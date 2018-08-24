@@ -5,8 +5,9 @@ close all; clearvars; clc
 sub_dir = uigetdir;
 file_list = dir(fullfile(sub_dir, '*.csv'));
 
+%%
 data = cell(size(file_list));
-for i = 1%:length(file_list)
+for i = 1:length(file_list)
     tmp = importfileEEGrasp(fullfile(file_list(i).folder,file_list(i).name ));
     tmp = tmp(3:end-2, :); % remove first and last 2 data to remove spline interpolation effects
     data{i} = tmp;
@@ -29,6 +30,9 @@ for i = 1%:length(file_list)
     coord_table_z = cross(coord_table_x, coord_table_y);
     
     %%
+    % get time
+    time = data{i}{:, {'time_ms'}};
+    dt = 0.001 * (time(2) - time(1)); % in second
     % get trigger indices
     audio_trigger = data{i}{:, {'trigger'}};
     
@@ -65,7 +69,6 @@ for i = 1%:length(file_list)
     
     %%
     % compute object tilt
-    angTilt = zeros(height(data{i}), 1);
     coord_obj_z = zeros(height(data{i}), 3);
     for j = 1:height(data{i})
         obj_marker0 = data{i}{j, {'x0', 'y0', 'z0'}};
@@ -87,15 +90,23 @@ for i = 1%:length(file_list)
         %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         coord_obj_y = cross(obj_vector1, coord_obj_x);
         coord_obj_z(j, :) = obj_vector1; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
-% %         coord_obj_z = filtmat_class( dt, 30, data);
         %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
-        % Angle b/w line (object z) and plane (table xz)
-        
-        angTilt(j, 1) = asind( abs(dot(coord_table_y, coord_obj_z(j, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z(j, :).^2))) );
     end
     
+    %%
+    % filter
+    cutoff = 30; % in Hz
+    coord_obj_z_filtered = filtmat_class( dt, cutoff, coord_obj_z);
+    
+    angTilt = zeros(height(data{i}), 1);
+    for j = 1:height(data{i})
+        % Angle b/w line (object z) and plane (table xz)
+        angTilt(j, 1) = asind( abs(dot(coord_table_y, coord_obj_z_filtered(j, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z_filtered(j, :).^2))) );
+    end
+    
+    
+    plot([angTilt, audio_trigger])
+    pause
     %%
     % compute finger tip coordinate without missing frames
     
