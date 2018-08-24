@@ -64,6 +64,39 @@ for i = 1%:length(file_list)
     %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     %%
+    % compute object tilt
+    angTilt = zeros(height(data{i}), 1);
+    coord_obj_z = zeros(height(data{i}), 3);
+    for j = 1:height(data{i})
+        obj_marker0 = data{i}{j, {'x0', 'y0', 'z0'}};
+        obj_marker1 = data{i}{j, {'x1', 'y1', 'z1'}};
+        obj_marker2 = data{i}{j, {'x2', 'y2', 'z2'}};
+        obj_marker4 = data{i}{j, {'x4', 'y4', 'z4'}};
+        obj_marker5 = data{i}{j, {'x5', 'y5', 'z5'}};
+        obj_marker7 = data{i}{j, {'x7', 'y7', 'z7'}};
+        
+        obj_vector1 = obj_marker1 - obj_marker4;
+        obj_vector2 = obj_marker0 - obj_marker4;
+        coord_obj_x = cross(obj_vector1, obj_vector2);
+        
+        obj_vector3 = obj_marker5 - obj_marker2;
+        obj_vector4 = obj_marker7 - obj_marker2;
+        % coord_obj_y = cross(obj_vector3, obj_vector4);
+        % coord_obj_z = cross(coord_obj_x, coord_obj_y);
+        
+        %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        coord_obj_y = cross(obj_vector1, coord_obj_x);
+        coord_obj_z(j, :) = obj_vector1; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+% %         coord_obj_z = filtmat_class( dt, 30, data);
+        %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+        % Angle b/w line (object z) and plane (table xz)
+        
+        angTilt(j, 1) = asind( abs(dot(coord_table_y, coord_obj_z(j, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z(j, :).^2))) );
+    end
+    
+    %%
     % compute finger tip coordinate without missing frames
     
     
