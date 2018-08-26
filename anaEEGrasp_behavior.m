@@ -1,72 +1,51 @@
 close all; clearvars; clc
 
-%%
-% import data from .csv files
-sub_dir = uigetdir;
-file_list = dir(fullfile(sub_dir, '*.csv'));
+%% load aligned data
+[filename, pathname, ~] = uigetfile;
+load(fullfile(pathname, filename));
+
+coord_table_x = [1, 0, 0];
+coord_table_y = [0, 1, 0];
+coord_table_z = [0, 0, 1];
+
+%% lowpass filter all data
+dt = diff(data{1}{1:2, 1}) * 0.001;
+cutoff = 30; % in Hz
+data_filtered = data;
+for i = 1:length(file_list)
+    data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
+end
 
 %%
-data = cell(size(file_list));
-resultant_mx = zeros(size(file_list));
-angTilt = zeros(length(file_list), 1);
+resultant_mx = cell(size(file_list));
+angTilt = cell(size(file_list));
+coord_obj_y = cell(size(file_list));
+coord_obj_z = cell(size(file_list));
+ind_lft_onset = zeros(size(file_list));
+obj_height = cell(size(file_list));
+
+% assign filtered or raw data to analyze
+input = data_filtered; % or data
 for i = 1:length(file_list)
-    tmp = importfileEEGrasp( fullfile( file_list(i).folder, file_list(i).name ) );
     
-    % All ATI Nano 25 are in N and N-m
-    % rotate the ATI coordinate to handle coordinate
-    tmp_th0 = table2array( tmp(:, {'fx0', 'fy0', 'fz0', 'mx0', 'my0', 'mz0'}) );
-    tmp_th1 = table2array( tmp(:, {'fx1', 'fy1', 'fz1', 'mx1', 'my1', 'mz1'}) );
-    tmp_v2 = table2array( tmp(:, {'fx2', 'fy2', 'fz2', 'mx2', 'my2', 'mz2'}) );
-    tmp_v3 = table2array( tmp(:, {'fx3', 'fy3', 'fz3', 'mx3', 'my3', 'mz3'}) );
-    % both thumb ATI rotate about z for 180 deg then about y for 180 deg to
-    % the object coordinate
-    RTH = rotz(90) * roty(180);
-    tmp_th0 = [(RTH * tmp_th0(:, 1:3)')', (RTH * tmp_th0(:, 4:end)')'];
-    tmp_th1 = [(RTH * tmp_th1(:, 1:3)')', (RTH * tmp_th1(:, 4:end)')'];
-    % both virtual finger ATI rotate about z for 90 deg to the object
-    % coordinate
-    RV = rotz(-90);
-    tmp_v2 = [(RV * tmp_v2(:, 1:3)')', (RV * tmp_v2(:, 4:end)')'];
-    tmp_v3 = [(RV * tmp_v3(:, 1:3)')', (RV * tmp_v3(:, 4:end)')'];
-    % replace with rotated data
-    tmp{:, 3:26} = [tmp_th0, tmp_th1, tmp_v2, tmp_v3];
-    % remove first and last 2 data to remove spline interpolation effects
-    tmp = tmp(3:end-2, :);
-    data{i} = tmp;
-    
-    %% get Table coordinate
-    % Wu, G., Cavanagh, P.R., 1995. Recommendations for standardization in
-    % the reporting of kinematic data. Journal of Biomechanics 28 (10), 
-    % 1257–1260.
-    table_marker0 = mean(data{i}{:, {'x11', 'y11', 'z11'}}, 1);
-    table_marker1 = mean(data{i}{:, {'x12', 'y12', 'z12'}}, 1);
-    table_marker2 = mean(data{i}{:, {'x13', 'y13', 'z13'}}, 1);
-    
-    table_vector1 = table_marker1 - table_marker0;
-    table_vector2 = table_marker2 - table_marker0;
-    
-    coord_table_origin = table_marker0;
-    coord_table_x = table_vector1;
-    coord_table_y = cross(table_vector1, table_vector2);
-    coord_table_z = cross(coord_table_x, coord_table_y);
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% get time
-    time = data{i}{:, {'time_ms'}};
+    time = input{i}{:, {'time_ms'}};
     dt = 0.001 * (time(2) - time(1)); % in second
     % get trigger indices
-    audio_trigger = data{i}{:, {'trigger'}};
+    audio_trigger = input{i}{:, {'trigger'}};
     
     %% get PS Marker6: the center of the object
     % object coordinate before audio go cue and will keep until object
     % lift*
     ind_b4go = (audio_trigger == 1);
-    obj_marker0_b4go = mean(data{i}{ind_b4go, {'x0', 'y0', 'z0'}}, 1);
-    obj_marker1_b4go = mean(data{i}{ind_b4go, {'x1', 'y1', 'z1'}}, 1);
-    obj_marker2_b4go = mean(data{i}{ind_b4go, {'x2', 'y2', 'z2'}}, 1);
-    obj_marker4_b4go = mean(data{i}{ind_b4go, {'x4', 'y4', 'z4'}}, 1);
-    obj_marker5_b4go = mean(data{i}{ind_b4go, {'x5', 'y5', 'z5'}}, 1);
-    obj_marker6_b4go = mean(data{i}{ind_b4go, {'x6', 'y6', 'z6'}}, 1);
-    obj_marker7_b4go = mean(data{i}{ind_b4go, {'x7', 'y7', 'z7'}}, 1);
+    obj_marker0_b4go = mean(input{i}{ind_b4go, var_PS{1}}, 1);
+    obj_marker1_b4go = mean(input{i}{ind_b4go, var_PS{2}}, 1);
+    obj_marker2_b4go = mean(input{i}{ind_b4go, var_PS{3}}, 1);
+    obj_marker4_b4go = mean(input{i}{ind_b4go, var_PS{5}}, 1);
+    obj_marker5_b4go = mean(input{i}{ind_b4go, var_PS{6}}, 1);
+    obj_marker6_b4go = mean(input{i}{ind_b4go, var_PS{7}}, 1);
+    obj_marker7_b4go = mean(input{i}{ind_b4go, var_PS{8}}, 1);
     
     % coordinate fixed on the object for each frame!!!
     coord_obj_origin = obj_marker6_b4go;
@@ -86,63 +65,55 @@ for i = 1:length(file_list)
     coord_obj_z_b4go = obj_vector1_b4go; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
+    % Angle b/w line (object z) and plane (table xz)
+    angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_z_b4go)) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z_b4go.^2))) );
+    
     %% find lift onset
-    lift_marker0 = zeros(height(data{i}), 1);
-    for j = 1:height(data{i})
-        obj_marker0 = data{i}{j, {'x0', 'y0', 'z0'}};
+    lift_marker0 = zeros(height(input{i}), 1);
+    for j = 1:height(input{i})
+        obj_marker0 = input{i}{j, var_PS{1}};
         lift_marker0(j, 1) = sqrt(sum((obj_marker0 - obj_marker0_b4go).^2));
     end
     avg_lft = mean(lift_marker0(ind_b4go));
     std_lft = std(lift_marker0(ind_b4go));
-%     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
-    tmp = find(abs(lift_marker0 - avg_lft) > 15); % larger than 15 mm
-    ind_lft_onset = tmp(1) - 1;
-%     b = lift_marker0(ind_lft_onset, 1);
+    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
+    obj_height{i} = abs(lift_marker0 - avg_lft);
+    tmp = find(abs(lift_marker0 - avg_lft) > 10); % larger than 10 mm
+    ind_lft_onset(i, 1) = tmp(1) - 1;
     
-    %% compute Torque compensation at lif onset
-%     ind_lft_onset = 1:height(data{i});
-    obj_side = file_list(i).name(end-4);
-    switch obj_side
-        case 'R'
-            finger_Th = data{i}{ind_lft_onset, {'fx0', 'fy0', 'fz0', 'mx0', 'my0', 'mz0'}};
-            finger_V  = data{i}{ind_lft_onset, {'fx2', 'fy2', 'fz2', 'mx2', 'my2', 'mz2'}};
-        case 'L'
-            finger_Th = data{i}{ind_lft_onset, {'fx1', 'fy1', 'fz1', 'mx1', 'my1', 'mz1'}};
-            finger_V  = data{i}{ind_lft_onset, {'fx3', 'fy3', 'fz3', 'mx3', 'my3', 'mz3'}};
-        otherwise
-            disp('something wrong with the file name!!')
-    end
+    %% compute frame by frame
+    for time_id = 1:height(input{i})
+        %% compute Torque compensation
+        obj_side = file_list(i).name(end-4);
+        switch obj_side
+            case 'R'
+                finger_Th = input{i}{time_id, var_ATI{1}};
+                finger_V  = input{i}{time_id, var_ATI{3}};
+            case 'L'
+                finger_Th = input{i}{time_id, var_ATI{2}};
+                finger_V  = input{i}{time_id, var_ATI{4}};
+            otherwise
+                disp('something wrong with the file name!!')
+        end
+
+        % find th_cop_y and v_cop_y
+        % since the ATI reference origin is on tool surface: dy = mx / fz
+        th_cop_y = finger_Th(:, 4) ./ finger_Th(:, 3);
+        v_cop_y = finger_V(:, 4) ./ finger_V(:, 3);
+
+        % width b/w two nano 25 tool surface in mm
+        width_obj = 2 * (21.6 + 3);
+
+        diff_finger = finger_Th - finger_V;
+        resultant_mx{i}(time_id, 1) = diff_finger(:, 2) .* width_obj - (diff_finger(:, 3) .* (th_cop_y - v_cop_y));
     
-    % find th_cop_y and v_cop_y
-    % since the ATI reference origin is on tool surface: dy = mx / fz
-    th_cop_y = finger_Th(:, 4) ./ finger_Th(:, 3);
-    v_cop_y = finger_V(:, 4) ./ finger_V(:, 3);
-    
-    % width b/w two nano 25 tool surface in meter
-    width_obj = 2 * (21.6 + 3) * 0.001;
-    
-    diff_finger = finger_Th - finger_V;
-    resultant_mx(i, 1) = diff_finger(:, 2) .* width_obj - (diff_finger(:, 3) .* (th_cop_y - v_cop_y));
-    disp(resultant_mx(i, 1));
-        %%
-        b = abs(lift_marker0 - avg_lft);
-
-% %     plotyy(1:length(audio_trigger), resultant_max, 1:length(audio_trigger), b)
-% %     disp(i)
-% %     disp(obj_side)
-% %     pause
-
-
-
-    %% compute object tilt
-    coord_obj_z = zeros(height(data{i}), 3);
-    for j = ind_lft_onset% 1:height(data{i})
-        obj_marker0 = data{i}{j, {'x0', 'y0', 'z0'}};
-        obj_marker1 = data{i}{j, {'x1', 'y1', 'z1'}};
-        obj_marker2 = data{i}{j, {'x2', 'y2', 'z2'}};
-        obj_marker4 = data{i}{j, {'x4', 'y4', 'z4'}};
-        obj_marker5 = data{i}{j, {'x5', 'y5', 'z5'}};
-        obj_marker7 = data{i}{j, {'x7', 'y7', 'z7'}};
+        %% compute object tilt
+        obj_marker0 = input{i}{time_id, var_PS{1}};
+        obj_marker1 = input{i}{time_id, var_PS{2}};
+        obj_marker2 = input{i}{time_id, var_PS{3}};
+        obj_marker4 = input{i}{time_id, var_PS{5}};
+        obj_marker5 = input{i}{time_id, var_PS{6}};
+        obj_marker7 = input{i}{time_id, var_PS{8}};
         
         obj_vector1 = obj_marker1 - obj_marker4;
         obj_vector2 = obj_marker0 - obj_marker4;
@@ -154,43 +125,75 @@ for i = 1:length(file_list)
         % coord_obj_z = cross(coord_obj_x, coord_obj_y);
         
         %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        coord_obj_y = cross(obj_vector1, coord_obj_x);
-        coord_obj_z(j, :) = obj_vector1; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        coord_obj_y{i}(time_id, :) = cross(obj_vector1, coord_obj_x);
+        coord_obj_z{i}(time_id, :) = obj_vector1; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    end
-    
-%     %% filter
-%     cutoff = 30; % in Hz
-%     coord_obj_z_filtered = filtmat_class( dt, cutoff, coord_obj_z);
-    
 
-    for j = ind_lft_onset%1:height(data{i})
+
+
+
         % Angle b/w line (object z) and plane (table xz)
-        angTilt(i, 1) = asind( abs(dot(coord_table_y, coord_obj_z(j, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z(j, :).^2))) );
+        angTilt{i}(time_id, 1) = abs(angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj_z{i}(time_id, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z{i}(time_id, :).^2))) ));
+        
     end
+    
+    disp(i);
 
     %% compute finger tip coordinate without missing frames
     
 end
-[path, ~, ~] = fileparts(sub_dir);
 
-save([path, 'temp_data.mat'], 'resultant_mx', 'file_list', 'angTilt')
+save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultant_mx', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height')
 
 %% plot
-name = {file_list.name}';
+mx = resultant_mx;
 
-tmp = char(name);
-ind_IL = (tmp(:, 11) == 'I');
-ind_TR = (tmp(:, 11) == 'T');
-ind_PT = (tmp(:, 11) == 'P');
+j = 1;
+time_of_plot = ind_lft_onset(1, 1);
+tmp = [str2double(file_list(1).name(7:9)), mx{1}(time_of_plot, 1), angTilt{1}(time_of_plot,1)];
+session = cell(33, 2);
+for i = 2:length(file_list)
+    time_of_plot = ind_lft_onset(i, 1);
+    if (file_list(i).name(:, 11) ~= file_list(i - 1).name(:, 11))
+        session(j, :) = {file_list(i - 1).name(:, 11), tmp};
+        j = j + 1;
+        tmp = [];
+    end
+    
+    tmp = [tmp; str2double(file_list(i).name(7:9)), mx{i}(time_of_plot, 1), angTilt{i}(time_of_plot, 1)];
+end
+session(j, :) = {file_list(end).name(:, 11), tmp};
 
-trial_id = 1:100;
-mx = resultant_mx * 1000;
+figure(1)
 subplot 211
-plot(trial_id(ind_IL), mx(ind_IL, 1), '-*r', trial_id(ind_TR), mx(ind_TR, 1), 'ob', trial_id(ind_PT), mx(ind_PT, 1), 'xk')
+hold on
+for i = 1:length(session)
+    switch session{i, 1}
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    plot(session{i, 2}(:, 1), session{i, 2}(:, 2), line_spec)
+end
+hold off
 subplot 212
-plot(trial_id(ind_IL), angTilt(ind_IL, 1), '-*r', trial_id(ind_TR), angTilt(ind_TR, 1), 'ob', trial_id(ind_PT), angTilt(ind_PT, 1), 'xk')
+hold on
+for i = 1:length(session)
+    switch session{i, 1}
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    plot(session{i, 2}(:, 1), session{i, 2}(:, 3), line_spec)
+end
+hold off
 legend({'IL', 'TR', 'PT'})
-
-
 
