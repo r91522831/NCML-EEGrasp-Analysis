@@ -121,8 +121,6 @@ for i = 1:length(file_list)
         %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-
-
         % Angle b/w line (object z) and plane (table xz)
         angTilt{i}(time_id, 1) = abs(angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj_z{i}(time_id, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z{i}(time_id, :).^2))) ));
         
