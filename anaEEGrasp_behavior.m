@@ -86,9 +86,11 @@ for i = 1:length(file_list)
         end
 
         % find th_cop_y and v_cop_y
-        % since the ATI reference origin is on tool surface: dy = mx / fz
-        th_cop_y = finger_Th(:, 4) ./ finger_Th(:, 3);
-        v_cop_y = finger_V(:, 4) ./ finger_V(:, 3);
+        % since the ATI reference origin is on tool surface: dy = (mx - fy * dz) / fz
+        th_cop_z2surface = -5; % in mm
+        v_cop_z2surface = 5; % in mm
+        th_cop_y = (finger_Th(:, 4) - finger_Th(:, 2) .* th_cop_z2surface )./ finger_Th(:, 3);
+        v_cop_y = (finger_V(:, 4) - finger_V(:, 2) .* v_cop_z2surface )./ finger_V(:, 3);
 
         % width b/w two nano 25 tool surface in mm
         width_obj = 2 * (21.6 + 3);
