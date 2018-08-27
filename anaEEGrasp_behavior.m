@@ -147,11 +147,53 @@ save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultant_mx', 'a
 
 %% plot
 mx = resultant_mx;
+dt = diff(data{1}{1:2, 1}) * 0.001;
+cutoff = 5; % in Hz
+mx_filtered = mx;
+obj_height_filtered = obj_height;
+for i = 1:length(mx)
+    mx_filtered{i} = filtmat_class( dt, cutoff, mx{i} );
+    obj_height_filtered{i} = filtmat_class( dt, cutoff, obj_height{i} );
+end
 
-j = 1;
+%%
+for i = 1:length(file_list)
+    ind_hold = find(data{i, 1}{:, 2} == 3);
+    for j = ind_hold(1, 1):-1:1
+        if obj_height_filtered{i, :}(j, 1) < 30 % 10 mm
+            ind_lft_onset(i, 1) = j;
+            break;
+        end
+    end
+end
+
+for i = 1:length(file_list)
+    figure(2)
+    subplot 211
+    plot(obj_height_filtered{i, :})
+    hold on
+    vline(ind_lft_onset(i, 1));
+    hold off
+    subplot 212
+    plot(mx_filtered{i, :})
+    hold on
+    vline(ind_lft_onset(i, 1));
+    hold off
+    
+%     disp(i)
+%     pause
+end
+
+
+
+
+
+%%
+
 time_of_plot = ind_lft_onset(1, 1);
 tmp = [str2double(file_list(1).name(7:9)), mx{1}(time_of_plot, 1), angTilt{1}(time_of_plot,1)];
 session = cell(33, 2);
+j = 1;
 for i = 2:length(file_list)
     time_of_plot = ind_lft_onset(i, 1);
     if (file_list(i).name(:, 11) ~= file_list(i - 1).name(:, 11))
@@ -195,5 +237,6 @@ for i = 1:length(session)
     plot(session{i, 2}(:, 1), session{i, 2}(:, 3), line_spec)
 end
 hold off
+ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
 
