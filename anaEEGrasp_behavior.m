@@ -9,7 +9,7 @@ coord_table_y = [0, 1, 0];
 coord_table_z = [0, 0, 1];
 
 %% lowpass filter all data
-dt = diff(data{1}{1:2, 1}) * 0.001;
+dt = diff(data{1}{1:2, 1}) * 0.001; % in second
 cutoff = 30; % in Hz
 data_filtered = data;
 for i = 1:length(file_list)
@@ -31,11 +31,12 @@ for i = 1:length(file_list)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% get time
     time = input{i}{:, {'time_ms'}};
-    dt = 0.001 * (time(2) - time(1)); % in second
     % get trigger indices
     audio_trigger = input{i}{:, {'trigger'}};
     
-    %% get PS Marker6: the center of the object
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Get object coordinate before reaching initiation
+    % get PS Marker6: the center of the object
     % object coordinate before audio go cue and will keep until object
     % lift*
     ind_b4go = (audio_trigger == 1);
@@ -68,19 +69,7 @@ for i = 1:length(file_list)
     % Angle b/w line (object z) and plane (table xz)
     angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_z_b4go)) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z_b4go.^2))) );
     
-    %% find lift onset
-    lift_marker0 = zeros(height(input{i}), 1);
-    for j = 1:height(input{i})
-        obj_marker0 = input{i}{j, var_PS{1}};
-        lift_marker0(j, 1) = sqrt(sum((obj_marker0 - obj_marker0_b4go).^2));
-    end
-    avg_lft = mean(lift_marker0(ind_b4go));
-    std_lft = std(lift_marker0(ind_b4go));
-    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
-    obj_height{i} = abs(lift_marker0 - avg_lft);
-    tmp = find(abs(lift_marker0 - avg_lft) > 10); % larger than 10 mm
-    ind_lft_onset(i, 1) = tmp(1) - 1;
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% compute frame by frame
     for time_id = 1:height(input{i})
         %% compute Torque compensation
@@ -156,8 +145,24 @@ for i = 1:length(mx)
     obj_height_filtered{i} = filtmat_class( dt, cutoff, obj_height{i} );
 end
 
-%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% find lift onset
 for i = 1:length(file_list)
+    %{
+    lift_marker0 = zeros(height(input{i}), 1);
+    for j = 1:height(input{i})
+        obj_marker0 = input{i}{j, var_PS{1}};
+        lift_marker0(j, 1) = sqrt(sum((obj_marker0 - obj_marker0_b4go).^2));
+    end
+    avg_lft = mean(lift_marker0(ind_b4go));
+    std_lft = std(lift_marker0(ind_b4go));
+    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
+    obj_height{i} = abs(lift_marker0 - avg_lft);
+    tmp = find(abs(lift_marker0 - avg_lft) > 10); % larger than 10 mm
+    ind_lft_onset(i, 1) = tmp(1) - 1;
+    %}
+    
+    
     ind_hold = find(data{i, 1}{:, 2} == 3);
     for j = ind_hold(1, 1):-1:1
         if obj_height_filtered{i, :}(j, 1) < 30 % 10 mm
