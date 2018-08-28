@@ -165,11 +165,21 @@ for i = 1:length(file_list)
     
     ind_hold = find(data{i, 1}{:, 2} == 3);
     for j = ind_hold(1, 1):-1:1
-        if obj_height_filtered{i, :}(j, 1) < 30 % 10 mm
+        if obj_height_filtered{i, :}(j, 1) < 10 % 10 mm
             ind_lft_onset(i, 1) = j;
             break;
         end
     end
+end
+
+%% find peak roll after lift onset
+ind_peak_roll = zeros(size(file_list));
+for i = 1:length(file_list)
+    roll_win = 250; % in ms
+    ind_roll_win = floor(roll_win ./ (dt * 1000));
+    
+    [~, tmp_ind] = max(angTilt{i, 1}(ind_lft_onset(i, 1):(ind_lft_onset(i, 1) + ind_roll_win), 1));
+    ind_peak_roll(i, 1) = tmp_ind;
 end
 
 for i = 1:length(file_list)
@@ -196,7 +206,7 @@ end
 %%
 
 time_of_plot = ind_lft_onset(1, 1);
-tmp = [str2double(file_list(1).name(7:9)), mx{1}(time_of_plot, 1), angTilt{1}(time_of_plot,1)];
+tmp = [str2double(file_list(1).name(7:9)), mx_filtered{1}(time_of_plot, 1), angTilt{1}(ind_peak_roll(1, 1), 1)];
 session = cell(33, 2);
 j = 1;
 for i = 2:length(file_list)
@@ -207,7 +217,7 @@ for i = 2:length(file_list)
         tmp = [];
     end
     
-    tmp = [tmp; str2double(file_list(i).name(7:9)), mx{i}(time_of_plot, 1), angTilt{i}(time_of_plot, 1)];
+    tmp = [tmp; str2double(file_list(i).name(7:9)), mx_filtered{i}(time_of_plot, 1), angTilt{i}(ind_peak_roll(i, 1), 1)];
 end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
@@ -242,6 +252,6 @@ for i = 1:length(session)
     plot(session{i, 2}(:, 1), session{i, 2}(:, 3), line_spec)
 end
 hold off
-ylim([0, 15])
+% ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
 
