@@ -4,76 +4,58 @@ close all; clearvars; clc
 [filename, pathname, ~] = uigetfile;
 load(fullfile(pathname, filename));
 
+coord_table_origin = [0, 0, 0];
 coord_table_x = [1, 0, 0];
 coord_table_y = [0, 1, 0];
 coord_table_z = [0, 0, 1];
 
+n_PSonObj = 8;
+
 %% lowpass filter all data
 dt = diff(data{1}{1:2, 1}) * 0.001; % in second
-cutoff = 30; % in Hz
+% % % cutoff = 30; % in Hz
 data_filtered = data;
-for i = 1:length(file_list)
-    data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
-end
+% % % for i = 1:length(file_list)
+% % %     data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
+% % % end
 
 %%
 resultant_mx = cell(size(file_list));
 angTilt = cell(size(file_list));
-coord_obj_y = cell(size(file_list));
-coord_obj_z = cell(size(file_list));
+coord_obj = cell(size(file_list));
 ind_lft_onset = zeros(size(file_list));
 obj_height = cell(size(file_list));
 
 % assign filtered or raw data to analyze
 input = data_filtered; % or data
+
 for i = 1:length(file_list)
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% get time
+    % get which side of the handle on the object is grasped
+    obj_side = file_list(i).name(end-4);
+    % get time and triggers
     time = input{i}{:, {'time_ms'}};
     % get trigger indices
     audio_trigger = input{i}{:, {'trigger'}};
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Get object coordinate before reaching initiation
-    % get PS Marker6: the center of the object
-    % object coordinate before audio go cue and will keep until object
-    % lift*
+    % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (audio_trigger == 1);
-    obj_marker0_b4go = mean(input{i}{ind_b4go, var_PS{1}}, 1);
-    obj_marker1_b4go = mean(input{i}{ind_b4go, var_PS{2}}, 1);
-    obj_marker2_b4go = mean(input{i}{ind_b4go, var_PS{3}}, 1);
-    obj_marker4_b4go = mean(input{i}{ind_b4go, var_PS{5}}, 1);
-    obj_marker5_b4go = mean(input{i}{ind_b4go, var_PS{6}}, 1);
-    obj_marker6_b4go = mean(input{i}{ind_b4go, var_PS{7}}, 1);
-    obj_marker7_b4go = mean(input{i}{ind_b4go, var_PS{8}}, 1);
+    markers_b4go = cell(n_PSonObj, 1);
+    for m = 1:8
+        markers_b4go{m, 1} = mean(input{i}{ind_b4go, var_PS{m}}, 1);
+    end
     
-    % coordinate fixed on the object for each frame!!!
-    coord_obj_origin = obj_marker6_b4go;
-    
-    obj_vector1_b4go = obj_marker1_b4go - obj_marker4_b4go;
-    obj_vector2_b4go = obj_marker0_b4go - obj_marker4_b4go;
-    coord_obj_x_b4go = cross(obj_vector1_b4go, obj_vector2_b4go);
-    
-    obj_vector3_b4go = obj_marker5_b4go - obj_marker2_b4go;
-    obj_vector4_b4go = obj_marker7_b4go - obj_marker2_b4go;
-    % coord_obj_y_b4go = cross(obj_vector3_b4go, obj_vector4_b4go);
-    
-    % coord_obj_z_b4go = cross(coord_obj_x_b4go, coord_obj_y_b4go);
-    
-    %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    coord_obj_y_b4go = cross(obj_vector1_b4go, coord_obj_x_b4go);
-    coord_obj_z_b4go = obj_vector1_b4go; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    coord_obj_b4go = coordOnObj(markers_b4go, obj_side);
     
     % Angle b/w line (object z) and plane (table xz)
-    angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_z_b4go)) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z_b4go.^2))) );
+    angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{'z_axis', :})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{'z_axis', :} .^2))) );
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% compute frame by frame
+    lift_marker0 = zeros(height(input{i}), 1);
     for time_id = 1:height(input{i})
         %% compute Torque compensation
-        obj_side = file_list(i).name(end-4);
         switch obj_side
             case 'R'
                 finger_Th = input{i}{time_id, var_ATI{1}};
@@ -99,33 +81,34 @@ for i = 1:length(file_list)
         resultant_mx{i}(time_id, 1) = diff_finger(:, 2) .* width_obj - (diff_finger(:, 3) .* (th_cop_y - v_cop_y));
     
         %% compute object tilt
-        obj_marker0 = input{i}{time_id, var_PS{1}};
-        obj_marker1 = input{i}{time_id, var_PS{2}};
-        obj_marker2 = input{i}{time_id, var_PS{3}};
-        obj_marker4 = input{i}{time_id, var_PS{5}};
-        obj_marker5 = input{i}{time_id, var_PS{6}};
-        obj_marker7 = input{i}{time_id, var_PS{8}};
+        markers = cell(n_PSonObj, 1);
+        for m = 1:8
+            markers{m, 1} = mean(input{i}{time_id, var_PS{m}}, 1);
+        end
         
-        obj_vector1 = obj_marker1 - obj_marker4;
-        obj_vector2 = obj_marker0 - obj_marker4;
-        coord_obj_x = cross(obj_vector1, obj_vector2);
-        
-        obj_vector3 = obj_marker5 - obj_marker2;
-        obj_vector4 = obj_marker7 - obj_marker2;
-        % coord_obj_y = cross(obj_vector3, obj_vector4);
-        % coord_obj_z = cross(coord_obj_x, coord_obj_y);
-        
-        %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        coord_obj_y{i}(time_id, :) = cross(obj_vector1, coord_obj_x);
-        coord_obj_z{i}(time_id, :) = obj_vector1; % for now!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        coord_obj{i}{time_id, 1} = coordOnObj(markers, obj_side);
 
         % Angle b/w line (object z) and plane (table xz)
-        angTilt{i}(time_id, 1) = abs(angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj_z{i}(time_id, :))) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_z{i}(time_id, :).^2))) ));
+        angTilt{i}(time_id, 1) = abs(angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj{i}{time_id, 1}{'z_axis', :})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj{i}{time_id, 1}{'z_axis', :} .^2))) ));
         
+        %% compute object height
+        lift_marker0(time_id, 1) = sqrt(sum((markers{7, 1} - markers_b4go{7, 1}).^2));
     end
     
+    %% define lift onset
+    avg_lft = mean(lift_marker0(ind_b4go));
+    std_lft = std(lift_marker0(ind_b4go));
+    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
+    obj_height{i} = abs(lift_marker0 - avg_lft);
+    
+    ind_hold = find(audio_trigger == 3);
+    for j = ind_hold(end, 1):-1:1
+        if obj_height{i, :}(j, 1) < 10 % 10 mm
+            ind_lft_onset(i, 1) = j;
+            break;
+        end
+    end
+
     disp(i);
 
     %% compute finger tip coordinate without missing frames
@@ -134,44 +117,37 @@ end
 
 save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultant_mx', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height')
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Check lift onset
+
+for i = 1:length(file_list)
+    plot(obj_height{i});
+    vline(ind_lft_onset(i));
+    disp(i)
+    pause
+end
+
+
+
+%{
 %% plot
 mx = resultant_mx;
-dt = diff(data{1}{1:2, 1}) * 0.001;
-cutoff = 5; % in Hz
+% % % cutoff_plot = 5; % in Hz
 mx_filtered = mx;
 obj_height_filtered = obj_height;
-for i = 1:length(mx)
-    mx_filtered{i} = filtmat_class( dt, cutoff, mx{i} );
-    obj_height_filtered{i} = filtmat_class( dt, cutoff, obj_height{i} );
-end
+% % % for i = 1:length(mx)
+% % %     mx_filtered{i} = filtmat_class( dt, cutoff_plot, mx{i} );
+% % %     obj_height_filtered{i} = filtmat_class( dt, cutoff_plot, obj_height{i} );
+% % % end
+
+
+%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% find lift onset
-for i = 1:length(file_list)
-    %{
-    lift_marker0 = zeros(height(input{i}), 1);
-    for j = 1:height(input{i})
-        obj_marker0 = input{i}{j, var_PS{1}};
-        lift_marker0(j, 1) = sqrt(sum((obj_marker0 - obj_marker0_b4go).^2));
-    end
-    avg_lft = mean(lift_marker0(ind_b4go));
-    std_lft = std(lift_marker0(ind_b4go));
-    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
-    obj_height{i} = abs(lift_marker0 - avg_lft);
-    tmp = find(abs(lift_marker0 - avg_lft) > 10); % larger than 10 mm
-    ind_lft_onset(i, 1) = tmp(1) - 1;
-    %}
-    
-    
-    ind_hold = find(data{i, 1}{:, 2} == 3);
-    for j = ind_hold(1, 1):-1:1
-        if obj_height_filtered{i, :}(j, 1) < 10 % 10 mm
-            ind_lft_onset(i, 1) = j;
-            break;
-        end
-    end
-end
 
+%{
 %% find peak roll after lift onset
 ind_peak_roll = zeros(size(file_list));
 for i = 1:length(file_list)
@@ -198,7 +174,7 @@ for i = 1:length(file_list)
 %     disp(i)
 %     pause
 end
-
+%}
 
 
 
@@ -254,4 +230,4 @@ end
 hold off
 % ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
-
+%}

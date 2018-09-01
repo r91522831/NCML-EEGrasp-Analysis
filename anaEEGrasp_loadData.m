@@ -20,8 +20,7 @@ end
 
 %%
 data = cell(size(file_list));
-coord_table_origin = cell(size(file_list));
-for i = 1%:length(file_list)
+for i = 1:length(file_list)
     data_raw = importfileEEGraspWithCond( fullfile( file_list(i).folder, file_list(i).name ) );
     %% replace first and last 2 data to remove spline interpolation effects
     data_raw(1:2, 3:end) = [data_raw(3, 3:end); data_raw(3, 3:end)];
@@ -81,7 +80,7 @@ for i = 1%:length(file_list)
     table_vector2 = table_marker2 - table_marker0;
     
     % get unit vectors for the coordinate axes
-    coord_table_origin{i, 1} = table_marker0;
+    coord_table_origin = table_marker0;
     coord_table_x = table_vector1 / norm(table_vector1);
     tmp = cross(table_vector1, table_vector2); % this is the gravity direction
     coord_table_y = tmp / norm(tmp);
@@ -92,19 +91,17 @@ for i = 1%:length(file_list)
     % first translate PS origin to table origin
     tmp = cell(1, length(var_PS));
     for j = 1:length(var_PS)
-        tmp{1, j} = bsxfun(@minus, data_raw{:, var_PS{j}}, coord_table_origin{i, 1});
+        tmp{1, j} = bsxfun(@minus, data_raw{:, var_PS{j}}, coord_table_origin);
     end
+
     %----------------------------------------------------------------------
-    % In the future:
     % rotate the coordinate system from PS to table.
     % [1, 0, 0] -> coord_table_x; [0, 1, 0] -> coord_table_y; % [0, 0, 1] -> coord_table_z
-    %----------------------------------------------------------------------
-    % rotate the coordinate from PS to table
-%    R = [coord_table_x; coord_table_y; coord_table_z];
+    R = [coord_table_x; coord_table_y; coord_table_z];
+    for j = 1:length(var_PS)
+        tmp{1, j} = (R * tmp{1, j}')';
+    end
 
-    
-    
-    % use PS coordinate with table origin for now
     data_PS_aligned = [tmp{:}];
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,6 +111,8 @@ for i = 1%:length(file_list)
     tmp{:, [var_PS{:}]} = data_PS_aligned;
     data{i} = tmp;
 end
+
 [path, subID, ~] = fileparts(sub_dir);
-save(fullfile(path, [subID, '_aligned_data.mat']), 'data', 'file_list', 'sub_dir', 'var_ATI', 'var_PS');
+save(fullfile(path, [subID, '_aligned_data.mat']), 'data', 'file_list', 'sub_dir', 'var_ATI', 'var_PS', 'var_PS_cond');
 clear tmp* i j
+disp("Data alignment completed!")
