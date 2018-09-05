@@ -140,7 +140,7 @@ for i = 1:length(file_list)
     peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, 1) + tmp_ind];
     
     %% find peak mx around lift onset
-    pmx_win = 250; % in ms
+    pmx_win = 50; % in ms
     ind_pmx_win = floor(pmx_win ./ (dt * 1000));
     [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, 1) - ind_pmx_win):(ind_lft_onset(i, 1) + ind_pmx_win), 'mx'}) );
     tmp_ind = (ind_lft_onset(i, 1) - ind_pmx_win) + tmp_ind;
@@ -191,7 +191,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot
-
+%{
 % Get Torque compensation
 mx = resultantF;
 % % % cutoff_plot = 5; % in Hz
@@ -233,12 +233,12 @@ for i = 1:length(file_list)
     disp(i)
     pause
 end
-
+%}
 
 
 
 %% Plot peak mx and peak roll around lift onset in all trials
-%{
+
 tmp = [str2double(file_list(1).name(7:9)), peak_mx{1, 'peakMx'}, peak_roll{1, 'peakRoll'}];
 session = cell(33, 2);
 j = 1;
@@ -287,4 +287,4 @@ end
 hold off
 % ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
-%}
+
