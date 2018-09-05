@@ -204,8 +204,10 @@ obj_height_filtered = obj_height;
 
 d_center2surface = 3 + 21.6 + 3 + 2; % in mm center piece + Nano 25 + mounting + cover
 for i = 1:length(file_list)
-    % remove the fy * COPx - fx * COPy effects on mz, mz_pure_Th should be close
-    % to 0.5 * mz_pure_V    
+    % remove the fy * COPx - fx * COPy effects on mz, 
+    % (mz_pure_Th should be close to 0.5 * mz_pure_V) <- this statement is
+    % not necessarily true, since individual finger's fy * COPx - fx * COPy
+    % can cancel out each other's mz
     COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
     COPy_Th = (finger_Th_surface{i}{:, 'mx'} - finger_Th_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_Th_surface{i}{:, 'fz'};
     
