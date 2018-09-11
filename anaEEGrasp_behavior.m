@@ -29,7 +29,7 @@ finger_Th_surface = cell(size(file_list));
 finger_V_surface = cell(size(file_list));
 angTilt = cell(size(file_list));
 coord_obj = cell(size(file_list));
-ind_lft_onset = zeros(length(file_list), 5);
+ind_lft_onset = zeros(length(file_list), 6);
 audio_trigger = cell(size(file_list));
 obj_height = cell(size(file_list));
 obj_weight = zeros(length(file_list), 1);
@@ -140,20 +140,26 @@ for i = 1:length(file_list)
         end
     end
     for j = ind_hold(end, 1):-1:1
-        if obj_height{i, :}(j, 1) < 5 % 10 mm
+        if obj_height{i, :}(j, 1) < 5 % 5 mm
             ind_lft_onset(i, 2) = j;
             break;
         end
     end
     for j = ind_hold(end, 1):-1:1
-        if obj_height{i, :}(j, 1) < 3 % 10 mm
+        if obj_height{i, :}(j, 1) < 4 % 4 mm
             ind_lft_onset(i, 3) = j;
             break;
         end
     end
     for j = ind_hold(end, 1):-1:1
-        if obj_height{i, :}(j, 1) < 1 % 10 mm
+        if obj_height{i, :}(j, 1) < 3 % 3 mm
             ind_lft_onset(i, 4) = j;
+            break;
+        end
+    end
+    for j = ind_hold(end, 1):-1:1
+        if obj_height{i, :}(j, 1) < 1 % 1 mm
+            ind_lft_onset(i, 5) = j;
             break;
         end
     end
@@ -167,7 +173,7 @@ for i = 1:length(file_list)
     for j = ind_lft_onset(i, 1):-1:1 % start from 10 mm backward
         tmp_rf = sqrt(sum(resultantF{i, :}{j, {'fx', 'fy', 'fz'}}.^2, 2));
         if tmp_rf < obj_weight(i, 1) % load force equal to object weight
-            ind_lft_onset(i, 5) = j;
+            ind_lft_onset(i, 6) = j;
             break;
         end
     end
@@ -198,7 +204,27 @@ save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'fin
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check lift onset
-delta_t = ind_lft_onset - ind_lft_onset(:, 5);
+tmp_time_real = zeros(length(file_list), size(ind_lft_onset, 2));
+for i = 1:length(file_list)
+        tmp_time_real(i, j) = data{i}{ind_lft_onset(i, j), 1};
+    end
+end
+delta_t = tmp_time_real - tmp_time_real(:, 6);
+
+str_criterion = {'10', '5', '4', '3', '1'};
+figure(1)
+for i = 1:5
+    subplot(5, 1, i)
+    histogram(delta_t(2:end,i))
+    ylabel('trial count')
+    ntitle(['   onset criterion ', str_criterion{i}, ' mm'], 'location', 'northwest')
+    if i ~= 5 
+        xlim([-150, 140]);
+    end
+end
+xlabel('time differences b/w height criteria and load equal to weight (ms)')
+
+
 % % % for i = 1:length(file_list)
 % % %     ind_lft_onset
 % % % end
@@ -265,31 +291,38 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
+<<<<<<< HEAD
     plotyy(1:length(obj_height_filtered{i, :}), data{i, :}{:, 'y10'}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
 % % %     vline(ind_lft_onset(i, 1), '-or');
 %     plot(obj_height_filtered{i, :})
     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
+=======
+    plot(obj_height_filtered{i, :})
+%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
+>>>>>>> 74cc1390dd5fd2a3911b6cfe48b2d920543474c0
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
     vline(ind_lft_onset(i, 3), '-ok');
     vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), '-k');
+    vline(ind_lft_onset(i, 5), ':ob');
+    vline(ind_lft_onset(i, 6), '-k');
     hold off
-%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-%     ylim([0, 15])
+    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+    ylim([0, 15])
     subplot 212
-%     plot(resultantF{i, :}{:, 'fy'})
-    plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
+    plot(resultantF{i, :}{:, 'fy'})
+%     plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
     vline(ind_lft_onset(i, 3), '-ok');
     vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), '-k');
+    vline(ind_lft_onset(i, 5), ':ob');
+    vline(ind_lft_onset(i, 6), '-k');
     hline(obj_weight(i, 1));
     hold off
-%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
     
 % % %     
 % % %     plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
