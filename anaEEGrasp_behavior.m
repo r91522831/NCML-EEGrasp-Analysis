@@ -29,8 +29,10 @@ finger_Th_surface = cell(size(file_list));
 finger_V_surface = cell(size(file_list));
 angTilt = cell(size(file_list));
 coord_obj = cell(size(file_list));
-ind_lft_onset = zeros(size(file_list));
+ind_lft_onset = zeros(length(file_list), 5);
+audio_trigger = cell(size(file_list));
 obj_height = cell(size(file_list));
+obj_weight = zeros(length(file_list), 1);
 peak_roll = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
 peak_mx = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakMx', 'index'});
 
@@ -43,12 +45,12 @@ for i = 1:length(file_list)
     % get time and triggers
     time = input{i}{:, {'time_ms'}};
     % get trigger indices
-    audio_trigger = input{i}{:, {'trigger'}};
+    audio_trigger{i, 1} = input{i}{:, {'trigger'}};
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Get object coordinate before reaching initiation
     % object coordinate before audio go cue and should keep the same until object lift onset*
-    ind_b4go = (audio_trigger == 1);
+    ind_b4go = (audio_trigger{i, 1} == 1);
     markers_b4go = cell(n_PSonObj, 1);
     for m = 1:8
         markers_b4go{m, 1} = mean(input{i}{ind_b4go, var_PS{m}}, 1);
@@ -104,7 +106,6 @@ for i = 1:length(file_list)
     
     lift_marker0 = zeros(height(input{i}), 1);
     for time_id = 1:height(input{i})
-        
         %% compute object tilt
         markers = cell(n_PSonObj, 1);
         for m = 1:8
@@ -125,13 +126,47 @@ for i = 1:length(file_list)
     %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
     obj_height{i} = abs(lift_marker0 - avg_lft);
     
-    ind_hold = find(audio_trigger == 3);
+    % based on kinematics
+    ind_hold = find(audio_trigger{i, 1} == 3);
     for j = ind_hold(end, 1):-1:1
         if obj_height{i, :}(j, 1) < 10 % 10 mm
             ind_lft_onset(i, 1) = j;
             break;
         end
     end
+    for j = ind_hold(end, 1):-1:1
+        if obj_height{i, :}(j, 1) < 5 % 10 mm
+            ind_lft_onset(i, 2) = j;
+            break;
+        end
+    end
+    for j = ind_hold(end, 1):-1:1
+        if obj_height{i, :}(j, 1) < 3 % 10 mm
+            ind_lft_onset(i, 3) = j;
+            break;
+        end
+    end
+    for j = ind_hold(end, 1):-1:1
+        if obj_height{i, :}(j, 1) < 1 % 10 mm
+            ind_lft_onset(i, 4) = j;
+            break;
+        end
+    end
+    
+    % based on kinetics
+    % compute object weight
+    ind_hold = find(audio_trigger{i, 1} == 3);
+    tmp_stable_window = 50; % in ms
+    obj_weight(i, 1) = mean( sqrt(sum(resultantF{i, :}{(ind_hold(end, 1) - tmp_stable_window):ind_hold(end, 1), {'fx', 'fy', 'fz'}}.^2, 2)) );
+    
+    for j = ind_lft_onset(i, 1):-1:1 % start from 10 mm backward
+        tmp_rf = sqrt(sum(resultantF{i, :}{j, {'fx', 'fy', 'fz'}}.^2, 2));
+        if tmp_rf < obj_weight(i, 1) % load force equal to object weight
+            ind_lft_onset(i, 5) = j;
+            break;
+        end
+    end
+    
     
     %% find peak roll after lift onset
     roll_win = 250; % in ms
@@ -142,7 +177,7 @@ for i = 1:length(file_list)
     %% find peak mx around lift onset
     pmx_win = 50; % in ms
     ind_pmx_win = floor(pmx_win ./ (dt * 1000));
-    [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, 1) - ind_pmx_win):(ind_lft_onset(i, 1) + ind_pmx_win), 'mx'}) );
+    [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, 1) - ind_pmx_win):ind_lft_onset(i, 1), 'mx'}) );
     tmp_ind = (ind_lft_onset(i, 1) - ind_pmx_win) + tmp_ind;
     peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
     %%
@@ -152,12 +187,17 @@ for i = 1:length(file_list)
     
 end
 
-save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'peak_roll', 'peak_mx');
+save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'audio_trigger');
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check lift onset
+delta_t = ind_lft_onset - ind_lft_onset(:, 5);
+% % % for i = 1:length(file_list)
+% % %     ind_lft_onset
+% % % end
+
 %{
 for i = 1:length(file_list)
     plotyy(1:length(obj_height{i}), obj_height{i}, 1:length(obj_height{i}), angTilt{i, 1});
@@ -191,7 +231,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot
-%{
+
 % Get Torque compensation
 mx = resultantF;
 % % % cutoff_plot = 5; % in Hz
@@ -204,39 +244,57 @@ obj_height_filtered = obj_height;
 
 d_center2surface = 3 + 21.6 + 3 + 2; % in mm center piece + Nano 25 + mounting + cover
 for i = 1:length(file_list)
-    % remove the fy * COPx - fx * COPy effects on mz, mz_pure_Th should be close
-    % to 0.5 * mz_pure_V    
-    COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
-    COPy_Th = (finger_Th_surface{i}{:, 'mx'} - finger_Th_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_Th_surface{i}{:, 'fz'};
-    
-    COPx_V = (finger_V_surface{i}{:, 'fx'} .* d_center2surface - finger_V_surface{i}{:, 'my'}) ./ finger_V_surface{i}{:, 'fz'};
-    COPy_V = (finger_V_surface{i}{:, 'mx'} + finger_V_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_V_surface{i}{:, 'fz'};
-    
-    tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
-    tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
-    
+% % %     % remove the fy * COPx - fx * COPy effects on mz, mz_pure_Th should be close
+% % %     % to 0.5 * mz_pure_V    
+% % %     COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
+% % %     COPy_Th = (finger_Th_surface{i}{:, 'mx'} - finger_Th_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_Th_surface{i}{:, 'fz'};
+% % %     
+% % %     COPx_V = (finger_V_surface{i}{:, 'fx'} .* d_center2surface - finger_V_surface{i}{:, 'my'}) ./ finger_V_surface{i}{:, 'fz'};
+% % %     COPy_V = (finger_V_surface{i}{:, 'mx'} + finger_V_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_V_surface{i}{:, 'fz'};
+% % %     
+% % %     tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
+% % %     tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
+% % %     
     figure(2)
     subplot 211
     plot(obj_height_filtered{i, :})
     hold on
-    vline(ind_lft_onset(i, 1));
+    vline(ind_lft_onset(i, 1), '-or');
+    vline(ind_lft_onset(i, 2), ':or');
+    vline(ind_lft_onset(i, 3), '-ok');
+    vline(ind_lft_onset(i, 4), '-ob');
+    vline(ind_lft_onset(i, 5), '-k');
     hold off
+%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+%     ylim([0, 15])
     subplot 212
-    plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
+    plot(resultantF{i, :}{:, 'fy'})
     hold on
-    vline(ind_lft_onset(i, 1));
+    vline(ind_lft_onset(i, 1), '-or');
+    vline(ind_lft_onset(i, 2), ':or');
+    vline(ind_lft_onset(i, 3), '-ok');
+    vline(ind_lft_onset(i, 4), '-ob');
+    vline(ind_lft_onset(i, 5), '-k');
+    hline(obj_weight(i, 1));
     hold off
-    ylim([-100, 100])
+%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+    
+% % %     
+% % %     plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
+% % %     hold on
+% % %     vline(ind_lft_onset(i, 1));
+% % %     hold off
+% % %     ylim([-100, 100])
     
     disp(i)
     pause
 end
-%}
+
 
 
 
 %% Plot peak mx and peak roll around lift onset in all trials
-
+%{
 tmp = [str2double(file_list(1).name(7:9)), peak_mx{1, 'peakMx'}, peak_roll{1, 'peakRoll'}];
 session = cell(33, 2);
 j = 1;
@@ -285,4 +343,4 @@ end
 hold off
 % ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
-
+%}
