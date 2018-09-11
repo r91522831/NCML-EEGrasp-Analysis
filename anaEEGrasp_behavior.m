@@ -114,7 +114,7 @@ for i = 1:length(file_list)
     for time_id = 1:height(input{i})
         %% compute object tilt
         markers = cell(n_PSonObj, 1);
-        for m = 1:8
+        for m = 1:n_PSonObj
             markers{m, 1} = mean(input{i}{time_id, var_PS{m}}, 1);
         end
         coord_obj{i}{time_id, 1} = coordOnObj(markers, obj_side);
@@ -206,6 +206,7 @@ save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'fin
 %% Check lift onset
 tmp_time_real = zeros(length(file_list), size(ind_lft_onset, 2));
 for i = 1:length(file_list)
+    for j = 1:size(ind_lft_onset, 2)
         tmp_time_real(i, j) = data{i}{ind_lft_onset(i, j), 1};
     end
 end
@@ -291,15 +292,10 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
-<<<<<<< HEAD
-    plotyy(1:length(obj_height_filtered{i, :}), data{i, :}{:, 'y10'}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
 % % %     vline(ind_lft_onset(i, 1), '-or');
-%     plot(obj_height_filtered{i, :})
-    plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
-=======
     plot(obj_height_filtered{i, :})
 %     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
->>>>>>> 74cc1390dd5fd2a3911b6cfe48b2d920543474c0
+
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
