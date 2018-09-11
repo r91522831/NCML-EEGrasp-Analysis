@@ -260,7 +260,8 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
-    plot(obj_height_filtered{i, :})
+%     plot(obj_height_filtered{i, :})
+    plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
@@ -271,7 +272,8 @@ for i = 1:length(file_list)
 %     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
 %     ylim([0, 15])
     subplot 212
-    plot(resultantF{i, :}{:, 'fy'})
+%     plot(resultantF{i, :}{:, 'fy'})
+    plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
