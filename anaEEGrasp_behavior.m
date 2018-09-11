@@ -244,6 +244,7 @@ obj_height_filtered = obj_height;
 
 d_center2surface = 3 + 21.6 + 3 + 2; % in mm center piece + Nano 25 + mounting + cover
 for i = 1:length(file_list)
+<<<<<<< HEAD
 % % %     % remove the fy * COPx - fx * COPy effects on mz, mz_pure_Th should be close
 % % %     % to 0.5 * mz_pure_V    
 % % %     COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
@@ -255,6 +256,21 @@ for i = 1:length(file_list)
 % % %     tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
 % % %     tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
 % % %     
+=======
+    % remove the fy * COPx - fx * COPy effects on mz, 
+    % (mz_pure_Th should be close to 0.5 * mz_pure_V) <- this statement is
+    % not necessarily true, since individual finger's fy * COPx - fx * COPy
+    % can cancel out each other's mz
+    COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
+    COPy_Th = (finger_Th_surface{i}{:, 'mx'} - finger_Th_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_Th_surface{i}{:, 'fz'};
+    
+    COPx_V = (finger_V_surface{i}{:, 'fx'} .* d_center2surface - finger_V_surface{i}{:, 'my'}) ./ finger_V_surface{i}{:, 'fz'};
+    COPy_V = (finger_V_surface{i}{:, 'mx'} + finger_V_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_V_surface{i}{:, 'fz'};
+    
+    tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
+    tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
+    
+>>>>>>> 3d17d4fdcc53398b2d2368c3ad9e78aa977d22f5
     figure(2)
     subplot 211
     plot(obj_height_filtered{i, :})
