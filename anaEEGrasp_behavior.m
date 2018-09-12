@@ -211,12 +211,12 @@ str_criterion = {'10', '5', '4', '3', '1'};
 figure(1)
 for i = 1:5
     subplot(5, 1, i)
-    histogram(delta_t(2:end,i))
+    histogram(delta_t([1:81, 84:91, 93:end],i))
     ylabel('trial count')
     ntitle(['   onset criterion ', str_criterion{i}, ' mm'], 'location', 'northwest')
-    if i ~= 5 
-        xlim([-150, 140]);
-    end
+%     if i ~= 5 
+%         xlim([-150, 140]);
+%     end
 end
 xlabel('time differences b/w height criteria and load equal to weight (ms)')
 
@@ -287,8 +287,8 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
-    plot(obj_height_filtered{i, :})
-%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
+%     plot(obj_height_filtered{i, :})
+    plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
@@ -297,11 +297,12 @@ for i = 1:length(file_list)
     vline(ind_lft_onset(i, 5), ':ob');
     vline(ind_lft_onset(i, 6), '-k');
     hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-    ylim([0, 15])
+%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+%     ylim([0, 15])
+    ylim([0, 300])
     subplot 212
-    plot(resultantF{i, :}{:, 'fy'})
-%     plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
+%     plot(resultantF{i, :}{:, 'fy'})
+    plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
@@ -311,7 +312,7 @@ for i = 1:length(file_list)
     vline(ind_lft_onset(i, 6), '-k');
     hline(obj_weight(i, 1));
     hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
+%     xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
     
 % % %     
 % % %     plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
@@ -328,12 +329,12 @@ end
 
 
 %% Plot peak mx and peak roll around lift onset in all trials
-%{
+tmp_onset_criterion = 1;
 tmp = [str2double(file_list(1).name(7:9)), peak_mx{1, 'peakMx'}, peak_roll{1, 'peakRoll'}];
 session = cell(33, 2);
 j = 1;
 for i = 2:length(file_list)
-    time_of_plot = ind_lft_onset(i, 1);
+    time_of_plot = ind_lft_onset(i, tmp_onset_criterion);
     if (file_list(i).name(:, 11) ~= file_list(i - 1).name(:, 11))
         session(j, :) = {file_list(i - 1).name(:, 11), tmp};
         j = j + 1;
@@ -344,7 +345,7 @@ for i = 2:length(file_list)
 end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
-figure(1)
+figure(3)
 subplot 211
 hold on
 for i = 1:length(session)
@@ -377,4 +378,4 @@ end
 hold off
 % ylim([0, 15])
 legend({'IL', 'TR', 'PT'})
-%}
+
