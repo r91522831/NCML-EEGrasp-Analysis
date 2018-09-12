@@ -36,6 +36,10 @@ obj_weight = zeros(length(file_list), 1);
 peak_roll = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
 peak_mx = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakMx', 'index'});
 
+fingr_th_height = cell(size(file_list));
+fingr_in_height = cell(size(file_list));
+fingr_mi_height = cell(size(file_list));
+
 % assign filtered or raw data to analyze
 input = data_filtered; % or data
 input_surface = data_aligned2surface;
@@ -52,11 +56,13 @@ for i = 1:length(file_list)
     % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (audio_trigger{i, 1} == 1);
     markers_b4go = cell(n_PSonObj, 1);
-    for m = 1:8
+    for m = 1:n_PSonObj
         markers_b4go{m, 1} = mean(input{i}{ind_b4go, var_PS{m}}, 1);
     end
     
     coord_obj_b4go = coordOnObj(markers_b4go, obj_side);
+    
+    % 
     
     % Angle b/w line (object z) and plane (table xz)
     angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{'z_axis', :})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{'z_axis', :} .^2))) );
@@ -108,7 +114,7 @@ for i = 1:length(file_list)
     for time_id = 1:height(input{i})
         %% compute object tilt
         markers = cell(n_PSonObj, 1);
-        for m = 1:8
+        for m = 1:n_PSonObj
             markers{m, 1} = mean(input{i}{time_id, var_PS{m}}, 1);
         end
         coord_obj{i}{time_id, 1} = coordOnObj(markers, obj_side);
@@ -118,7 +124,6 @@ for i = 1:length(file_list)
         %% compute object height
         lift_marker0(time_id, 1) = sqrt(sum((markers{7, 1} - markers_b4go{7, 1}).^2));
     end
-   
     
     %% define lift onset
     avg_lft = mean(lift_marker0(ind_b4go));
@@ -287,8 +292,15 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
+<<<<<<< HEAD
 %     plot(obj_height_filtered{i, :})
     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
+=======
+% % %     vline(ind_lft_onset(i, 1), '-or');
+    plot(obj_height_filtered{i, :})
+%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
+
+>>>>>>> 3cc8ae0a36751fbbc2e5ddd0f3f4728fdf2a5535
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
