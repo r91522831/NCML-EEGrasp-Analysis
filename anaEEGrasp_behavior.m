@@ -179,17 +179,20 @@ for i = 1:length(file_list)
     end
     
     
+    %% choosen onset
+    tmp_ind_onset = 2; % 5mm
+    
     %% find peak roll after lift onset
     roll_win = 250; % in ms
     ind_roll_win = floor(roll_win ./ (dt * 1000));
-    [tmp_roll, tmp_ind] = max(angTilt{i, 1}(ind_lft_onset(i, 1):(ind_lft_onset(i, 1) + ind_roll_win), 1));
-    peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, 1) + tmp_ind];
+    [tmp_roll, tmp_ind] = max(angTilt{i, 1}(ind_lft_onset(i, tmp_ind_onset):(ind_lft_onset(i, tmp_ind_onset) + ind_roll_win), 1));
+    peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, tmp_ind_onset) + tmp_ind];
     
     %% find peak mx around lift onset
     pmx_win = 50; % in ms
     ind_pmx_win = floor(pmx_win ./ (dt * 1000));
-    [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, 1) - ind_pmx_win):ind_lft_onset(i, 1), 'mx'}) );
-    tmp_ind = (ind_lft_onset(i, 1) - ind_pmx_win) + tmp_ind;
+    [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win):ind_lft_onset(i, tmp_ind_onset), 'mx'}) );
+    tmp_ind = (ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win) + tmp_ind;
     peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
     %%
     disp(i);
@@ -292,15 +295,8 @@ for i = 1:length(file_list)
 
     figure(2)
     subplot 211
-<<<<<<< HEAD
 %     plot(obj_height_filtered{i, :})
     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
-=======
-% % %     vline(ind_lft_onset(i, 1), '-or');
-    plot(obj_height_filtered{i, :})
-%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
-
->>>>>>> 3cc8ae0a36751fbbc2e5ddd0f3f4728fdf2a5535
     hold on
     vline(ind_lft_onset(i, 1), '-or');
     vline(ind_lft_onset(i, 2), ':or');
