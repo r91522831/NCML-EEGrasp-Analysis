@@ -21,7 +21,7 @@ data_filtered = data;
 % % %     data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
 % % % end
 
-%%
+%% 
 resultantF = cell(size(file_list));
 finger_Th = cell(size(file_list));
 finger_V = cell(size(file_list));
@@ -30,7 +30,8 @@ finger_V_surface = cell(size(file_list));
 angTilt = cell(size(file_list));
 coord_obj = cell(size(file_list));
 ind_lft_onset = zeros(length(file_list), 6);
-audio_trigger = cell(size(file_list));
+info_time_trigger = cell(length(file_list), 2);
+missing_info = cell(length(file_list), 1);
 obj_height = cell(size(file_list));
 obj_weight = zeros(length(file_list), 1);
 peak_roll = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
@@ -40,21 +41,58 @@ fingr_th_height = cell(size(file_list));
 fingr_in_height = cell(size(file_list));
 fingr_mi_height = cell(size(file_list));
 
+
+%--------------------------------------------------------------------------
 % assign filtered or raw data to analyze
 input = data_filtered; % or data
 input_surface = data_aligned2surface;
+
 for i = 1:length(file_list)
     % get which side of the handle on the object is grasped
     obj_side = file_list(i).name(end-4);
-    % get time and triggers
-    time = input{i}{:, {'time_ms'}};
+    % get time stamp
+    tmp_tstamp = input{i}{:, {'time_ms'}};
+    info_time_trigger{i, 1} = tmp_tstamp;
     % get trigger indices
-    audio_trigger{i, 1} = input{i}{:, {'trigger'}};
+    tmp_audio = input{i}{:, {'trigger'}};
+    info_time_trigger{i, 2} = tmp_audio;
+    
+    %% Check the PS sensor in each frame
+    markers = cell(n_PSonObj, 1);
+    for m = 1:n_PSonObj
+        markers{m, 1} = input{i}{:, [var_PS{m}, var_PS_cond{m}]};
+    end
+    
+    tmp_missing = 1;
+    for time_id = 1:height(input{i})
+        tmp_markers = cell(n_PSonObj, 1);
+        tmp_cond = zeros(n_PSonObj, 1);
+        for m = 1:n_PSonObj
+            tmp_markers{m, 1} = markers{m, 1}(time_id, 1:3);
+            tmp_cond(m, 1) = markers{m, 1}(time_id, 4);
+        end
+        % if there is any marker missing in this frame
+        if any(tmp_cond < 0)
+            % check if there is at least 3 within [1, 2, 4, 5]
+            % check if there is all within [3, 6, 8]
+            
+            % reconstruct the missing sensor using the object rigid
+            % dimensions
+            missing_info{i, 1}{tmp_missing, 1} = time_id;
+            missing_info{i, 1}{tmp_missing, 2} = find(tmp_cond < 0);
+            tmp_missing = tmp_missing + 1;
+        end
+        coord_obj{i}{time_id, 1} = coordOnObj(tmp_markers, obj_side);
+        
+    end
+    
+    
+    %{
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Get object coordinate before reaching initiation
     % object coordinate before audio go cue and should keep the same until object lift onset*
-    ind_b4go = (audio_trigger{i, 1} == 1);
+    ind_b4go = (tmp_audio == 1);
     markers_b4go = cell(n_PSonObj, 1);
     for m = 1:n_PSonObj
         markers_b4go{m, 1} = mean(input{i}{ind_b4go, var_PS{m}}, 1);
@@ -62,10 +100,13 @@ for i = 1:length(file_list)
     
     coord_obj_b4go = coordOnObj(markers_b4go, obj_side);
     
-    % 
-    
     % Angle b/w line (object z) and plane (table xz)
     angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{'z_axis', :})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{'z_axis', :} .^2))) );
+    
+    
+    
+    
+    
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% compute frame by frame
@@ -115,7 +156,7 @@ for i = 1:length(file_list)
         %% compute object tilt
         markers = cell(n_PSonObj, 1);
         for m = 1:n_PSonObj
-            markers{m, 1} = mean(input{i}{time_id, var_PS{m}}, 1);
+            markers{m, 1} = input{i}{time_id, var_PS{m}};
         end
         coord_obj{i}{time_id, 1} = coordOnObj(markers, obj_side);
         % Angle b/w line (object z) and plane (table xz)
@@ -132,7 +173,7 @@ for i = 1:length(file_list)
     obj_height{i} = abs(lift_marker0 - avg_lft);
     
     % based on kinematics
-    ind_hold = find(audio_trigger{i, 1} == 3);
+    ind_hold = find(tmp_audio == 3);
     for j = ind_hold(end, 1):-1:1
         if obj_height{i, :}(j, 1) < 10 % 10 mm
             ind_lft_onset(i, 1) = j;
@@ -166,7 +207,7 @@ for i = 1:length(file_list)
     
     % based on kinetics
     % compute object weight
-    ind_hold = find(audio_trigger{i, 1} == 3);
+    ind_hold = find(tmp_audio == 3);
     tmp_stable_window = 50; % in ms
     obj_weight(i, 1) = mean( sqrt(sum(resultantF{i, :}{(ind_hold(end, 1) - tmp_stable_window):ind_hold(end, 1), {'fx', 'fy', 'fz'}}.^2, 2)) );
     
@@ -185,203 +226,34 @@ for i = 1:length(file_list)
     [tmp_roll, tmp_ind] = max(angTilt{i, 1}(ind_lft_onset(i, 1):(ind_lft_onset(i, 1) + ind_roll_win), 1));
     peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, 1) + tmp_ind];
     
+    
+    
     %% find peak mx around lift onset
+    %{
+    % this might need to be rewrite
     pmx_win = 50; % in ms
     ind_pmx_win = floor(pmx_win ./ (dt * 1000));
     [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, 1) - ind_pmx_win):ind_lft_onset(i, 1), 'mx'}) );
     tmp_ind = (ind_lft_onset(i, 1) - ind_pmx_win) + tmp_ind;
     peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
+    %}
     %%
+    
+    %}
     disp(i);
 
     %% compute finger tip coordinate without missing frames
     
 end
 
-save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'audio_trigger');
+% save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Check lift onset
-tmp_time_real = zeros(length(file_list), size(ind_lft_onset, 2));
-for i = 1:length(file_list)
-    for j = 1:size(ind_lft_onset, 2)
-        tmp_time_real(i, j) = data{i}{ind_lft_onset(i, j), 1};
+for i = 1:length(missing_info)
+    if ~isempty(missing_info{i})
+        plot(cell2mat(missing_info{i, 1}(:,end)), 'x')
+        disp(i)
+        pause
     end
 end
-delta_t = tmp_time_real - tmp_time_real(:, 6);
 
-str_criterion = {'10', '5', '4', '3', '1'};
-figure(1)
-for i = 1:5
-    subplot(5, 1, i)
-    histogram(delta_t(2:end,i))
-    ylabel('trial count')
-    ntitle(['   onset criterion ', str_criterion{i}, ' mm'], 'location', 'northwest')
-    if i ~= 5 
-        xlim([-150, 140]);
-    end
-end
-xlabel('time differences b/w height criteria and load equal to weight (ms)')
-
-
-% % % for i = 1:length(file_list)
-% % %     ind_lft_onset
-% % % end
-
-%{
-for i = 1:length(file_list)
-    plotyy(1:length(obj_height{i}), obj_height{i}, 1:length(obj_height{i}), angTilt{i, 1});
-    vline(ind_lft_onset(i));
-    vline(peak_roll{i, 'index'})
-    disp(i)
-    pause
-end
-%}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Check mx
-%{
-for i = 1:length(file_list)    
-    figure(2)
-    subplot 211
-    plot(obj_height_filtered{i, :})
-    hold on
-    vline(ind_lft_onset(i, 1));
-    hold off
-    subplot 212
-    plot(mx_filtered{i}{:, 'mx'})
-    hold on
-    vline(ind_lft_onset(i, 1));
-    hold off
-    
-    disp(i)
-    pause
-end
-%}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plot
-
-% Get Torque compensation
-mx = resultantF;
-% % % cutoff_plot = 5; % in Hz
-mx_filtered = mx;
-obj_height_filtered = obj_height;
-% % % for i = 1:length(mx)
-% % %     mx_filtered{i} = filtmat_class( dt, cutoff_plot, mx{i} );
-% % %     obj_height_filtered{i} = filtmat_class( dt, cutoff_plot, obj_height{i} );
-% % % end
-
-d_center2surface = 3 + 21.6 + 3 + 2; % in mm center piece + Nano 25 + mounting + cover
-for i = 1:length(file_list)
-    % remove the fy * COPx - fx * COPy effects on mz, 
-    % (mz_pure_Th should be close to 0.5 * mz_pure_V) <- this statement is
-    % not necessarily true, since individual finger's fy * COPx - fx * COPy
-    % can cancel out each other's mz
-% % %     COPx_Th = (-finger_Th_surface{i}{:, 'fx'} .* d_center2surface - finger_Th_surface{i}{:, 'my'}) ./ finger_Th_surface{i}{:, 'fz'};
-% % %     COPy_Th = (finger_Th_surface{i}{:, 'mx'} - finger_Th_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_Th_surface{i}{:, 'fz'};
-% % %     
-% % %     COPx_V = (finger_V_surface{i}{:, 'fx'} .* d_center2surface - finger_V_surface{i}{:, 'my'}) ./ finger_V_surface{i}{:, 'fz'};
-% % %     COPy_V = (finger_V_surface{i}{:, 'mx'} + finger_V_surface{i}{:, 'fy'} .* d_center2surface ) ./ finger_V_surface{i}{:, 'fz'};
-% % %     
-% % %     tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
-% % %     tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
-    
-
-    figure(2)
-    subplot 211
-% % %     vline(ind_lft_onset(i, 1), '-or');
-    plot(obj_height_filtered{i, :})
-%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), audio_trigger{i, :})
-
-    hold on
-    vline(ind_lft_onset(i, 1), '-or');
-    vline(ind_lft_onset(i, 2), ':or');
-    vline(ind_lft_onset(i, 3), '-ok');
-    vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), ':ob');
-    vline(ind_lft_onset(i, 6), '-k');
-    hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-    ylim([0, 15])
-    subplot 212
-    plot(resultantF{i, :}{:, 'fy'})
-%     plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), audio_trigger{i, :})
-    hold on
-    vline(ind_lft_onset(i, 1), '-or');
-    vline(ind_lft_onset(i, 2), ':or');
-    vline(ind_lft_onset(i, 3), '-ok');
-    vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), ':ob');
-    vline(ind_lft_onset(i, 6), '-k');
-    hline(obj_weight(i, 1));
-    hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-    
-% % %     
-% % %     plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
-% % %     hold on
-% % %     vline(ind_lft_onset(i, 1));
-% % %     hold off
-% % %     ylim([-100, 100])
-    
-    disp(i)
-    pause
-end
-
-
-
-
-%% Plot peak mx and peak roll around lift onset in all trials
-%{
-tmp = [str2double(file_list(1).name(7:9)), peak_mx{1, 'peakMx'}, peak_roll{1, 'peakRoll'}];
-session = cell(33, 2);
-j = 1;
-for i = 2:length(file_list)
-    time_of_plot = ind_lft_onset(i, 1);
-    if (file_list(i).name(:, 11) ~= file_list(i - 1).name(:, 11))
-        session(j, :) = {file_list(i - 1).name(:, 11), tmp};
-        j = j + 1;
-        tmp = [];
-    end
-    
-    tmp = [tmp; str2double(file_list(i).name(7:9)), peak_mx{i, 'peakMx'}, peak_roll{i, 'peakRoll'}];
-end
-session(j, :) = {file_list(end).name(:, 11), tmp};
-
-figure(1)
-subplot 211
-hold on
-for i = 1:length(session)
-    switch session{i, 1}
-        case 'I'
-            line_spec = '-*r';
-        case 'T'
-            line_spec = '-ob';
-        case 'P'
-            line_spec = '-xk';
-        otherwise
-    end
-    plot(session{i, 2}(:, 1), session{i, 2}(:, 2), line_spec)
-end
-hold off
-subplot 212
-hold on
-for i = 1:length(session)
-    switch session{i, 1}
-        case 'I'
-            line_spec = '-*r';
-        case 'T'
-            line_spec = '-ob';
-        case 'P'
-            line_spec = '-xk';
-        otherwise
-    end
-    plot(session{i, 2}(:, 1), session{i, 2}(:, 3), line_spec)
-end
-hold off
-% ylim([0, 15])
-legend({'IL', 'TR', 'PT'})
-%}
