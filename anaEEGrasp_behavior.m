@@ -47,7 +47,7 @@ fingr_mi_height = cell(size(file_list));
 input = data_filtered; % or data
 input_surface = data_aligned2surface;
 
-for i = 1:length(file_list)
+for i = 88%1:length(file_list)
     % get which side of the handle on the object is grasped
     obj_side = file_list(i).name(end-4);
     % get time stamp
@@ -71,19 +71,41 @@ for i = 1:length(file_list)
             tmp_markers{m, 1} = markers{m, 1}(time_id, 1:3);
             tmp_cond(m, 1) = markers{m, 1}(time_id, 4);
         end
+        tmp_yz_markers = [1, 4, 5]; % default markers
+        tmp_xz_markers = [3, 6, 8];
         % if there is any marker missing in this frame
         if any(tmp_cond < 0)
+            tmp_missing_markers = find(tmp_cond < 0);
             % check if there is at least 3 within [1, 2, 4, 5]
+            tmp_critical = [1, 2, 4, 5];
+            tmp_missed = ismember(tmp_yz_markers, tmp_missing_markers);
+            if sum(tmp_missed) > 1
+                disp(["trial ", i, "missed too many markers for yz plan!"]);
+                continue;
+            elseif sum(tmp_missed) > 0
+                tmp_yz_markers = tmp_critical( ~tmp_missed );
+            end
             % check if there is all within [3, 6, 8]
+            tmp_missed = ismember(tmp_xz_markers, tmp_missing_markers);
+            if sum(tmp_missed) > 0
+                disp(["trial ", i, "missed too many markers for xz plan!"]);
+                continue;
+            end
             
-            % reconstruct the missing sensor using the object rigid
-            % dimensions
+            % ------------------------------------------------------------
+            % reconstruct the missing sensor using the object rigid dimensions
+            
+            % ------------------------------------------------------------
+            % log missing marker information
             missing_info{i, 1}{tmp_missing, 1} = time_id;
             missing_info{i, 1}{tmp_missing, 2} = find(tmp_cond < 0);
+            missing_info{i, 1}{tmp_missing, 3} = (tmp_cond < 0);
             tmp_missing = tmp_missing + 1;
         end
-        coord_obj{i}{time_id, 1} = coordOnObj(tmp_markers, obj_side);
+        tmp_coordBasis = coordBasisOnObj(tmp_markers, tmp_yz_markers, tmp_xz_markers);
         
+        
+        coord_obj{i}{time_id, 1} = [tmp_coordBasis, tmp_coordOrigin];
     end
     
     
@@ -252,4 +274,13 @@ end
 % save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
 
 
+
+
+for i = 1:length(missing_info)
+    if ~isempty(missing_info{i})
+        plot(cell2mat(missing_info{i, 1}(:,end)), 'x')
+        disp(i)
+        pause
+    end
+end
 
