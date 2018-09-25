@@ -45,6 +45,6 @@ switch holdSide
         disp("Something wrong with holding side!")
 end
 
-output_coord = array2table(origin', 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'origin'});
+output_coord = array2table([origin', origin_r_avg', origin_l_avg'], 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'origin', 'RCenter', 'LCenter'});
 end
 

@@ -23,7 +23,7 @@ fgr_on_obj_kinetic = cell(size(file_list));
 input = data;
 input_surface = data_aligned2surface;
 
-for i = 1:length(file_list)
+for i = 1%:length(file_list)
     % get which side of the handle on the object is grasped
     obj_side = file_list(i).name(end-4);
     % get time stamp
@@ -107,7 +107,7 @@ for i = 1:length(file_list)
         
         % compute the finger location in the coordinate frame fixed on the object
         for m = 1:n_PSonFgr
-            tmp_fgr = (tmp_markers_fgr{m, 1} - transpose( table2array(tmp_coordOrigin) )) * table2array(tmp_coordBasis);
+            tmp_fgr = (tmp_markers_fgr{m, 1} - transpose( tmp_coordOrigin{:, 'origin'} )) * table2array(tmp_coordBasis);
             tmp_fgr_on_obj{m, 1}(time_id, :) = array2table([tmp_fgr, tmp_cond_fgr(m, 1)], 'VariableNames', {'x', 'y', 'z', 'cond'});
         end
     end
