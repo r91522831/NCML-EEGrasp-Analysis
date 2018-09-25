@@ -23,7 +23,7 @@ fgr_on_obj_kinetic = cell(size(file_list));
 input = data;
 input_surface = data_aligned2surface;
 
-for i = 1%:length(file_list)
+for i = 1:length(file_list)
     % get which side of the handle on the object is grasped
     obj_side = file_list(i).name(end-4);
     % get time stamp
@@ -74,7 +74,7 @@ for i = 1%:length(file_list)
             tmp_critical = [1, 2, 4, 5];
             tmp_missed = ismember(tmp_critical, tmp_missing_markers);
             if sum(tmp_missed) > 1
-                disp(["trial ", i, "missed too many markers for yz plan!"]);
+                disp(['trial ', num2str(i), ' missed too many markers for yz plan!']);
                 continue;
             elseif sum(tmp_missed) > 0
                 tmp_yz_markers = tmp_critical( ~tmp_missed );
@@ -82,7 +82,7 @@ for i = 1%:length(file_list)
             % check if there is all within [3, 6, 8]
             tmp_missed = ismember(tmp_xz_markers, tmp_missing_markers);
             if sum(tmp_missed) > 0
-                disp(["trial ", i, "missed too many markers for xz plan!"]);
+                disp(['trial ', num2str(i), ' missed too many markers for xz plan!']);
                 continue;
             end
             % remove missing marker from markers used to get origin
