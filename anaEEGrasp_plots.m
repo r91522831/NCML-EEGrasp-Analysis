@@ -96,36 +96,46 @@ for i = 1:length(file_list)
 % % %     tmp_mz_pure_Th = finger_Th_surface{i}{:, 'mz'} - (finger_Th_surface{i}{:, 'fy'} .* COPx_Th - finger_Th_surface{i}{:, 'fx'} .* COPy_Th);
 % % %     tmp_mz_pure_V = finger_V_surface{i}{:, 'mz'} - (finger_V_surface{i}{:, 'fy'} .* COPx_V - finger_V_surface{i}{:, 'fx'} .* COPy_V);
     
-
+    timestamp = info_time_trigger{i, 1};
     figure(2)
-    subplot 211
-    plot(obj_height_filtered{i, :})
-%     plotyy(1:length(obj_height_filtered{i, :}), obj_height_filtered{i, :}, 1:length(obj_height_filtered{i, :}), info_time_trigger{i, 2}{:})
-
+    subplot 311
+    plot(info_time_trigger{i, 1}, obj_height_filtered{i, 1})
+%     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, obj_height_filtered{i, 1}, info_time_trigger{i, 1}, info_time_trigger{i, 2});
     hold on
-    vline(ind_lft_onset(i, 1), '-or');
-    vline(ind_lft_onset(i, 2), ':or');
-    vline(ind_lft_onset(i, 3), '-ok');
-    vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), ':ob');
-    vline(ind_lft_onset(i, 6), '-k');
+    ylim([-1, 14])
+    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
+    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
+    hline([1:3, 5, 10], 'k');
     hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-    ylim([0, 15])
-    subplot 212
-    plot(resultantF{i, :}{:, 'fy'})
-%     plotyy(1:length(resultantF{i, :}{:, 'fy'}), resultantF{i, :}{:, 'fy'}, 1:length(resultantF{i, :}{:, 'fy'}), info_time_trigger{i, 2}{:})
+    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+    
+    subplot 312
+    plot(info_time_trigger{i, 1}, obj_height_filtered{i, 2})
+%     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, obj_height_filtered{i, 2}, info_time_trigger{i, 1}, info_time_trigger{i, 2});
     hold on
-    vline(ind_lft_onset(i, 1), '-or');
-    vline(ind_lft_onset(i, 2), ':or');
-    vline(ind_lft_onset(i, 3), '-ok');
-    vline(ind_lft_onset(i, 4), '-ob');
-    vline(ind_lft_onset(i, 5), ':ob');
-    vline(ind_lft_onset(i, 6), '-k');
+    ylim([0, 15])
+    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
+    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
+    hline([1:3, 5, 10], 'k');
+    hold off
+    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+    
+    subplot 313
+    plot(info_time_trigger{i, 1}, sqrt(sum((resultantF{i, :}{:, {'fy', 'fx','fz'}}).^2, 2)))
+%     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, sqrt(sum((resultantF{i, :}{:, {'fy', 'fx','fz'}}).^2, 2)), info_time_trigger{i, 1}, info_time_trigger{i, 2});
+    hold on
+    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
+    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
     hline(obj_weight(i, 1));
     hold off
-    xlim([ind_lft_onset(i, 4) - 100, ind_lft_onset(i, 1) + 100])
-    
+    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+%     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+
 % % %     
 % % %     plot(1:length(tmp_mz_pure_Th), tmp_mz_pure_Th, '-r', 1:length(tmp_mz_pure_Th), tmp_mz_pure_V, '-b')
 % % %     hold on
@@ -157,7 +167,7 @@ end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
 figure(1)
-subplot 311
+subplot 411
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -172,7 +182,8 @@ for i = 1:length(session)
     plot(session{i, 2}(:, 1), session{i, 2}(:, 2), line_spec)
 end
 hold off
-subplot 312
+
+subplot 412
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -187,7 +198,24 @@ for i = 1:length(session)
     plot(session{i, 2}(:, 1), session{i, 2}(:, 3), line_spec)
 end
 hold off
-subplot 313
+
+subplot 413
+hold on
+for i = 1:length(session)
+    switch session{i, 1}
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    plot(session{i, 2}(:, 1), abs(session{i, 2}(:, 2)), line_spec)
+end
+hold off
+
+subplot 414
 hold on
 for i = 1:length(session)
     switch session{i, 1}
