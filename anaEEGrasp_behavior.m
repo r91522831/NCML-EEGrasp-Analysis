@@ -31,56 +31,44 @@ obj_height = cell(size(file_list));
 obj_weight = zeros(length(file_list), 1);
 peak_roll = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
 peak_mx = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakMx', 'index'});
-
-fingr_th_height = cell(size(file_list));
-fingr_in_height = cell(size(file_list));
-fingr_mi_height = cell(size(file_list));
+mx_onset = zeros(length(file_list), 1);
 
 %%
 input = data_filtered; % or data
-for i = 1%:length(file_list)
+for i = 1:length(file_list)
     tmp_audio = info_time_trigger{i, 2};
     %% Get object coordinate before reaching initiation
     % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (tmp_audio == 1);
     tmp = cellfun(@table2array, coord_obj{i}(ind_b4go, 1),'UniformOutput',false);
-    coord_obj_b4go = array2table(mean(cat(3, tmp{:}), 3), 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'x_axis', 'y_axis', 'z_axis', 'origin'});
+    coord_obj_b4go = array2table(mean(cat(3, tmp{:}), 3), 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'x_axis', 'y_axis', 'z_axis', 'origin', 'RCenter', 'LCenter'});
     
-    % Angle b/w line (object z) and plane (table xz)
-    angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{:, 'z_axis'} .^2))) );
+    % the object center is a virtual center at the middle of right and left
+    % handle centers
+    tmp_obj_center_b4go = mean(coord_obj_b4go{:, {'RCenter', 'LCenter'}}, 2)';
+    % Angle b/w object axis z and table z
+    tmp_angTilt_b4go = 90 - atan2d(coord_obj_b4go{'z', 'z_axis'}, coord_obj_b4go{'y', 'z_axis'}); % range -90 < x < 270 degrees
+    % Angle b/w object z axis and table xz plane
+% % %     tmp_angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{:, 'z_axis'} .^2))) );
     
     %% frame by frame
-    obj_center = zeros(height(input{i}), 1);
+    obj_center_d = zeros(height(input{i}), 3);
     for time_id = 1:height(input{i})
-        %% compute object height
-        obj_center(time_id, 1) = sqrt(sum((markers{7, 1} - markers_b4go{7, 1}).^2));
-        
-        
-        %% compute object tilt
-        markers = cell(n_PSonObj, 1);
-        for m = 1:n_PSonObj
-            markers{m, 1} = input{i}{time_id, var_PS{m}};
+        % compute object height
+        if isempty(coord_obj{i}{time_id, 1})
+            continue;
         end
-        coord_obj{i}{time_id, 1} = coordOnObj(markers, obj_side);
         
-        % Angle b/w line (object z) and plane (table xz)
-        angTilt{i}(time_id, 1) = abs(angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj{i}{time_id, 1}{'z_axis', :})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj{i}{time_id, 1}{'z_axis', :} .^2))) ));
+        obj_center_d(time_id, :) = mean(coord_obj{i}{time_id, 1}{:, {'RCenter', 'LCenter'}}, 2)' - tmp_obj_center_b4go;
         
-        
+        % Angle b/w object axis z and table z
+        angTilt{i}(time_id, 1) = (90 - atan2d(coord_obj{i}{time_id, 1}{'z', 'z_axis'}, coord_obj{i}{time_id, 1}{'y', 'z_axis'})) - tmp_angTilt_b4go;
+        % Angle b/w object z axis and table xz plane
+% % %         angTilt{i}(time_id, 1) = abs(tmp_angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj{i}{time_id, 1}{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj{i}{time_id, 1}{:, 'z_axis'} .^2))) ));
     end
     
-    
-    
-    
-    
-    
-    
-    %{
     %% define lift onset
-    avg_lft = mean(lift_marker0(ind_b4go));
-    std_lft = std(lift_marker0(ind_b4go));
-    %     tmp = find(abs(lift_marker0 - avg_lft) > 5 * std_lft);
-    obj_height{i} = abs(lift_marker0 - avg_lft);
+    obj_height{i} = obj_center_d(:, 2);
     
     % based on kinematics
     ind_hold = find(tmp_audio == 3);
@@ -97,13 +85,13 @@ for i = 1%:length(file_list)
         end
     end
     for j = ind_hold(end, 1):-1:1
-        if obj_height{i, :}(j, 1) < 4 % 4 mm
+        if obj_height{i, :}(j, 1) < 3 % 3 mm
             ind_lft_onset(i, 3) = j;
             break;
         end
     end
     for j = ind_hold(end, 1):-1:1
-        if obj_height{i, :}(j, 1) < 3 % 3 mm
+        if obj_height{i, :}(j, 1) < 2 % 2 mm
             ind_lft_onset(i, 4) = j;
             break;
         end
@@ -117,7 +105,6 @@ for i = 1%:length(file_list)
     
     % based on kinetics
     % compute object weight
-    ind_hold = find(tmp_audio == 3);
     tmp_stable_window = 50; % in ms
     obj_weight(i, 1) = mean( sqrt(sum(resultantF{i, :}{(ind_hold(end, 1) - tmp_stable_window):ind_hold(end, 1), {'fx', 'fy', 'fz'}}.^2, 2)) );
     
@@ -139,24 +126,28 @@ for i = 1%:length(file_list)
     [tmp_roll, tmp_ind] = max(angTilt{i, 1}(ind_lft_onset(i, tmp_ind_onset):(ind_lft_onset(i, tmp_ind_onset) + ind_roll_win), 1));
     peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, tmp_ind_onset) + tmp_ind];
     
-    
-    
     %% find peak mx around lift onset
-    %{
     % this might need to be rewrite
     pmx_win = 50; % in ms
     ind_pmx_win = floor(pmx_win ./ (dt * 1000));
     [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win):ind_lft_onset(i, tmp_ind_onset), 'mx'}) );
     tmp_ind = (ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win) + tmp_ind;
     peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
-    %}
-    %%
     
-    %}
+    %% mx at lift onset
+    mx_onset(i) = resultantF{i, 1}{ind_lft_onset(i, tmp_ind_onset), 'mx'};
     
     %% compute finger tip coordinate without missing frames
+    
+    
+    %% compute the finger average coordinate within the holding phase
+    
+    
+    
+    
+    
     %%
     disp(i);
 end
 
-% save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th*', 'finger_V*', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
+save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
