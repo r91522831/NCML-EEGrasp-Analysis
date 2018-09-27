@@ -7,26 +7,12 @@ for i = 1:length(filelist)
     load(fullfile(pathname, filelist(i).name));
 end
 
-%% lowpass filter all data
-dt = diff(data{1}{1:2, 1}) * 0.001; % in second
-% % % cutoff = 30; % in Hz
-data_filtered = data;
-% % % for i = 1:length(file_list)
-% % %     data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
-% % % end
-
-
 %%
 obj = cell(length(file_list), 1);
 fgr_all = cell(length(file_list), 1);
 
-input = data_filtered; % or data
+input = data;
 for i = 1:length(file_list)
-    % get only trials from the initial learing session
-    if file_list(i).name(:, 11) ~= 'I'
-        continue;
-    end
-    
     % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (info_time_trigger{i, 2} == 1);
     tmp = cellfun(@table2array, coord_obj{i}(ind_b4go, 1),'UniformOutput',false);
@@ -44,15 +30,14 @@ for i = 1:length(file_list)
     obj{i, 1} = array2table(eul, 'VariableNames', {'x', 'y', 'z', 'pitch', 'yaw', 'roll'});
     
     % individual fingers
-    fgr_all{i, 1}.Th = [finger_Th{i, 1}, fgr_on_obj{i}.Th{:}]; % fx, fy, fz, mx, my, mz, COPx, COPy, COPz, x, y, z, cond
-    fgr_all{i, 1}.Vi = finger_V{i, 1}; % fx, fy, fz, mx, my, mz, COPx, COPy, COPz
-    fgr_all{i, 1}.In = fgr_on_obj{i}.In{:}; % x, y, z, cond
-    fgr_all{i, 1}.Mi = fgr_on_obj{i}.Mi{:}; % x, y, z, cond
-    
-    
-% % %     finger_Vi
-% % %     fgr_on_obj % x, y, z, cond
-    
+    tmp_resultant = resultantF{i, 1};
+    tmp_th = [finger_Th{i, 1}, fgr_on_obj{i}.Th{:}]; % fx, fy, fz, mx, my, mz, COPx, COPy, COPz, x, y, z, cond
+    tmp_vi = finger_V{i, 1}; % fx, fy, fz, mx, my, mz, COPx, COPy, COPz
+    tmp_in = fgr_on_obj{i}.In{:}; % x, y, z, cond
+    tmp_mi = fgr_on_obj{i}.Mi{:}; % x, y, z, cond
+    fgr_all{i, 1} = cell2table({tmp_th, tmp_in, tmp_mi, tmp_vi, tmp_resultant}, 'VariableNames', {'Th', 'In', 'Mi', 'Vi', 'Re'});
     
     disp(i)
 end
+
+save(fullfile(pathname, [filename(1:4), '_for_plot.mat']), 'obj', 'fgr_all', 'info_time_trigger', 'ind_lft_onset', 'file_list', 'pathname');
