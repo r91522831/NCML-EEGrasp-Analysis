@@ -4,24 +4,15 @@ close all; clearvars; clc
 [filename, pathname, ~] = uigetfile;
 load(fullfile(pathname, filename));
 
-coord_table_origin = [0, 0, 0];
-coord_table_x = [1, 0, 0];
-coord_table_y = [0, 1, 0];
-coord_table_z = [0, 0, 1];
+% % % coord_table_origin = [0, 0, 0];
+% % % coord_table_x = [1, 0, 0];
+% % % coord_table_y = [0, 1, 0];
+% % % coord_table_z = [0, 0, 1];
 
 % % % n_PSonObj = 8;
 % % % n_PSonFgr = 3;
 % % %
 % % % kinetic_channels = {'fx', 'fy', 'fz', 'mx', 'my', 'mz'};
-
-
-%% lowpass filter all data
-dt = diff(data{1}{1:2, 1}) * 0.001; % in second
-% % % cutoff = 30; % in Hz
-data_filtered = data;
-% % % for i = 1:length(file_list)
-% % %     data_filtered{i}{:, 3:end} = filtmat_class( dt, cutoff, data{i}{:, 3:end} );
-% % % end
 
 %%
 angTilt2R = cell(size(file_list));
@@ -34,7 +25,7 @@ peak_mx = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames',
 mx_onset = zeros(length(file_list), 1);
 
 %%
-input = data_filtered; % or data
+input = data;
 for i = 1:length(file_list)
     tmp_audio = info_time_trigger{i, 2};
     %% Get object coordinate before reaching initiation
@@ -49,8 +40,8 @@ for i = 1:length(file_list)
     tmp_obj_Lcenter_b4go = mean(coord_obj_b4go{:, {'LCenter'}}, 2)';
     tmp_obj_center_b4go = mean([tmp_obj_Rcenter_b4go; tmp_obj_Lcenter_b4go], 1);
     
-    % Angle b/w object axis z and table z
-    tmp_angTilt2R_b4go = atan2d(coord_obj_b4go{'z', 'z_axis'}, coord_obj_b4go{'y', 'z_axis'}); % range -180 < x < 180 degrees, positive represents lower right obj wrt subjects
+    % Angle b/w object axis z and table z, positive represents lower right obj wrt subjects
+    tmp_angTilt2R_b4go = atan2d(coord_obj_b4go{'z', 'z_axis'}, coord_obj_b4go{'y', 'z_axis'}); % range -180 < x < 180 degrees
     % Angle b/w object z axis and table xz plane
 % % %     tmp_angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{:, 'z_axis'} .^2))) );
     
@@ -88,32 +79,32 @@ for i = 1:length(file_list)
     
     % based on kinematics
     ind_hold = find(tmp_audio == 3);
-    for j = ind_hold(end, 1):-1:1
-        if obj_height{i, 1}(j, 1) < 10 % 10 mm
+    for j = ind_hold(end, 1):-1:1 % 10 mm
+        if obj_height{i, 1}(j, 1) < 10
             ind_lft_onset(i, 1) = j;
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1
-        if obj_height{i, 1}(j, 1) < 5 % 5 mm
+    for j = ind_hold(end, 1):-1:1 %  5 mm
+        if obj_height{i, 1}(j, 1) < 5
             ind_lft_onset(i, 2) = j;
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1
-        if obj_height{i, 1}(j, 1) < 3 % 3 mm
+    for j = ind_hold(end, 1):-1:1 %  3 mm
+        if obj_height{i, 1}(j, 1) < 3
             ind_lft_onset(i, 3) = j;
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1
-        if obj_height{i, 1}(j, 1) < 2 % 2 mm
+    for j = ind_hold(end, 1):-1:1 % 2 mm
+        if obj_height{i, 1}(j, 1) < 2
             ind_lft_onset(i, 4) = j;
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1
-        if obj_height{i, 1}(j, 1) < 1 % 1 mm
+    for j = ind_hold(end, 1):-1:1 % 1 mm
+        if obj_height{i, 1}(j, 1) < 1
             ind_lft_onset(i, 5) = j;
             break;
         end
@@ -124,6 +115,7 @@ for i = 1:length(file_list)
     tmp_stable_window = 100; % in ms
     obj_weight(i, 1) = mean( sqrt(sum(resultantF{i, :}{(ind_hold(end, 1) - tmp_stable_window):(ind_hold(end, 1) + tmp_stable_window), {'fx', 'fy', 'fz'}}.^2, 2)) );
     
+    % onset when total force larger than the object weight
     for j = ind_lft_onset(i, 1):-1:1 % start from 10 mm backward
         tmp_rf = sqrt(sum(resultantF{i, :}{j, {'fx', 'fy', 'fz'}}.^2, 2));
         if tmp_rf < obj_weight(i, 1) % load force equal to object weight
