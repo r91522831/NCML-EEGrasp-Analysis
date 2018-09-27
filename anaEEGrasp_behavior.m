@@ -160,4 +160,4 @@ for i = 1:length(file_list)
     disp(i);
 end
 
-save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'file_list', 'pathname', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
+save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
