@@ -23,7 +23,10 @@ for i = 1:length(file_list)
     %% frame by frame
     eul = zeros(height(input{i}), 6);
     for time_id = 1:height(input{i})
-        r_matrix = coord_obj{1, 1}{time_id, 1}{:, {'x_axis', 'y_axis', 'z_axis'}};
+        if isempty(coord_obj{i, 1}{time_id, 1})
+            continue;
+        end
+        r_matrix = coord_obj{i, 1}{time_id, 1}{:, {'x_axis', 'y_axis', 'z_axis'}};
         tmp_eul = rotm2eul(r_matrix, 'ZYX') - eul_b4go; % ZYX -> pitch, yaw, roll
         eul(time_id, :) = [coord_obj{i, 1}{time_id, 1}{:, {'origin'}}', tmp_eul];
     end
