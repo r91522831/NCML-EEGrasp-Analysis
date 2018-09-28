@@ -80,7 +80,7 @@ for i = 1:length(session)
 end
 hold off
 % ylim([0, 15])
-ylabel('absolute roll ({\circ})')
+ylabel('absolute peak roll ({\circ})')
 xlabel('trial')
 xlim([0, 96])
 savefig(fullfile(pathname, 'behavior'))
