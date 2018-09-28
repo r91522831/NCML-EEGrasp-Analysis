@@ -12,17 +12,35 @@ for sub = 1:nsub
     close all
     load(fullfile(pathname, filelist(sub).name));
     
-    ntrial = length(file_list);
-    tmp = nan(95, 2);
-    if mod(sub, 2)
-        tmp(1:ntrial, :) = [mx_onset(:), peak_roll{:, 'peakRoll'}];
+    % add trial id to mx_onset and peak_roll
+    tmp_filename = char({file_list(:).name});
+    trial_id = str2num(tmp_filename(:, 7:9));
+    tmp_mx_onset = mx_onset;
+    tmp_peak_roll = peak_roll{:, 'peakRoll'};
+    if ~mod(sub, 2)
+        tmp_mx_onset = -mx_onset;
+        tmp_peak_roll = -tmp_peak_roll;
+    end
+    if length(trial_id) ~= 95
+        tmp = nan(95, 2);
+        tmp_forward = 1;
+        for i = 1:95
+            if tmp_forward > length(trial_id)
+                break;
+            end
+            if i ~= trial_id(tmp_forward)
+                continue;
+            end
+            tmp(i, :) = [tmp_mx_onset(tmp_forward), tmp_peak_roll(tmp_forward)];
+            tmp_forward = tmp_forward + 1;
+        end
     else
-        tmp(1:ntrial, :) = [-mx_onset(:), -peak_roll{:, 'peakRoll'}];
+        tmp = [tmp_mx_onset, tmp_peak_roll];
     end
     all_sub_mx_pRoll(:, :, sub) = tmp;
 end
 avg_mx_pRoll = nanmean(all_sub_mx_pRoll, 3);
-stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3) ./ sqrt(nsub);
+stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3);% ./ sqrt(nsub);
 %%
 tmp = [str2double(file_list(1).name(7:9)), avg_mx_pRoll(1, :), stde_mx_pRoll(1, :)];
 ntrial = length(file_list);
@@ -79,8 +97,9 @@ for i = 1:length(session)
     end
 end
 hold off
-% ylim([0, 15])
+ylim([-10, 21])
 ylabel('absolute peak roll ({\circ})')
 xlabel('trial')
 xlim([0, 96])
-savefig(fullfile(pathname, 'behavior'))
+mtit('error bars are SD')
+savefig(fullfile(pathname, 'behavior_sd'))
