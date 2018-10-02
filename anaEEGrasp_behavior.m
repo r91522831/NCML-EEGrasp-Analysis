@@ -16,18 +16,20 @@ load(fullfile(pathname, filename));
 
 %%
 angTilt2R = cell(size(file_list));
-ind_lft_onset = zeros(length(file_list), 6);
+ind_lft_onset = nan(length(file_list), 6);
+info_onset_time = nan(length(file_list), 1);
 
 obj_height = cell(length(file_list), 3);
-obj_weight = zeros(length(file_list), 1);
-peak_roll = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
-peak_mx = table(zeros(size(file_list)), zeros(size(file_list)), 'VariableNames', {'peakMx', 'index'});
-mx_onset = zeros(length(file_list), 1);
+obj_weight = nan(length(file_list), 1);
+peak_roll = table(nan(size(file_list)), nan(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
+peak_mx = table(nan(size(file_list)), nan(size(file_list)), 'VariableNames', {'peakMx', 'index'});
+mx_onset = nan(length(file_list), 1);
 
 %%
 input = data;
 for i = 1:length(file_list)
     tmp_audio = info_time_trigger{i, 2};
+    dt = 0.001 * (info_time_trigger{i, 1}(2, 1) - info_time_trigger{i, 1}(1, 1)); % in second
     %% Get object coordinate before reaching initiation
     % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (tmp_audio == 1);
@@ -97,13 +99,13 @@ for i = 1:length(file_list)
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1 % 2 mm
+    for j = ind_hold(end, 1):-1:1 %  2 mm
         if obj_height{i, 1}(j, 1) < 2
             ind_lft_onset(i, 4) = j;
             break;
         end
     end
-    for j = ind_hold(end, 1):-1:1 % 1 mm
+    for j = ind_hold(end, 1):-1:1 %  1 mm
         if obj_height{i, 1}(j, 1) < 1
             ind_lft_onset(i, 5) = j;
             break;
@@ -126,7 +128,8 @@ for i = 1:length(file_list)
     
 
     %% choosen onset
-    tmp_ind_onset = 3; % 3 mm
+    tmp_ind_onset = 3; % 3 mm    
+    info_onset_time(i, 1) = 0.001 * info_time_trigger{i, 1}(ind_lft_onset(i, tmp_ind_onset)); % in seconds
     
     %% find peak roll after lift onset
     roll_win = 250; % in ms
@@ -160,4 +163,8 @@ for i = 1:length(file_list)
     disp(i);
 end
 
-save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
+%%
+ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
+
+save(fullfile(pathname, [filename(1:4), '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger');
+save(fullfile(pathname, [filename(1:4), '_info_onset_time.mat']), 'info_onset_time');
