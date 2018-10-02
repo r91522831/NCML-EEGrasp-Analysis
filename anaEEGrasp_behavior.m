@@ -2,6 +2,7 @@ close all; clearvars; clc
 
 %% load aligned data
 [filename, pathname, ~] = uigetfile;
+% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/S002_fingerInfo.mat')
 load(fullfile(pathname, filename));
 
 % % % coord_table_origin = [0, 0, 0];

@@ -1,5 +1,8 @@
 % put behavior lift onset into EEG event
-load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/S009_info_onset_time.mat')
+[filename, pathname, ~] = uigetfile;
+% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/S009_info_onset_time.mat')
+load(fullfile(pathname, filename));
+
 tmp_latency = num2cell(info_onset_time .* EEG.srate + [EEG.event(2:5:end-1).latency]');
 for i = 1:length(tmp_latency)
     tmp_latency{i, 2} = 1; % duration
