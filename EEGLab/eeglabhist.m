@@ -60,3 +60,17 @@ tf_data = cell(size(electrodes));
 for i = 1:length(electrodes)
     figure; [tf_ersp{i}, tf_itc{i}, tf_powbase{i}, tf_times{i}, tf_freqs{i}, ~, ~, tf_data{i}] = pop_newtimef( EEG, 1, electrodes{i}, [-2000, 5996], [3, 0.5] , 'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, 'baseline',[-600, -100], 'basenorm', 'on', 'trialbase', 'full', 'plotitc' , 'off', 'plotphase', 'off', 'padratio', 1, 'trialbase', 'full', 'winsize', 512);
 end
+
+%% sort the tf_data according to conditions
+for i = 1:length(electrodes)
+    tf_data{i, 2} = tf_data{i, 1}(:, :, cond(:, 1) == 'I');
+    tf_data{i, 3} = tf_data{i, 1}(:, :, cond(:, 1) == 'T');
+    tf_data{i, 4} = tf_data{i, 1}(:, :, and(cond(:, 1) == 'P', cond(:, end) == '1'));
+    tf_data{i, 5} = tf_data{i, 1}(:, :, and(cond(:, 1) == 'P', cond(:, end) == '2'));
+    tf_data{i, 6} = tf_data{i, 1}(:, :, and(cond(:, 1) == 'P', cond(:, end) == '3'));
+end
+
+%% Get 150-350 ms for 4-8 Hz (theta); 450-650 ms for 9-12 Hz (alpha); 450-650 ms for 20-30 Hz (beta)
+f_range = and(tf_freqs{i} >= 4, tf_freqs{i} <= 8);
+t_range = and(tf_times{i} >= 150, tf_times{i} <= 350);
+tf4theta{1, 1} = tf_data{1, 2}(f_range, t_range);
