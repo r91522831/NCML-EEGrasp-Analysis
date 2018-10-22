@@ -51,6 +51,7 @@ cond = tmp(:, [11:12, 16:18]);
 Fz = 6; FCz = 41; C3 = 15; CP3 = 47; C1 = 44;
 electrodes_name = {'Fz', 'FCz', 'C3', 'CP3', 'C1'};
 electrodes = {Fz; FCz; C3; CP3; C1};
+cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 tf_ersp = cell(size(electrodes));
 tf_itc = cell(size(electrodes));
 tf_powbase = cell(size(electrodes));
@@ -70,7 +71,38 @@ for i = 1:length(electrodes)
     tf_data{i, 6} = tf_data{i, 1}(:, :, and(cond(:, 1) == 'P', cond(:, end) == '3'));
 end
 
+tf_data = cell2table(tf_data, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+
 %% Get 150-350 ms for 4-8 Hz (theta); 450-650 ms for 9-12 Hz (alpha); 450-650 ms for 20-30 Hz (beta)
-f_range = and(tf_freqs{i} >= 4, tf_freqs{i} <= 8);
-t_range = and(tf_times{i} >= 150, tf_times{i} <= 350);
-tf4theta{1, 1} = tf_data{1, 2}(f_range, t_range);
+tf4theta = cell(size(tf_data));
+tf4alpha = cell(size(tf_data));
+tf4beta = cell(size(tf_data));
+for i = 1:length(electrodes)
+    for j = 1:length(cond_names)
+        f_range = and(tf_freqs{i} >= 4, tf_freqs{i} <= 8);
+        t_range = and(tf_times{i} >= 150, tf_times{i} <= 350);
+        tmp_avg = squeeze(mean(mean(mean(tf_data{i, j}{:}(f_range, t_range, :), 1), 2), 3));
+        tf4theta{i, j} = tmp_avg;
+        f_range = and(tf_freqs{i} >= 9, tf_freqs{i} <= 12);
+        t_range = and(tf_times{i} >= 450, tf_times{i} <= 650);
+        tmp_avg = squeeze(mean(mean(mean(tf_data{i, j}{:}(f_range, t_range, :), 1), 2), 3));
+        tf4alpha{i, j} = tmp_avg;
+        f_range = and(tf_freqs{i} >= 20, tf_freqs{i} <= 30);
+        t_range = and(tf_times{i} >= 450, tf_times{i} <= 650);
+        tmp_avg = squeeze(mean(mean(mean(tf_data{i, j}{:}(f_range, t_range, :), 1), 2), 3));
+        tf4beta{i, j} = tmp_avg;
+    end
+end
+tf4theta = cell2table(tf4theta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+tf4alpha = cell2table(tf4alpha, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+tf4beta = cell2table(tf4beta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+%%
+tf4theta_Fz_FCz = mean(tf4theta{{'Fz', 'FCz'}, :}, 1);
+tf4alpha_C3_CP3 = mean(tf4alpha{{'C3', 'CP3'}, :}, 1);
+tf4beta_C3_C1 = mean(tf4beta{{'C3', 'C1'}, :}, 1);
+tf_power = [abs(tf4theta_Fz_FCz); abs(tf4alpha_C3_CP3); abs(tf4beta_C3_C1)];
+tf_power = array2table(tf_power, 'VariableNames', cond_names, 'RowNames', {'theta', 'alpha', 'beta'});
+
+
+
+
