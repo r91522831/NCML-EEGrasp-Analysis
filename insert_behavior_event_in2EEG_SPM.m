@@ -1,5 +1,5 @@
 clear;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Insert behavior onset into EEG evenets for SPM
 [filename, pathname, ~] = uigetfile;
 % load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/SPM/S009_spm_raw.mat')
 load(fullfile(pathname, filename));
