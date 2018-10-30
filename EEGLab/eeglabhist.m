@@ -8,6 +8,9 @@ EEG = pop_saveset( EEG, 'filename','S009_raw.set','filepath','/Users/yenhsunw/Dr
 EEG = eeg_checkset( EEG );
 EEG=pop_chanedit(EEG, 'load',{'/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/wg64xyz.xyz' 'filetype' 'xyz'});
 EEG = eeg_checkset( EEG );
+
+% run insert_behavior_event_in2EEG to put behavior onset into EEG events
+
 EEG = pop_loadset('filename','S009_channel_loc_lift_onset.set','filepath','/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/S009/');
 EEG = eeg_checkset( EEG );
 EEG = pop_resample( EEG, 256);
