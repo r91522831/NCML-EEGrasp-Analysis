@@ -20,8 +20,13 @@ tmp_onset = table2struct(tmp_onset);
 tmp_event = [EEG.event, tmp_onset'];
 [~, tmp_ind] = sort([tmp_event.latency]);
 event_with_onset = tmp_event(tmp_ind);
-EEG.event = event_with_onset;
+for i = 1:length(tmp_event)
+    event_with_onset(i).bvmknum = i;
+    event_with_onset(i).urevent = i;
+end
 
+EEG.event = event_with_onset;
+EEG.urevent = rmfield(event_with_onset, 'urevent');
 save(fullfile(pathname, [filename(1:4), '_info_onset_event4EEG_EEGLab.mat']), 'event_with_onset');
 end
 

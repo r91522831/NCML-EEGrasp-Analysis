@@ -8,7 +8,7 @@ clear; close all; clc;
 sub_id = foldername(1:4);
 % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/Sxxx/';
 [tmp_dir, ~, ~] = fileparts(tmp_dir);
-output_dir = fullfile(tmp_dir, 'eeglab', sub_id);
+output_dir = fullfile(tmp_dir, 'eeglab', 'archive', sub_id);
 
 %% EEGLab
 EEG.etc.eeglabvers = '14.1.2'; % this tracks which version of EEGLAB is being used, you may ignore it
@@ -96,19 +96,41 @@ EEG.setname = [sub_id, '_pruned_ICA'];
 EEG = eeg_checkset( EEG );
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
 
+
+
+
+
+
+
+
+%%
+EEG = pop_loadset('filename', [sub_id, '_pruned_ICA.set'], 'filepath', output_dir);
+
 % Get experiment conditions
+cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 % /Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/Sxxx
 sub_dir = fullfile('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/', sub_id);
 file_list = dir(fullfile(sub_dir, '*.csv'));
 tmp = char({file_list.name});
 cond = tmp(:, [11:12, 16:18]);
 
+% Get peak roll for each trial
+% load peak_roll
+load(fullfile('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/preliminary results/', [sub_id, '_temp_result.mat']));
+% sort peak roll according to conditions
+pRoll{1, 1} = peak_roll(:, 1);
+pRoll{1, 2} = peak_roll(cond(:, 1) == 'I', 1);
+pRoll{1, 3} = peak_roll(cond(:, 1) == 'T', 1);
+pRoll{1, 4} = peak_roll(and(cond(:, 1) == 'P', cond(:, end) == '1'), 1);
+pRoll{1, 5} = peak_roll(and(cond(:, 1) == 'P', cond(:, end) == '2'), 1);
+pRoll{1, 6} = peak_roll(and(cond(:, 1) == 'P', cond(:, end) == '3'), 1);
+pRoll = cell2table(pRoll, 'VariableNames', cond_names);
+
 % channel id:
 % {'Fz', 'FCz', 'C3', 'CP3', 'C1'} = {6, 41, 15, 47, 44}
 Fz = 6; FCz = 41; C3 = 15; CP3 = 47; C1 = 44;
 electrodes_name = {'Fz', 'FCz', 'C3', 'CP3', 'C1'};
 electrodes = {Fz; FCz; C3; CP3; C1};
-cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 tf_ersp = cell(size(electrodes));
 tf_itc = cell(size(electrodes));
 tf_powbase = cell(size(electrodes));
@@ -129,6 +151,52 @@ for i = 1:length(electrodes)
 end
 
 tf_data = cell2table(tf_data, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+
+% Get 150-350 ms for 4-8 Hz (theta); 450-650 ms for 9-12 Hz (alpha); 450-650 ms for 20-30 Hz (beta) for individual trial
+t_tf4theta = cell(size(tf_data));
+t_tf4alpha = cell(size(tf_data));
+t_tf4beta = cell(size(tf_data));
+for i = 1:length(electrodes)
+    for j = 1:length(cond_names)
+        f_range = and(tf_freqs{i} >= 4, tf_freqs{i} <= 8);
+        t_range = and(tf_times{i} >= 150, tf_times{i} <= 350);
+        for k = 1:length(tf_data{i, j}{:}(1, 1, :))
+            tmp_avg = squeeze(mean(mean(tf_data{i, j}{:}(f_range, t_range, k), 1), 2));
+            t_tf4theta{i, j}(k, 1) = tmp_avg;
+        end
+        f_range = and(tf_freqs{i} >= 9, tf_freqs{i} <= 12);
+        t_range = and(tf_times{i} >= 450, tf_times{i} <= 650);
+        for k = 1:length(tf_data{i, j}{:}(1, 1, :))
+            tmp_avg = squeeze(mean(mean(tf_data{i, j}{:}(f_range, t_range, k), 1), 2));
+            t_tf4alpha{i, j}(k, 1) = tmp_avg;
+        end
+        f_range = and(tf_freqs{i} >= 20, tf_freqs{i} <= 30);
+        t_range = and(tf_times{i} >= 450, tf_times{i} <= 650);
+        for k = 1:length(tf_data{i, j}{:}(1, 1, :))
+            tmp_avg = squeeze(mean(mean(tf_data{i, j}{:}(f_range, t_range, k), 1), 2));
+            t_tf4beta{i, j}(k, 1) = tmp_avg;
+        end
+    end
+end
+t_tf4theta = cell2table(t_tf4theta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+t_tf4alpha = cell2table(t_tf4alpha, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+t_tf4beta = cell2table(t_tf4beta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+
+% compute average for conditions, channels, and brainwave bands for each trial
+t_tf4theta_Fz_FCz = cell(1, length(cond_names));
+t_tf4alpha_C3_CP3 = cell(1, length(cond_names));
+t_tf4beta_C3_C1 = cell(1, length(cond_names));
+for j = 1:length(cond_names)
+    t_tf4theta_Fz_FCz{1, j} = mean([t_tf4theta{{'Fz'}, j}{:}, t_tf4theta{{'FCz'}, j}{:}], 2);    
+    t_tf4alpha_C3_CP3{1, j} = mean([t_tf4alpha{{'C3'}, j}{:}, t_tf4alpha{{'CP3'}, j}{:}], 2);
+    t_tf4beta_C3_C1{1, j} = mean([t_tf4beta{{'C3'}, j}{:}, t_tf4beta{{'C1'}, j}{:}], 2);
+end
+cellfun(@abs, t_tf4theta_Fz_FCz, 'UniformOutput', false);
+
+t_tf_power = [cellfun(@abs, t_tf4theta_Fz_FCz, 'UniformOutput', false); cellfun(@abs, t_tf4alpha_C3_CP3, 'UniformOutput', false); cellfun(@abs, t_tf4beta_C3_C1, 'UniformOutput', false)];
+t_tf_power = array2table(t_tf_power, 'VariableNames', cond_names, 'RowNames', {'theta', 'alpha', 'beta'});
+t_tf_power_complex = [t_tf4theta_Fz_FCz; t_tf4alpha_C3_CP3; t_tf4beta_C3_C1];
+t_tf_power_complex = array2table(t_tf_power_complex, 'VariableNames', cond_names, 'RowNames', {'theta', 'alpha', 'beta'});
 
 % Get 150-350 ms for 4-8 Hz (theta); 450-650 ms for 9-12 Hz (alpha); 450-650 ms for 20-30 Hz (beta)
 tf4theta = cell(size(tf_data));
@@ -153,6 +221,7 @@ end
 tf4theta = cell2table(tf4theta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
 tf4alpha = cell2table(tf4alpha, 'VariableNames', cond_names, 'RowNames', electrodes_name);
 tf4beta = cell2table(tf4beta, 'VariableNames', cond_names, 'RowNames', electrodes_name);
+
 % compute average for conditions, channels, and brainwave bands
 tf4theta_Fz_FCz = mean(tf4theta{{'Fz', 'FCz'}, :}, 1);
 tf4alpha_C3_CP3 = mean(tf4alpha{{'C3', 'CP3'}, :}, 1);
@@ -166,5 +235,5 @@ tf_power_complex = array2table(tf_power_complex, 'VariableNames', cond_names, 'R
 [tmp_dir, ~, ~] = fileparts(output_dir);
 tmp_filename = [sub_id, '_tf_power.mat'];
 power_change_filename = fullfile(tmp_dir, 'power_change', tmp_filename);
-save(power_change_filename, 'tf_power', 'tf_power_complex');
+save(power_change_filename, 'tf_power', 'tf_power_complex', 't_tf_power', 't_tf_power_complex', 'pRoll');
 
