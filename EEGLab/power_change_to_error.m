@@ -23,13 +23,58 @@ for i = 1:sub_no
     t_tf_with_error{i, 1} = cell2table(tmp, 'VariableNames', t_tf_power.Properties.VariableNames, 'RowNames', t_tf_power.Properties.RowNames);
     t_tf_complex_with_error{i, 1} = cell2table(tmp_complex, 'VariableNames', t_tf_power_complex.Properties.VariableNames, 'RowNames', t_tf_power_complex.Properties.RowNames);
 end
-% t_tf_with_error = cell2table(tmp_tf_with_error, 'VariableNames', t_tf_power.Properties.VariableNames, 'RowNames', t_tf_power.Properties.RowNames);
-% t_tf_complex_with_error = cell2table(tmp_tf_complex_with_error, 'VariableNames', t_tf_power_complex.Properties.VariableNames, 'RowNames', t_tf_power_complex.Properties.RowNames);
+% Accumulate all power percentage change across subjects
+xsub_t_tf_complex_with_error = t_tf_complex_with_error{1, 1};
+for sub_id = 2:sub_no
+    invert_obj_direct = 1;
+    if mod(sub_label(sub_id), 2) == 0
+        invert_obj_direct = -1;
+    end
+    
+    for i = 1:height(t_tf_complex_with_error{sub_id, 1})
+        for j = 1:width(t_tf_complex_with_error{sub_id, 1})
+            tmp = t_tf_complex_with_error{sub_id, 1}{i, j}{:};
+            tmp.pRoll = invert_obj_direct * t_tf_complex_with_error{sub_id, 1}{i, j}{:}.pRoll; % switch obj direction
+            xsub_t_tf_complex_with_error{i, j} = {[xsub_t_tf_complex_with_error{i, j}{:}; tmp]};
+        end
+    end
+end
 
+%% Plot all trials across subjects
+figure(99)
+set(0,'defaultAxesFontSize', 18)
+cond = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
+marker_style = {'x', 'o', '^', 's', 'd'};
+freq_band = {'alpha', 'theta', 'beta'};
+title_array = {'\alpha', '\theta', '\beta'};
+color_session = {'b', 'k', 'r', 'c', 'm'};
 
+for f = 1:length(freq_band)
+    h = nan(1, length(cond));
+    subplot(2, 2, f)
+    hold on;
+    for c = 1:length(cond)
+        x = xsub_t_tf_complex_with_error{freq_band{f}, cond{c}}{:}{:, 'pRoll'};
+        y = abs(xsub_t_tf_complex_with_error{freq_band{f}, cond{c}}{:}{:, 'powerChange'});
+        % create color array
+        h(c) = plot(x, y, marker_style{c}, 'color', color_session{c});
+    end
+    lsline
+    hold off;
+    if f == 2
+        legend(h, cond);
+    end
+    ylabel('Power change (%)');
+    xlabel('Peak roll ({\circ})');
+    xlim([-25, 20]);
+    ylim([-2, 8]);
+    title(title_array{f}, 'FontWeight', 'bold');
+end
+mtit('across subjects')
+savefig(fullfile(data_dir, 'across_sub.fig'));
 
-%% plot
-for sub_id = 1%:length(sub_label)
+%% plot individual subject
+for sub_id = 1:length(sub_label)
     figure(sub_id)
     set(0,'defaultAxesFontSize', 18)
     
@@ -61,7 +106,6 @@ for sub_id = 1%:length(sub_label)
 %                 text(invert_obj_direct * x(i) + 0.3, y(i), num2str(i));
             end
         end
-% % % % % % %         lsline
         hold off;
         ylabel('Power change (%)');
         xlabel('Peak roll ({\circ})');
@@ -72,5 +116,5 @@ for sub_id = 1%:length(sub_label)
     
     mtit(['sub00', num2str(sub_label(sub_id))], 'yoff', .5)
     
-    savefig(fullfile(data_dir, ['S00', num2str(sub_id)]));
+    savefig(fullfile(data_dir, ['S00', num2str(sub_label(sub_id))]));
 end
