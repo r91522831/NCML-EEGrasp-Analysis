@@ -41,7 +41,7 @@ for sub_id = 2:sub_no
 end
 
 %% Plot all trials across subjects
-figure(99)
+figure(1)
 set(0,'defaultAxesFontSize', 18)
 cond = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 marker_style = {'x', 'o', '^', 's', 'd'};
@@ -66,15 +66,15 @@ for f = 1:length(freq_band)
     end
     ylabel('Power change (%)');
     xlabel('Peak roll ({\circ})');
-    xlim([-25, 20]);
-    ylim([-2, 8]);
+%     xlim([0, 20]);
+%     ylim([-2, 8]);
     title(title_array{f}, 'FontWeight', 'bold');
 end
 mtit('across subjects')
 savefig(fullfile(data_dir, 'across_sub.fig'));
 
 %% plot individual subject
-for sub_id = 1:length(sub_label)
+for sub_id = length(sub_label)
     figure(sub_id)
     set(0,'defaultAxesFontSize', 18)
     
@@ -109,8 +109,8 @@ for sub_id = 1:length(sub_label)
         hold off;
         ylabel('Power change (%)');
         xlabel('Peak roll ({\circ})');
-        xlim([-25, 15]);
-        ylim([-2, 8]);
+%         xlim([-25, 15]);
+%         ylim([-2, 8]);
         title(title_array{f}, 'FontWeight', 'bold');
     end
     
