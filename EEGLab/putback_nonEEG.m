@@ -2,11 +2,12 @@ function EEG = putback_nonEEG(newEEG, originEEG, data_mask)
 %putback_nonEEG Summary of this function goes here
 %   Detailed explanation goes here
 % put non-EEG channgel back to the EEG structure
+EEG = newEEG;
+
 if nargin < 3
-    data_mask = ones(1, size(originEEG.data, 2));
+    data_mask = newEEG.etc.clean_sample_mask;
 end
 
-EEG = newEEG;
 switch length(size(originEEG.data))
     case 2  % raw data length
         EEG.data = [newEEG.data; originEEG.data(~strcmp({originEEG.chanlocs.type}, 'EEG'), data_mask)];
