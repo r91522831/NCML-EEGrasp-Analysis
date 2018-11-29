@@ -252,46 +252,26 @@ tf_times = cell(EEG.nbic, cond_nb);
 tf_freqs = cell(EEG.nbic, cond_nb);
 tf_data = cell(EEG.nbic, cond_nb);
 
+fig_dir = fullfile(output_dir, 'figures');
+if ~isfolder(fig_dir)
+    mkdir(fig_dir);
+end
+
 EEG_cond = cell(cond_nb, 1);
-for j = 1%:cond_nb
+for j = 1:cond_nb
     EEG_cond{j} = EEG;
     EEG_cond{j}.data = EEG.data(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
     EEG_cond{j}.icaact = EEG.icaact(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
 
-    for i = 1%:EEG.nbic
-        figure;
+    for i = 1:EEG.nbic
+        h = figure;
         [tf_ersp{i, j}, tf_itc{i, j}, tf_powbase{i, j}, tf_times{i, j}, tf_freqs{i, j}, ~, ~, tf_data{i, j}] = ...
             pop_newtimef( EEG_cond{j}, 0, i, [-4852, 5586], [3, 0.5], 'topovec', EEG.icawinv(:, i), ...
                           'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', [cond_names{j}, ' IC ', num2str(i)], ...
                           'freqs', [0, 35], 'baseline', [-600, -100], 'plotphase', 'off', 'scale', 'abs', 'padratio', 1 ); %'basenorm', 'on', 'trialbase', 'full');
-        
-        %              
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        savefig
-        close
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
+        close(h);
     end
-
 end
 
 
