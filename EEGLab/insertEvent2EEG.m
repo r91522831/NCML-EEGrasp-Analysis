@@ -25,8 +25,9 @@ for i = 1:length(tmp_event)
     event_with_onset(i).urevent = i;
 end
 
-EEG.event = event_with_onset;
-EEG.urevent = rmfield(event_with_onset, 'urevent');
+without_bad_behavior_trial = ~isnan([event_with_onset.latency]);
+EEG.event = event_with_onset(without_bad_behavior_trial);
+EEG.urevent = rmfield(event_with_onset(without_bad_behavior_trial), 'urevent');
 save(fullfile(pathname, [filename(1:4), '_info_onset_event4EEG_EEGLab.mat']), 'event_with_onset');
 end
 

@@ -5,6 +5,14 @@ clear; close all; clc;
 % modified 27-Nov-2018 by Yen-Hsun Wu @ ASU
 % ------------------------------------------------
 
+% Ask if the goal of the process is in IC space or in Electrode space
+switch input('Do you want to make data full rank for analyses in IC space?(y/N)', 's')
+    case {'y', 'Y'}
+        reduce2fullrank = true;
+    otherwise
+        reduce2fullrank = false;
+end
+
 %% Section 1: Select raw EEG .vhdr file
 % Step 1:
 % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/Data/Sxxx_EEG/', '*.vhdr'
@@ -27,7 +35,7 @@ EEG.etc.eeglabvers = '15.1.1'; % this tracks which version of EEGLAB is being us
 EEG = pop_loadbv(raw_dir, raw_filename);
 
 EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = pop_newset(ALLEEG, EEG, 0, 'setname', 'S009_raw', 'gui', 'off');
+[ALLEEG, EEG, CURRENTSET] = pop_newset(ALLEEG, EEG, 0, 'setname', [sub_id, '_raw'], 'gui', 'off');
 if ~isfolder(output_dir)
     mkdir(output_dir);
 end
@@ -36,6 +44,12 @@ EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_di
 %% Section2: Experiment info
 % Load channel locations and insert behavior (lift onset) events
 % Step 1: Load channel locations
+ANTNeuro_montage = {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG'};
+if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, true only for S002
+    EEG = pop_select(EEG, 'channel', {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1'});
+    EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
+end
+
 EEG = pop_chanedit(EEG, 'load', {fullfile(EEG_dir, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
 % Step 2: Insert behavior events
 % run insert_behavior_event_in2EEG to put behavior onset into EEG events
@@ -106,23 +120,31 @@ EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
 % Step 4: Discard channels to make the data full ranked.
-% select only EEG channels
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-dataRank = rank(EEG.data');
-channelSubset = loc_subsets(EEG.chanlocs, dataRank);
-EEG = pop_select(EEG, 'channel', channelSubset{1});
-EEG = pop_chanedit(EEG, 'eval', 'chans = pop_chancenter( chans, [], [] );');
-% putback EOG channel
-EEG = putback_nonEEG(EEG, originalEEG);
+if reduce2fullrank
+    % select only EEG channels
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    dataRank = rank(EEG.data');
 
-EEG.setname = [sub_id, '_adjust_rank'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    % discard channels
+    channelSubset = loc_subsets(EEG.chanlocs, dataRank);
+    EEG = pop_select(EEG, 'channel', channelSubset{1});
+    EEG = pop_chanedit(EEG, 'eval', 'chans = pop_chancenter( chans, [], [] );');
+
+    % putback EOG channel
+    EEG = putback_nonEEG(EEG, originalEEG);
+
+    EEG.setname = [sub_id, '_adjust_rank'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+end
 
 %% Section 5: Epoch around onset
 % Step 1:
 originalEEG_clean = EEG;
+% clean up trials without onset event
+EEG = checkEvent(EEG, 6);
+EEG = eeg_checkset( EEG );
 % find the tightest window for epoching
 ind_event = round([[EEG.event( strcmp({EEG.event.type}, 's9') ).latency]', ...
                    [EEG.event( strcmp({EEG.event.type}, 's17') ).latency]', ...
@@ -252,7 +274,7 @@ tf_times = cell(EEG.nbic, cond_nb);
 tf_freqs = cell(EEG.nbic, cond_nb);
 tf_data = cell(EEG.nbic, cond_nb);
 
-fig_dir = fullfile(output_dir, 'figures');
+fig_dir = fullfile(output_dir, 'figures', sub_id);
 if ~isfolder(fig_dir)
     mkdir(fig_dir);
 end
