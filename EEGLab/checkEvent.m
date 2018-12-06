@@ -4,6 +4,7 @@ function [eegout] = checkEvent(eegin, nbevent)
 eegout = eegin;
 
 start_count = false;
+% nbevent = 6; % s9, s17, onset, s33, s65, s129
 % s9 is the trigger for trial beginning
 % s129 is the trigger for trial end
 event_check = strcmp({eegin.event.type}, 's9') + 2 * strcmp({eegin.event.type}, 's129');

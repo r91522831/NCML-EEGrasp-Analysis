@@ -155,6 +155,8 @@ ind_event = round([[EEG.event( strcmp({EEG.event.type}, 's9') ).latency]', ...
 ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
 EEG = pop_epoch( EEG, {  'onset'  }, ind_b4afonset, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
 EEG = eeg_checkset( EEG );
+EEG.etc.epoch_latency = ind_b4afonset;
+EEG = eeg_checkset( EEG );
 % Step 2: Get experiment conditions
 sub_dir = fullfile(behavior_dir, 'matlab data', sub_id);
 file_list = dir(fullfile(sub_dir, '*.csv'));
@@ -288,7 +290,7 @@ for j = 1:cond_nb
     for i = 1:EEG.nbic
         h = figure;
         [tf_ersp{i, j}, tf_itc{i, j}, tf_powbase{i, j}, tf_times{i, j}, tf_freqs{i, j}, ~, ~, tf_data{i, j}] = ...
-            pop_newtimef( EEG_cond{j}, 0, i, [-4852, 5586], [3, 0.5], 'topovec', EEG.icawinv(:, i), ...
+            pop_newtimef( EEG_cond{j}, 0, i, round(1000 * [EEG.xmin, EEG.xmax]), [3, 0.5], 'topovec', EEG.icawinv(:, i), ...
                           'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', [cond_names{j}, ' IC ', num2str(i)], ...
                           'freqs', [0, 35], 'baseline', [-600, -100], 'plotphase', 'off', 'scale', 'abs', 'padratio', 1 ); %'basenorm', 'on', 'trialbase', 'full');
         savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
