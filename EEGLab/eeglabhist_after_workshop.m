@@ -320,6 +320,16 @@ for j = 1:cond_nb
     end
 end
 
+%%
+% tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
+z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+
+g_sub = nan(EEG.trials, length(cond_names) - 1);
+for i = 2:length(cond_names)
+    g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
+end
+
+
 
 %%
 
