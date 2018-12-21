@@ -267,33 +267,55 @@ pRoll = cell2table(pRoll, 'VariableNames', cond_names);
 
 %% Visualiztion
 % For each component, plot the three bands (alpha, beta, and theta) power on time x trials (IL: 1~19, TR: 1-19, PT1: 1-19, PT2: 1-19, PT3: 1-19)
-cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
+cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 cond_nb = length(cond_names);
-tf_ersp = cell(EEG.nbic, cond_nb);
-tf_itc = cell(EEG.nbic, cond_nb);
-tf_powbase = cell(EEG.nbic, cond_nb);
-tf_times = cell(EEG.nbic, cond_nb);
-tf_freqs = cell(EEG.nbic, cond_nb);
-tf_data = cell(EEG.nbic, cond_nb);
-
-fig_dir = fullfile(output_dir, 'figures', sub_id);
-if ~isfolder(fig_dir)
-    mkdir(fig_dir);
+% typeproc - type of processing: 1 process the raw channel data 
+%                                0 process the ICA component data
+typeproc = str2double(input('\nChoose type of processing [1: raw, 0: component]: (default: 0) ', 's'));
+if isnan(typeproc)
+    typeproc = 0;
+    nb_compoent = EEG.nbic;
+    topovec_value = EEG.icawinv;
+    cap_str = cell(nb_compoent, 1);
+    for i = 1:nb_compoent
+        cap_str{i} = [' IC ', num2str(i)];
+    end
+elseif typeproc == 1
+    nb_compoent = EEG.nbchan;
+    topovec_value = 1:nb_compoent;
+    cap_str = {EEG.chanlocs.labels}';
 end
+tf_ersp = cell(nb_compoent, cond_nb);
+tf_itc = cell(nb_compoent, cond_nb);
+tf_powbase = cell(nb_compoent, cond_nb);
+tf_times = cell(nb_compoent, cond_nb);
+tf_freqs = cell(nb_compoent, cond_nb);
+tf_data = cell(nb_compoent, cond_nb);
+
+% fig_dir = fullfile(output_dir, 'figures', sub_id);
+% if ~isfolder(fig_dir)
+%     mkdir(fig_dir);
+% end
 
 EEG_cond = cell(cond_nb, 1);
 for j = 1:cond_nb
     EEG_cond{j} = EEG;
-    EEG_cond{j}.data = EEG.data(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
-    EEG_cond{j}.icaact = EEG.icaact(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
+    if j == 1
+        EEG_cond{j}.data = EEG.data;
+        EEG_cond{j}.icaact = EEG.icaact;
+    else
+        EEG_cond{j}.data = EEG.data(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
+        EEG_cond{j}.icaact = EEG.icaact(:, :, strcmp([EEG.epoch.cond], cond_names{j}));
+    end
 
-    for i = 1:EEG.nbic
+    for i = 1:nb_compoent
         h = figure;
         [tf_ersp{i, j}, tf_itc{i, j}, tf_powbase{i, j}, tf_times{i, j}, tf_freqs{i, j}, ~, ~, tf_data{i, j}] = ...
-            pop_newtimef( EEG_cond{j}, 0, i, round(1000 * [EEG.xmin, EEG.xmax]), [3, 0.5], 'topovec', EEG.icawinv(:, i), ...
-                          'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', [cond_names{j}, ' IC ', num2str(i)], ...
+            pop_newtimef( EEG_cond{j}, typeproc, i, round(1000 * [EEG.xmin, EEG.xmax]), [3, 0.5], 'topovec', topovec_value, ...
+                          'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', [cond_names{j}, cap_str{i}], ...
                           'freqs', [0, 35], 'baseline', [-600, -100], 'plotphase', 'off', 'scale', 'abs', 'padratio', 1 ); %'basenorm', 'on', 'trialbase', 'full');
-        savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
+
+%         savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
         close(h);
     end
 end
