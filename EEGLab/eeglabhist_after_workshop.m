@@ -331,30 +331,34 @@ end
 % tf_freqs: freq ticks; tf_times: time ticks
 % z_sub: epoch x (time x freq x channel)
 z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
-
+% G matrix
 g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
-
-%%
+% H matrix
 bin_time = length(tf_times);
 bin_freq = length(tf_freqs);
 bin_chan = EEG.nbchan;
+nb_tf = bin_time * bin_freq;
+% construct h for time bins
+h_time = eye(bin_time, bin_time);
+% construct h for freq and time bins
+h_freq = zeros(bin_time * bin_freq, bin_freq + bin_time);
+for i = 1:bin_freq
+    tmp_freq = zeros(bin_time, bin_freq);
+    tmp_freq(1:bin_time, i) = 1;
+    
+    h_freq((bin_time * (i - 1) + 1):(bin_time * i), :) = [tmp_freq, h_time]; 
+end
+% construct h for channel, freq, and time
 q_sub = bin_chan + bin_freq + bin_time;
 h_sub = zeros(size(z_sub, 2), q_sub); % (time * freq * channel) x (channel + freq + time)
-nb_tf = bin_time * bin_freq;
-one_chan = ones(nb_tf, 1);
-one_freq = ones(bin_time, 1);
-
 for i = 1:bin_chan
-    h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), i) = one_chan;
-%     for j = 1:bin_freq
-%         h_sub((nb_tf * (i - 1) + 1):(bin_time * j), i * bin_chan + j) = one_freq;
-%         for k = 1:bin_time
-%             h_sub((nb_tf * i + bin_time * j + k), i * bin_chan + j * bin_freq + k) = 1;
-%         end
-%     end
+    tmp_sub = zeros(bin_freq * bin_time, bin_chan);
+    tmp_sub(1:nb_tf, i) = 1;
+    
+    h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), :) = [tmp_sub, h_freq];
 end
 
 
