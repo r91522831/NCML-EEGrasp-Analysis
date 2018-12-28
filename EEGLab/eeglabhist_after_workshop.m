@@ -240,10 +240,14 @@ rejIC_final = rejIC_other_vote | rejIC_ICLabel_nonBrain;
 EEG = pop_subcomp( EEG, find(rejIC_final), 0);
 EEG = eeg_checkset( EEG );
 EEG.nbic = size(EEG.icaact, 1);
+% Step 7: Remove HEOG channel
+EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
 EEG.setname = [sub_id, '_pruned_ICA'];
 EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+
+
 
 
 %{
