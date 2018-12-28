@@ -328,6 +328,7 @@ g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
+h_sub = nan(size(z_sub, 2), EEG.nbchan);
 
 
 
