@@ -92,6 +92,8 @@ originalEEG = EEG;
 % select only EEG channels
 EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
 EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
+% Interpolate channels.
+EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');   
 % putback EOG channel
 EEG = putback_nonEEG(EEG, originalEEG, EEG.etc.clean_sample_mask);
 
@@ -99,7 +101,7 @@ EEG.setname = [sub_id, '_ASRclean'];
 EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step2: Use cleanline plugin to remove 50 or 60 Hz line noise
+% Step 2: Use cleanline plugin to remove 50 or 60 Hz line noise
 
 % Step 3: Apply average reference after adding initial reference channel
 % base on Makoto Miyakoshi's suggestions (https://sccn.ucsd.edu/wiki/Makoto's_preprocessing_pipeline) 
@@ -243,6 +245,8 @@ EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
 
+
+%{
 %% Clean up workspace to release memory
 clear originalEEG*
 
@@ -265,7 +269,7 @@ pRoll = cell2table(pRoll, 'VariableNames', cond_names);
 %% Section 8: Time-freq analysis on ICs
 
 
-%% Visualiztion
+%% Section 9: Time-freq analysis on channels
 % For each component, plot the three bands (alpha, beta, and theta) power on time x trials (IL: 1~19, TR: 1-19, PT1: 1-19, PT2: 1-19, PT3: 1-19)
 cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 cond_nb = length(cond_names);
@@ -288,14 +292,12 @@ end
 tf_ersp = cell(nb_compoent, cond_nb);
 tf_itc = cell(nb_compoent, cond_nb);
 tf_powbase = cell(nb_compoent, cond_nb);
-tf_times = cell(nb_compoent, cond_nb);
-tf_freqs = cell(nb_compoent, cond_nb);
 tf_data = cell(nb_compoent, cond_nb);
 
-% fig_dir = fullfile(output_dir, 'figures', sub_id);
-% if ~isfolder(fig_dir)
-%     mkdir(fig_dir);
-% end
+fig_dir = fullfile(output_dir, 'figures', sub_id);
+if ~isfolder(fig_dir)
+    mkdir(fig_dir);
+end
 
 EEG_cond = cell(cond_nb, 1);
 for j = 1:cond_nb
@@ -310,32 +312,55 @@ for j = 1:cond_nb
 
     for i = 1:nb_compoent
         h = figure;
-        [tf_ersp{i, j}, tf_itc{i, j}, tf_powbase{i, j}, tf_times{i, j}, tf_freqs{i, j}, ~, ~, tf_data{i, j}] = ...
+        [tf_ersp{i, j}, tf_itc{i, j}, tf_powbase{i, j}, tf_times, tf_freqs, ~, ~, tf_data{i, j}] = ...
             pop_newtimef( EEG_cond{j}, typeproc, i, round(1000 * [EEG.xmin, EEG.xmax]), [3, 0.5], 'topovec', topovec_value, ...
                           'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', [cond_names{j}, cap_str{i}], ...
                           'freqs', [0, 35], 'baseline', [-600, -100], 'plotphase', 'off', 'scale', 'abs', 'padratio', 1 ); %'basenorm', 'on', 'trialbase', 'full');
 
-%         savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
+        savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
         close(h);
     end
 end
-
+%}
 %%
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
+% tf_freqs: freq ticks; tf_times: time ticks
+% z_sub: epoch x (time x freq x channel)
 z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
 
 g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
-h_sub = nan(size(z_sub, 2), EEG.nbchan);
+bin_time = length(tf_times);
+bin_freq = length(tf_freqs);
+bin_chan = EEG.nbchan;
+q_sub = bin_chan + bin_freq + bin_time;
+h_sub = zeros(size(z_sub, 2), q_sub); % (time * freq * channel) x (channel + freq + time)
+nb_tf = bin_time * bin_freq;
+one_chan = ones(1, nb_tf);
+one_freq = ones(1, bin_freq);
+one_time = ones(1, bin_time);
+for i = 1:bin_chan
+    h_sub(1:(nb_tf * i), i) = one_chan;
+    for j = 1:bin_freq
+        h_sub(1:(nb_tf * i + bin_time * j), i * bin_chan + j) = one_chan;
+        for k = 1:bin_time
+            h_sub(1:(nb_tf * i + bin_time * j + k), i * bin_chan + j * bin_freq + k) = 1;
+        end
+    end
+end
+
+
+
+
+
 
 
 
 %%
 
 %{
-%%
 EEG = pop_loadset('filename', [sub_id, '_pruned_ICA.set'], 'filepath', output_dir);
 
 
