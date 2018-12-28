@@ -332,23 +332,25 @@ g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
+
+%%
 bin_time = length(tf_times);
 bin_freq = length(tf_freqs);
 bin_chan = EEG.nbchan;
 q_sub = bin_chan + bin_freq + bin_time;
 h_sub = zeros(size(z_sub, 2), q_sub); % (time * freq * channel) x (channel + freq + time)
 nb_tf = bin_time * bin_freq;
-one_chan = ones(1, nb_tf);
-one_freq = ones(1, bin_freq);
-one_time = ones(1, bin_time);
+one_chan = ones(nb_tf, 1);
+one_freq = ones(bin_time, 1);
+
 for i = 1:bin_chan
-    h_sub(1:(nb_tf * i), i) = one_chan;
-    for j = 1:bin_freq
-        h_sub(1:(nb_tf * i + bin_time * j), i * bin_chan + j) = one_chan;
-        for k = 1:bin_time
-            h_sub(1:(nb_tf * i + bin_time * j + k), i * bin_chan + j * bin_freq + k) = 1;
-        end
-    end
+    h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), i) = one_chan;
+%     for j = 1:bin_freq
+%         h_sub((nb_tf * (i - 1) + 1):(bin_time * j), i * bin_chan + j) = one_freq;
+%         for k = 1:bin_time
+%             h_sub((nb_tf * i + bin_time * j + k), i * bin_chan + j * bin_freq + k) = 1;
+%         end
+%     end
 end
 
 
