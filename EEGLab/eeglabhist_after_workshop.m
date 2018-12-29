@@ -326,19 +326,50 @@ end
 
 save(fullfile(output_dir, [sub_id, '_tf_info']), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', '-v7.3');
 
-%% Constrained Principal Component Analysis 
+%% Constrained Principal Component Analysis
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
 % tf_freqs: freq ticks; tf_times: time ticks
+
+% Get 4-8 Hz (theta); 9-12 Hz (alpha); 20-30 Hz (beta)
+ind_theta = tf_freqs >= 4 & tf_freqs <= 8;
+ind_alpha = tf_freqs >= 9 & tf_freqs <= 12;
+ind_beta = tf_freqs >= 20 & tf_freqs <= 30;
+
+% average across freq bands
+tf_freq_band = cell(length(tf_data), 1);
+for i = 1:length(tf_data)
+    tf_freq_band{i, 1} = cat(1, mean(tf_data{i, 1}(ind_alpha, :, :), 1), mean(tf_data{i, 1}(ind_beta, :, :), 1), mean(tf_data{i, 1}(ind_theta, :, :), 1));
+end
+
+% averge across 5 time bins ~= 150~200 ms
+tf_ftbands = cell(length(tf_data), 1);
+dn_factor = 5;
+for i = 1:length(tf_freq_band)
+    [fband, t, ch] = size(tf_freq_band{i, 1});
+    dn_t = ceil(t / dn_factor);
+    tmp = nan(fband, dn_t, ch);
+    for j = 1:fband
+        for k = 1:ch
+            tmp(j, :, k) = decimate(tf_freq_band{i, 1}(j, :, k), dn_factor);
+        end
+    end
+    tf_ftbands{i, 1} = tmp;
+end
+
 % z_sub: epoch x (time x freq x channel)
-z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+% % % z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+% % % z_sub = reshape(permute(cat(4, tf_freq_band{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+z_sub = reshape(permute(cat(4, tf_ftbands{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
 % G matrix
 g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
 % H matrix
-bin_time = length(tf_times);
-bin_freq = length(tf_freqs);
+% % % bin_time = length(tf_times);
+bin_time = dn_t;
+% % % bin_freq = length(tf_freqs);
+bin_freq = 3;
 bin_chan = EEG.nbchan;
 nb_tf = bin_time * bin_freq;
 % construct h for time bins
