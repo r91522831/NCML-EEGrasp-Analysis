@@ -299,9 +299,9 @@ if ~isfolder(fig_dir)
     mkdir(fig_dir);
 end
 
-% EEG_cond = cell(cond_nb, 1);
-EEG_cond = cell(1, 1);
-for j = 1%:cond_nb
+EEG_cond = cell(cond_nb, 1);
+% EEG_cond = cell(1, 1);
+for j = 1:cond_nb
     EEG_cond{j} = EEG;
     if j == 1
         EEG_cond{j}.data = EEG.data;
@@ -324,7 +324,9 @@ for j = 1%:cond_nb
     end
 end
 
-% Constrained Principal Component Analysis 
+save(fullfile(output_dir, [sub_id, '_tf_info']), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', '-v7.3');
+
+%% Constrained Principal Component Analysis 
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
 % tf_freqs: freq ticks; tf_times: time ticks
 % z_sub: epoch x (time x freq x channel)
@@ -359,7 +361,9 @@ for i = 1:bin_chan
     h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), :) = [tmp_sub, h_freq];
 end
 
-save(fullfile(output_dir, sub_id), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', 'z_sub', 'g_sub', 'h_sub', '-v7.3');
+save(fullfile(output_dir, [sub_id, '_z_sub']), 'z_sub', '-v7.3');
+save(fullfile(output_dir, [sub_id, '_g_sub']), 'g_sub', '-v7.3');
+save(fullfile(output_dir, [sub_id, '_h_sub']), 'h_sub', '-v7.3');
 
 %%
 
