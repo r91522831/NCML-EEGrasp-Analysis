@@ -25,7 +25,7 @@ output_dir = fullfile(EEG_dir, 'eeglab', sub_id);
 [tmp_dir, ~, ~] = fileparts(EEG_dir);
 behavior_dir = fullfile(tmp_dir, 'behavior');
 
-% EEGLab
+%% EEGLab
 % Import raw EEG data
 [ALLEEG, EEG, ~, ALLCOM] = eeglab;
 pop_editoptions('option_single', false); % make sure the EEG.data precision is 'double' not 'single'!
@@ -247,10 +247,6 @@ EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
 
-
-
-
-%{
 %% Clean up workspace to release memory
 clear originalEEG*
 
@@ -303,8 +299,9 @@ if ~isfolder(fig_dir)
     mkdir(fig_dir);
 end
 
-EEG_cond = cell(cond_nb, 1);
-for j = 1:cond_nb
+% EEG_cond = cell(cond_nb, 1);
+EEG_cond = cell(1, 1);
+for j = 1%:cond_nb
     EEG_cond{j} = EEG;
     if j == 1
         EEG_cond{j}.data = EEG.data;
@@ -323,10 +320,11 @@ for j = 1:cond_nb
 
         savefig(h, fullfile(fig_dir, [sub_id, '_fig_', cond_names{j}, '_IC_', num2str(i)]));
         close(h);
+        disp([' channel ', num2str(i)]);
     end
 end
-%}
-%%
+
+% Constrained Principal Component Analysis 
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
 % tf_freqs: freq ticks; tf_times: time ticks
 % z_sub: epoch x (time x freq x channel)
@@ -361,6 +359,9 @@ for i = 1:bin_chan
     h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), :) = [tmp_sub, h_freq];
 end
 
+save(fullfile(output_dir, sub_id), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', 'z_sub', 'g_sub', 'h_sub', '-v7.3');
+
+%%
 
 
 
