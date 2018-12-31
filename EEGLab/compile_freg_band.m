@@ -6,7 +6,7 @@ cond_nb = length(cond_names);
 base_folder = uigetdir('Select base folder');
 tf_data_list = dir(fullfile(base_folder, '*_tf_info.mat'));
 
-for sub_i = 1%:length(tf_data_list)
+for sub_i = 1:length(tf_data_list)
     subID = tf_data_list(sub_i).name(1:4);
     
     EEG = pop_loadset('filename', [subID, '_pruned_ICA.set'], 'filepath', fullfile(base_folder, subID));
@@ -21,13 +21,30 @@ for sub_i = 1%:length(tf_data_list)
     ind_alpha = tf_freqs >= 9 & tf_freqs <= 12;
     ind_beta = tf_freqs >= 20 & tf_freqs <= 30;
     
+    %{
     % average across freq bands
     tf_freq_band = cell(length(tf_data), 1);
+    dn_f = 3;
     for i = 1:length(tf_data)
         tf_freq_band{i, 1} = cat(1, mean(tf_data{i, 1}(ind_alpha, :, :), 1), mean(tf_data{i, 1}(ind_beta, :, :), 1), mean(tf_data{i, 1}(ind_theta, :, :), 1));
     end
+    %}
+    % decimate across 11 freq bins change freq resolution from .5 Hz to 5 Hz
+    tf_freq_band = cell(length(tf_data), 1);
+    dn_factor_freq = 11;
+    for i = 1:length(tf_data)
+        [fband, t, ch] = size(tf_data{i, 1});
+        dn_f = ceil(fband / dn_factor_freq);
+        tmp = nan(dn_f, t, ch);
+        for j = 1:t
+            for k = 1:ch
+                tmp(:, j, k) = decimate(tf_data{i, 1}(:, j, k), dn_factor_freq);
+            end
+        end
+        tf_freq_band{i, 1} = tmp;
+    end
     
-    % averge across 5 time bins ~= 150~200 ms
+    % decimate across 5 time bins ~= 150~200 ms
     tf_ftbands = cell(length(tf_data), 1);
     dn_factor = 5;
     for i = 1:length(tf_freq_band)
@@ -46,16 +63,18 @@ for sub_i = 1%:length(tf_data_list)
     % z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
     % z_sub = reshape(permute(cat(4, tf_freq_band{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
     z_sub = reshape(permute(cat(4, tf_ftbands{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+    
     % G matrix
     g_sub = nan(EEG.trials, length(cond_names) - 1);
     for i = 2:length(cond_names)
         g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
     end
+    
     % H matrix
-    % % % bin_time = length(tf_times);
+    % % % bin_time = length(tf_times); % without downsample in time
     bin_time = dn_t;
-    % % % bin_freq = length(tf_freqs);
-    bin_freq = 3;
+    % % % bin_freq = length(tf_freqs); % without downsample in freq
+    bin_freq = dn_f;
     bin_chan = EEG.nbchan;
     nb_tf = bin_time * bin_freq;
     % construct h for time bins
@@ -80,5 +99,5 @@ for sub_i = 1%:length(tf_data_list)
     
     save(fullfile(base_folder, [subID, '_z_sub']), 'z_sub', '-v7.3');
     save(fullfile(base_folder, [subID, '_g_sub']), 'g_sub', '-v7.3');
-    save(fullfile(base_folder, [subID, '_h_sub']), 'h_sub', '-v7.3');
+    save(fullfile(base_folder, [subID, '_h_sub']), 'h_sub', 'bin_freq', 'bin_time', 'bin_chan', '-v7.3');
 end
