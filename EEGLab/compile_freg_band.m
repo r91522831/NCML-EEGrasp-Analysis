@@ -70,13 +70,46 @@ for sub_i = 1:length(tf_data_list)
         g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
     end
     
+    %%
     % H matrix
     % % % bin_time = length(tf_times); % without downsample in time
     bin_time = dn_t;
     % % % bin_freq = length(tf_freqs); % without downsample in freq
     bin_freq = dn_f;
     bin_chan = EEG.nbchan;
+    
     nb_tf = bin_time * bin_freq;
+
+    %% construct h for channel and freq
+    % construct ones for time bins
+    h_time = ones(bin_time, 1);
+    % construct ones for freq bins
+    h_time_freq = cell(bin_freq);
+    for i = 1:bin_freq
+        for j = 1:bin_freq
+            if i == j
+                h_time_freq{i, j} = h_time;
+            else
+                h_time_freq{i, j} = zeros(size(h_time));
+            end
+        end
+    end
+    h_time_freq = cell2mat(h_time_freq);
+    % construct h for channel and freq
+    h_sub = cell(bin_chan); % channel x channel
+    for i = 1:bin_chan
+        for j = 1:bin_chan
+            if i == j
+                h_sub{i, j} = h_time_freq;
+            else
+                h_sub{i, j} = zeros(size(h_time_freq));
+            end
+        end
+    end
+    h_sub = cell2mat(h_sub);
+    
+    %% NG H
+    %{
     % construct h for time bins
     h_time = eye(bin_time, bin_time);
     % construct h for freq and time bins
@@ -89,14 +122,51 @@ for sub_i = 1:length(tf_data_list)
     end
     % construct h for channel, freq, and time
     q_sub = bin_chan + bin_freq + bin_time;
-    h_sub = zeros(size(z_sub, 2), q_sub); % (time * freq * channel) x (channel + freq + time)
+    h_sub = zeros(size(z_sub, 2), q_sub); % (time * freq * channel) x (channel * freq * time)
     for i = 1:bin_chan
         tmp_sub = zeros(bin_freq * bin_time, bin_chan);
         tmp_sub(1:nb_tf, i) = 1;
         
         h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), :) = [tmp_sub, h_freq];
     end
+    %}
     
+    %% construct h for channel
+    %{
+    h_sub = cell(bin_chan); % channel x channel
+    for i = 1:bin_chan
+        for j = 1:bin_chan
+            if i == j
+                h_sub{i, j} = ones(nb_tf, 1); % ones(freq x time, 1)
+            else
+                h_sub{i, j} = zeros(nb_tf, 1);
+            end
+        end
+    end
+    h_sub = cell2mat(h_sub);
+    %}
+    
+    %% construct h for channel and time
+    %{
+    % construct ones for time bins
+    h_time = eye(bin_time, bin_time);
+    % construct ones for freq and time bins
+    h_time_freq = repmat(h_time, bin_freq, 1);
+    % construct ones for channel and time
+    h_sub = cell(bin_chan); % channel x channel
+    for i = 1:bin_chan
+        for j = 1:bin_chan
+            if i == j
+                h_sub{i, j} = h_time_freq;
+            else
+                h_sub{i, j} = zeros(size(h_time_freq));
+            end
+        end
+    end
+    h_sub = cell2mat(h_sub);
+    %}
+    
+    %%
     save(fullfile(base_folder, [subID, '_z_sub']), 'z_sub', '-v7.3');
     save(fullfile(base_folder, [subID, '_g_sub']), 'g_sub', '-v7.3');
     save(fullfile(base_folder, [subID, '_h_sub']), 'h_sub', 'bin_freq', 'bin_time', 'bin_chan', '-v7.3');
