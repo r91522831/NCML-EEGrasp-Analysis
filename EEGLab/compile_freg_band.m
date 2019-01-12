@@ -146,6 +146,37 @@ for sub_i = 1:length(tf_data_list)
     h_sub = cell2mat(h_sub);
     %}
     
+    %% construct h for freq
+    %{
+    % construct ones for time bins
+    h_time = ones(bin_time, 1);
+    % construct ones for freq bins
+    h_time_freq = cell(bin_freq);
+    for i = 1:bin_freq
+        for j = 1:bin_freq
+            if i == j
+                h_time_freq{i, j} = h_time;
+            else
+                h_time_freq{i, j} = zeros(size(h_time));
+            end
+        end
+    end
+    h_time_freq = cell2mat(h_time_freq);
+    
+    h_sub = cell(bin_chan, 1); % channel x 1
+    for i = 1:bin_chan
+        h_sub{i, 1} = h_time_freq; % ones(freq x time, 1)
+    end
+    h_sub = cell2mat(h_sub);
+    %}
+    
+    %% construct h for time
+    %{
+    % construct ones for time bins
+    h_time = eye(bin_time);
+    h_sub = repmat(h_time, bin_freq * bin_chan, 1);
+    %}
+    
     %% construct h for channel and time
     %{
     % construct ones for time bins
