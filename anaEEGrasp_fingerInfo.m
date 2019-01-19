@@ -19,6 +19,13 @@ coord_obj = cell(size(file_list));
 fgr_on_obj = cell(size(file_list));
 fgr_on_obj_kinetic = cell(size(file_list));
 
+%% lowpass filtered
+% % % for i = 1:length(mx)
+% % %     mx_filtered{i} = filtmat_class( dt, cutoff_plot, mx{i} );
+% % %     obj_height_filtered{i} = filtmat_class( dt, cutoff_plot, obj_height{i} );
+% % % end
+
+
 %--------------------------------------------------------------------------
 % assign filtered or raw data to analyze
 input = data;
@@ -67,6 +74,9 @@ for i = 1:length(file_list)
             tmp_cond_fgr(m, 1) = markers_fgr{m, 1}(time_id, 4);
         end
         
+        %% might not need to check the missing markers, since it was done when converting from .tdms to .cvs
+        % this will introduce extra noise
+        %{
         % if there is any marker missing in this frame
         if any(tmp_cond < 0) || any(tmp_cond_fgr < 0)
             tmp_missing_markers = find(tmp_cond < 0);
@@ -74,17 +84,33 @@ for i = 1:length(file_list)
             % check if there is at least 3 within [1, 2, 4, 5]
             tmp_critical = [1, 2, 4, 5];
             tmp_missed = ismember(tmp_critical, tmp_missing_markers);
-            if sum(tmp_missed) > 1
-                disp(['trial ', num2str(i), ' missed too many markers for yz plan!']);
-                continue;
-            elseif sum(tmp_missed) > 0
-                tmp_yz_markers = tmp_critical( ~tmp_missed );
+        
+        
+            switch sum(tmp_missed)
+                case {0, 1}
+                    tmp_yz_markers = tmp_critical( ~tmp_missed );
+                case 2
+                    tmp_ind_missed = find(tmp_missed);
+                    tmp_not_picked = tmp_missed;
+                    tmp_not_picked(tmp_ind_missed(1)) = 0;
+                    tmp_yz_markers = tmp_critical( ~tmp_not_picked );
+                    disp(['trial ', num2str(i), ' missed 2 markers for yz plan!']);
+                case 3
+                    tmp_ind_missed = find(tmp_missed);
+                    tmp_not_picked = tmp_missed;
+                    tmp_not_picked(tmp_ind_missed(1:2)) = 0;
+                    tmp_yz_markers = tmp_critical( ~tmp_not_picked );
+                    disp(['trial ', num2str(i), ' missed 3 markers for yz plan!']);
+                case 4
+                    % use [2, 4, 5]
+                    disp(['trial ', num2str(i), ' missed all markers for yz plan!']);
             end
+        
             % check if there is all within [3, 6, 8]
             tmp_missed = ismember(tmp_xz_markers, tmp_missing_markers);
             if sum(tmp_missed) > 0
                 disp(['trial ', num2str(i), ' missed too many markers for xz plan!']);
-                continue;
+%                 continue; % still use the missed marker with smoothened data
             end
             % remove missing marker from markers used to get origin
             tmp_origin_markers = tmp_origin_markers(tmp_cond >= 0);
@@ -98,6 +124,9 @@ for i = 1:length(file_list)
             missing_info{i, 1}{tmp_missing, 5} = (tmp_cond_fgr < 0);
             tmp_missing = tmp_missing + 1;
         end
+        %}
+        
+        
         
         % compute coordinate bases from yz and xz plan vectors
         tmp_coordBasis = coordBasisOnObj(tmp_markers, tmp_yz_markers, tmp_xz_markers);

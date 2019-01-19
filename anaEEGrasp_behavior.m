@@ -34,8 +34,17 @@ for i = 1:length(file_list)
     %% Get object coordinate before reaching initiation
     % object coordinate before audio go cue and should keep the same until object lift onset*
     ind_b4go = (tmp_audio == 1);
-    tmp = cellfun(@table2array, coord_obj{i}(ind_b4go, 1),'UniformOutput',false);
-    coord_obj_b4go = array2table(mean(cat(3, tmp{:}), 3), 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'x_axis', 'y_axis', 'z_axis', 'origin', 'RCenter', 'LCenter'});
+%     tmp = cellfun(@table2array, coord_obj{i, 1}(ind_b4go, 1), 'UniformOutput', false);
+    tmp_coord_obj = coord_obj{i, 1}(ind_b4go, 1);
+    tmp = cell(length(tmp_coord_obj), 1);
+    for j = 1:length(tmp_coord_obj)
+        if isempty(tmp_coord_obj{j, 1})
+            tmp{j, 1} = nan(size(tmp_coord_obj{1, 1}));
+            continue;
+        end
+        tmp{j, 1} = table2array(tmp_coord_obj{j, 1});
+    end
+    coord_obj_b4go = array2table(nanmean(cat(3, tmp{:}), 3), 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'x_axis', 'y_axis', 'z_axis', 'origin', 'RCenter', 'LCenter'});
     
     % the object center is a virtual center at the middle of right and left
     % handle centers
@@ -57,6 +66,9 @@ for i = 1:length(file_list)
     obj_center_d = zeros(height(input{i}), 1);
     for time_id = 1:height(input{i})
         % compute object height
+        if time_id > length(coord_obj{i})
+            continue;
+        end
         if isempty(coord_obj{i}{time_id, 1})
             continue;
         end

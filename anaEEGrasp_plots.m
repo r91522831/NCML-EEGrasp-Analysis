@@ -14,7 +14,7 @@ end
 tmp_time_real = zeros(length(file_list), size(ind_lft_onset, 2));
 for i = 1:length(file_list)
     for j = 1:size(ind_lft_onset, 2)
-        tmp_time_real(i, j) = data{i}{ind_lft_onset(i, j), 1};
+        tmp_time_real(i, j) = data{i}{ind_lft_onset{i, j}, 1};
     end
 end
 delta_t = tmp_time_real - tmp_time_real(:, 6);
@@ -103,11 +103,11 @@ for i = 1:length(file_list)
 %     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, obj_height_filtered{i, 1}, info_time_trigger{i, 1}, info_time_trigger{i, 2});
     hold on
     ylim([-1, 14])
-    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
-    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
+    vline(timestamp(ind_lft_onset{i, 1:5}), '-ob');
+    vline(timestamp(ind_lft_onset{i, 6}), '-xr');
     hline([1:3, 5, 10], 'k');
     hold off
-    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+    xlim([info_time_trigger{i, 1}(ind_lft_onset{i, 4} - 50), info_time_trigger{i, 1}(ind_lft_onset{i, 1} + 50)])
 %     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
 %     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
     
@@ -116,11 +116,11 @@ for i = 1:length(file_list)
 %     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, obj_height_filtered{i, 2}, info_time_trigger{i, 1}, info_time_trigger{i, 2});
     hold on
     ylim([0, 15])
-    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
-    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
+    vline(timestamp(ind_lft_onset{i, 1:5}), '-ob');
+    vline(timestamp(ind_lft_onset{i, 6}), '-xr');
     hline([1:3, 5, 10], 'k');
     hold off
-    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+    xlim([info_time_trigger{i, 1}(ind_lft_onset{i, 4} - 50), info_time_trigger{i, 1}(ind_lft_onset{i, 1} + 50)])
 %     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
 %     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
     
@@ -128,11 +128,11 @@ for i = 1:length(file_list)
     plot(info_time_trigger{i, 1}, sqrt(sum((resultantF{i, :}{:, {'fy', 'fx','fz'}}).^2, 2)))
 %     [ax, ~, ~] = plotyy(info_time_trigger{i, 1}, sqrt(sum((resultantF{i, :}{:, {'fy', 'fx','fz'}}).^2, 2)), info_time_trigger{i, 1}, info_time_trigger{i, 2});
     hold on
-    vline(timestamp(ind_lft_onset(i, 1:5)), '-ob');
-    vline(timestamp(ind_lft_onset(i, 6)), '-xr');
+    vline(timestamp(ind_lft_onset{i, 1:5}), '-ob');
+    vline(timestamp(ind_lft_onset{i, 6}), '-xr');
     hline(obj_weight(i, 1));
     hold off
-    xlim([info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
+    xlim([info_time_trigger{i, 1}(ind_lft_onset{i, 4} - 50), info_time_trigger{i, 1}(ind_lft_onset{i, 1} + 50)])
 %     xlim(ax(1), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
 %     xlim(ax(2), [info_time_trigger{i, 1}(ind_lft_onset(i, 4) - 50), info_time_trigger{i, 1}(ind_lft_onset(i, 1) + 50)])
 

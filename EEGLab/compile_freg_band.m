@@ -81,6 +81,7 @@ for sub_i = 1:length(tf_data_list)
     nb_tf = bin_time * bin_freq;
 
     %% construct h for channel and freq
+    %{
     % construct ones for time bins
     h_time = ones(bin_time, 1);
     % construct ones for freq bins
@@ -107,6 +108,7 @@ for sub_i = 1:length(tf_data_list)
         end
     end
     h_sub = cell2mat(h_sub);
+    %}
     
     %% NG H
     %{
@@ -196,6 +198,23 @@ for sub_i = 1:length(tf_data_list)
     end
     h_sub = cell2mat(h_sub);
     %}
+    
+    %% construct h for contrast of one channel vs the rest channels
+    h_theOneChan = (bin_chan - 1) * ones(nb_tf, 1);
+    h_sub = cell(bin_chan);
+    for i = 1:bin_chan
+        for j = 1:bin_chan
+            if i == j
+                h_sub{i, j} = h_theOneChan;
+            else
+                h_sub{i, j} = -1 * ones(size(h_theOneChan));
+            end
+        end
+    end
+    h_sub = cell2mat(h_sub);
+    
+    
+    
     
     %%
     save(fullfile(base_folder, [subID, '_z_sub']), 'z_sub', '-v7.3');

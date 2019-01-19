@@ -52,6 +52,7 @@ save(fullfile(base_folder, 'ALL_z'), 'ALL_z')
 save(fullfile(base_folder, 'ALL_g'), 'ALL_g')
 
 %% h_sub
+%{
 bin_chan = 63;
 bin_time = 40;
 bin_freq = 7;
@@ -78,7 +79,7 @@ ALL_h = cell2mat(h_cell);
 % % % ALL_h = h_sub;
 
 save(fullfile(base_folder, 'ALL_h'), 'ALL_h')
-
+%}
 
 
 %%
