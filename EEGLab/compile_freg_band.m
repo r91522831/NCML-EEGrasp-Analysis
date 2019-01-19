@@ -200,6 +200,7 @@ for sub_i = 1:length(tf_data_list)
     %}
     
     %% construct h for contrast of one channel vs the rest channels
+    %{
     h_theOneChan = (bin_chan - 1) * ones(nb_tf, 1);
     h_sub = cell(bin_chan);
     for i = 1:bin_chan
@@ -212,8 +213,28 @@ for sub_i = 1:length(tf_data_list)
         end
     end
     h_sub = cell2mat(h_sub);
+    %}
     
-    
+    %% construct h for contrast of paired channel comparison
+    h_theOneChan = ones(nb_tf, bin_chan - 1);
+
+    h_sub = cell(bin_chan);
+    for i = 1:bin_chan
+        for j = 1:bin_chan
+            h_theOtherChan = zeros(nb_tf, bin_chan - 1);
+            if i == j
+                h_sub{i, j} = h_theOneChan;
+            else
+                if i < j
+                    h_theOtherChan(:, i) = -1 * ones(nb_tf, 1);
+                else
+                    h_theOtherChan(:, i - 1) = -1 * ones(nb_tf, 1);
+                end
+                h_sub{i, j} = h_theOtherChan;
+            end
+        end
+    end
+    h_sub = cell2mat(h_sub);
     
     
     %%
