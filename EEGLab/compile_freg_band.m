@@ -216,6 +216,7 @@ for sub_i = 1:length(tf_data_list)
     %}
     
     %% construct h for contrast of paired channel comparison
+    %{
     h_theOneChan = ones(nb_tf, bin_chan - 1);
 
     h_sub = cell(bin_chan);
@@ -235,7 +236,37 @@ for sub_i = 1:length(tf_data_list)
         end
     end
     h_sub = cell2mat(h_sub);
+    %}
     
+    %% construct h for contrast of one freq vs the rest comparison
+    %{
+    h_theOneFreq = (bin_freq - 1) * ones(bin_time, 1);
+    h_theOtherFreq = -1 * ones(bin_time, 1);
+    
+    h_freq_time = cell(bin_freq);
+    for i = 1:bin_freq
+        for j = 1:bin_freq
+            if i == j
+                h_freq_time{i, j} = h_theOneFreq;
+            else
+                h_freq_time{i, j} = h_theOtherFreq;
+            end
+        end
+    end
+    h_freq_time = cell2mat(h_freq_time);
+    h_sub = repmat(h_freq_time, bin_chan, 1);
+    %}
+    
+    %% construct h for contrast of one time vs the rest comparison
+    h_theOneTime = -1 * ones(bin_time);
+    for i = 1:bin_time
+        for j = 1:bin_time
+            if i == j
+                h_theOneTime(i, j) = 39;
+            end
+        end
+    end
+    h_sub = repmat(h_theOneTime, bin_chan * bin_freq, 1);
     
     %%
     save(fullfile(base_folder, [subID, '_z_sub']), 'z_sub', '-v7.3');
