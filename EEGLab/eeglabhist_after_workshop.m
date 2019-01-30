@@ -198,7 +198,7 @@ EEG.setname = [sub_id, '_ICA'];
 EEG = eeg_checkset( EEG );
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
 EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step 2: run MARA
+%% Step 2: run MARA
 % keep original EEG
 originalEEG_ICA = EEG;
 % select only EEG channels and get MARA ICs rejection suggestion

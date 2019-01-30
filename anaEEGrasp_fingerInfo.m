@@ -3,6 +3,7 @@ close all; clearvars; clc
 %% load aligned data
 [filename, pathname, ~] = uigetfile;
 % load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/S002_aligned_data.mat')
+
 load(fullfile(pathname, filename));
 
 n_PSonObj = 8;
@@ -203,13 +204,3 @@ for i = 1:length(file_list)
 end
 
 save(fullfile(pathname, [filename(1:4), '_fingerInfo.mat']), 'file_list', 'data', 'var_PS', 'var_PS_cond', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic');
-
-
-
-
-
-
-
-
-
-
