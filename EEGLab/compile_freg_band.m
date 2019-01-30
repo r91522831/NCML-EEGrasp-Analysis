@@ -17,11 +17,11 @@ for sub_i = 1:length(tf_data_list)
     % tf_freqs: freq ticks; tf_times: time ticks
     
     % Get 4-8 Hz (theta); 9-12 Hz (alpha); 20-30 Hz (beta)
+    %{
     ind_theta = tf_freqs >= 4 & tf_freqs <= 8;
     ind_alpha = tf_freqs >= 9 & tf_freqs <= 12;
     ind_beta = tf_freqs >= 20 & tf_freqs <= 30;
     
-    %{
     % average across freq bands
     tf_freq_band = cell(length(tf_data), 1);
     dn_f = 3;
@@ -29,6 +29,7 @@ for sub_i = 1:length(tf_data_list)
         tf_freq_band{i, 1} = cat(1, mean(tf_data{i, 1}(ind_alpha, :, :), 1), mean(tf_data{i, 1}(ind_beta, :, :), 1), mean(tf_data{i, 1}(ind_theta, :, :), 1));
     end
     %}
+    
     % decimate across 11 freq bins change freq resolution from .5 Hz to 5 Hz
     tf_freq_band = cell(length(tf_data), 1);
     dn_factor_freq = 11;

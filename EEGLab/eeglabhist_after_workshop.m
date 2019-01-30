@@ -330,7 +330,9 @@ save(fullfile(output_dir, [sub_id, '_tf_info']), 'tf_data', 'tf_ersp', 'tf_itc',
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
 % tf_freqs: freq ticks; tf_times: time ticks
 
+
 % Get 4-8 Hz (theta); 9-12 Hz (alpha); 20-30 Hz (beta)
+%{
 ind_theta = tf_freqs >= 4 & tf_freqs <= 8;
 ind_alpha = tf_freqs >= 9 & tf_freqs <= 12;
 ind_beta = tf_freqs >= 20 & tf_freqs <= 30;
@@ -340,6 +342,23 @@ tf_freq_band = cell(length(tf_data), 1);
 for i = 1:length(tf_data)
     tf_freq_band{i, 1} = cat(1, mean(tf_data{i, 1}(ind_alpha, :, :), 1), mean(tf_data{i, 1}(ind_beta, :, :), 1), mean(tf_data{i, 1}(ind_theta, :, :), 1));
 end
+%}
+
+% decimate across 11 freq bins change freq resolution from .5 Hz to 5 Hz
+tf_freq_band = cell(length(tf_data), 1);
+dn_factor_freq = 11;
+for i = 1:length(tf_data)
+    [fband, t, ch] = size(tf_data{i, 1});
+    dn_f = ceil(fband / dn_factor_freq);
+    tmp = nan(dn_f, t, ch);
+    for j = 1:t
+        for k = 1:ch
+            tmp(:, j, k) = decimate(tf_data{i, 1}(:, j, k), dn_factor_freq);
+        end
+    end
+    tf_freq_band{i, 1} = tmp;
+end
+
 
 % averge across 5 time bins ~= 150~200 ms
 tf_ftbands = cell(length(tf_data), 1);
@@ -365,7 +384,12 @@ g_sub = nan(EEG.trials, length(cond_names) - 1);
 for i = 2:length(cond_names)
     g_sub(:, i - 1) = strcmp([EEG.epoch.cond], cond_names{i})';
 end
+
+save(fullfile(output_dir, [sub_id, '_z_sub']), 'z_sub', '-v7.3');
+save(fullfile(output_dir, [sub_id, '_g_sub']), 'g_sub', '-v7.3');
+
 % H matrix
+%{
 % % % bin_time = length(tf_times);
 bin_time = dn_t;
 % % % bin_freq = length(tf_freqs);
@@ -391,10 +415,8 @@ for i = 1:bin_chan
     
     h_sub((nb_tf * (i - 1) + 1):(nb_tf * i), :) = [tmp_sub, h_freq];
 end
-
-save(fullfile(output_dir, [sub_id, '_z_sub']), 'z_sub', '-v7.3');
-save(fullfile(output_dir, [sub_id, '_g_sub']), 'g_sub', '-v7.3');
 save(fullfile(output_dir, [sub_id, '_h_sub']), 'h_sub', '-v7.3');
+%}
 
 %%
 
