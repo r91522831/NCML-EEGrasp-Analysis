@@ -3,7 +3,7 @@ close all; clearvars; clc
 
 %% load aligned data
 pathname = uigetdir;
-filelist = dir(fullfile(pathname, '*.mat'));
+filelist = dir(fullfile(pathname, '*_temp_result.mat'));
 
 nsub = length(filelist);
 all_sub_mx_pRoll = nan(95, 2, nsub);
@@ -17,7 +17,8 @@ for sub = 1:nsub
     trial_id = str2num(tmp_filename(:, 7:9));
     tmp_mx_onset = mx_onset;
     tmp_peak_roll = peak_roll{:, 'peakRoll'};
-    if ~mod(sub, 2)
+    subID = str2double(filelist(sub).name(2:4));
+    if ~mod(subID, 2)
         tmp_mx_onset = -mx_onset;
         tmp_peak_roll = -tmp_peak_roll;
     end
@@ -40,7 +41,7 @@ for sub = 1:nsub
     all_sub_mx_pRoll(:, :, sub) = tmp;
 end
 avg_mx_pRoll = nanmean(all_sub_mx_pRoll, 3);
-stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3);% ./ sqrt(nsub);
+stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3) ./ sqrt(nsub);
 %%
 tmp = [str2double(file_list(1).name(7:9)), avg_mx_pRoll(1, :), stde_mx_pRoll(1, :)];
 ntrial = length(file_list);
@@ -74,7 +75,7 @@ for i = 1:length(session)
     errorbar(session{i, 2}(:, 1), session{i, 2}(:, 2), session{i, 2}(:, 4), line_spec)
 end
 hold off
-legend({'IL', 'TR', 'PT'}, 'Location', 'southwest')
+legend({'IL', 'TR', 'PT'}, 'Location', 'northwest')
 ylabel('Tcom (N-mm)')
 xlabel('trial')
 xlim([0, 96])
@@ -97,9 +98,9 @@ for i = 1:length(session)
     end
 end
 hold off
-ylim([-10, 21])
+ylim([-20, 10])
 ylabel('absolute peak roll ({\circ})')
 xlabel('trial')
 xlim([0, 96])
-mtit('error bars are SD')
-savefig(fullfile(pathname, 'behavior_sd'))
+mtit('error bars represent SE')
+savefig(fullfile(pathname, ['behavior_se_', num2str(nsub), 'subs']))

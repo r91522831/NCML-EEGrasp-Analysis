@@ -43,4 +43,4 @@ for i = 1:length(file_list)
     disp(i)
 end
 
-save(fullfile(pathname, [filename(1:4), '_for_plot.mat']), 'obj', 'fgr_all', 'info_time_trigger', 'ind_lft_onset', 'file_list');
+save(fullfile(pathname, [filename(1:4), '_for_plot.mat']), 'obj', 'fgr_all', 'info_time_trigger', 'ind_lft_onset', 'file_list', '-v7');
