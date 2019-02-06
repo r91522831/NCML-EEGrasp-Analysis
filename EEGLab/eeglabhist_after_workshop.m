@@ -327,6 +327,7 @@ end
 save(fullfile(output_dir, [sub_id, '_tf_info']), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', '-v7.3');
 
 %% Constrained Principal Component Analysis
+%{
 % tf_data{:, 1}: f x t x epoch; cat(4, tf_data{:, 1}): f x t x epoch x channel;
 % tf_freqs: freq ticks; tf_times: time ticks
 
@@ -387,6 +388,7 @@ end
 
 save(fullfile(output_dir, [sub_id, '_z_sub']), 'z_sub', '-v7.3');
 save(fullfile(output_dir, [sub_id, '_g_sub']), 'g_sub', '-v7.3');
+%}
 
 % H matrix
 %{

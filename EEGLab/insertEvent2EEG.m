@@ -2,8 +2,19 @@ function [EEG] = insertEvent2EEG(EEG, pathname, filename)
 % insertEvent2EEG Summary of this function goes here
 %   Detailed explanation goes here
 behavior = load(fullfile(pathname, filename));
+tmp_ready = [EEG.event(2:5:end-1).latency]';
 
-tmp_latency = num2cell(behavior.info_onset_time .* EEG.srate + [EEG.event(2:5:end-1).latency]'); % add 's9' time to the event time
+trial_filelist = dir(fullfile(fileparts(pathname), filename(1:4), '*.csv'));
+trial_list = cellfun(@(x) str2double(x(7:9)), {trial_filelist.name}');
+nb_trial = length(tmp_ready);
+
+tmp_onset = behavior.info_onset_time .* EEG.srate;
+tmp_behavior = nan(nb_trial, 1);
+for i = 1:length(trial_list)
+    tmp_behavior(trial_list(i), 1) = tmp_onset(i);
+end
+
+tmp_latency = num2cell(tmp_behavior + tmp_ready); % add 's9'(ready) time to the event time
 
 for i = 1:length(tmp_latency)
     tmp_latency{i, 2} = 1; % duration
