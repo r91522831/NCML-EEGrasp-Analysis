@@ -46,12 +46,23 @@ for i = 1:nb_sub
     ind_t2s = tf_times >= -1000 & tf_times <= 1000;
     
     % average across freq bands
+    %{
     tf_bands_theta = abs(mean(tf_all4d(ind_theta, ind_t2s, :, :), 1));
     tf_bands_alpha = abs(mean(tf_all4d(ind_alpha, ind_t2s, :, :), 1));
     tf_bands_beta = abs(mean(tf_all4d(ind_beta, ind_t2s, :, :), 1));
+    %}
+    % get all without averaging (too large Z matrix)
+    tf_bands_theta = tf_all4d(ind_theta, ind_t2s, :, :);
+    tf_bands_alpha = tf_all4d(ind_alpha, ind_t2s, :, :);
+    tf_bands_beta = tf_all4d(ind_beta, ind_t2s, :, :);
+    
     tf_bands_freqs = [tf_bands_theta; tf_bands_alpha; tf_bands_beta];
     
     dimensions(i, :) = size(tf_bands_freqs);
+    ticks_theta = tf_freqs(ind_theta);
+    ticks_alpha = tf_freqs(ind_alpha);
+    ticks_beta = tf_freqs(ind_beta);
+    ticks_time = tf_times(ind_t2s);
     
     %% decimate freqs and times
     %{
@@ -115,8 +126,27 @@ ALL_z = cat(1, z_sub{:});
 ALL_z_theta = cat(1, z_sub_theta{:});
 ALL_z_alpha = cat(1, z_sub_alpha{:});
 ALL_z_beta = cat(1, z_sub_beta{:});
-ALL_g = cat(1, g_sub{:});
+%% combine the huge G
+ALL_g = cell(nb_sub);
+for i = 1:nb_sub
+    for j = 1:nb_sub
+        if i ~= j
+            ALL_g{i, j} = zeros(size(g_sub{i, 1}));
+        else
+            ALL_g{i, j} = g_sub{i, 1};
+        end
+    end
+end
+ALL_g = cell2mat(ALL_g);
 
 dimensions = array2table(dimensions, 'VariableNames', {'FreqBands', 'TimeSteps', 'epochs', 'Channels'});
-save(fullfile(data_dir, 'ALL_z'), 'ALL_z', 'ALL_z_theta', 'ALL_z_alpha', 'ALL_z_beta', 'dimensions', '-v7.3');
+bin_time = dimensions{1, 'TimeSteps'};
+bin_freq = dimensions{1, 'FreqBands'};
+bin_chan = dimensions{1, 'Channels'};
+
+save(fullfile(data_dir, 'ALL_z'), 'ALL_z', '-v7.3');
+save(fullfile(data_dir, 'ALL_z_theta'), 'ALL_z_theta', '-v7.3');
+save(fullfile(data_dir, 'ALL_z_alpha'), 'ALL_z_alpha', '-v7.3');
+save(fullfile(data_dir, 'ALL_z_beta'), 'ALL_z_beta', '-v7.3');
+save(fullfile(data_dir, 'ALL_misc'), 'dimensions', 'ticks_*', 'bin_freq', 'bin_time', 'bin_chan', '-v7.3');
 save(fullfile(data_dir, 'ALL_g'), 'ALL_g', '-v7.3');

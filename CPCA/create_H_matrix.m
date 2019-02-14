@@ -4,25 +4,54 @@ data_dir = uigetdir;
 file_list = dir(fullfile(data_dir, 'ALL_*.mat'));
 
 for i = 1:length(file_list)
-    if any(strcmp(file_list(i).name, {'ALL_g.mat', 'ALL_z.mat'}))
+    if any(strcmp(file_list(i).name, {'ALL_misc.mat'}))
         load(fullfile(data_dir, file_list(i).name));
     end
 end
 
 %%
 % H matrix
-dn = dimensions(1, :);
-
+% % % dn = dimensions(1, :);
 % % % bin_time = length(tf_times); % without downsample in time
 % % % bin_freq = length(tf_freqs); % without downsample in freq
-bin_time = dn{1, 'TimeSteps'};
-bin_freq = dn{1, 'FreqBands'};
+% % % bin_time = dn{1, 'TimeSteps'};
+% % % bin_freq = dn{1, 'FreqBands'};
+% % % bin_chan = dn{1, 'Channels'};
+
+% % % description = [];
 addition_description = [];
 % % % bin_freq = 1;
 % % % addition_description = '_singleFband';
-bin_chan = dn{1, 'Channels'};
+
 
 nb_tf = bin_time * bin_freq;
+
+
+% construct h for single freq band (theta, alpha, beta) as time x channel
+%{
+% % % nb_f = length(ticks_theta);
+% % % nb_f = length(ticks_alpha);
+nb_f = length(ticks_beta);
+
+h_time = speye(bin_time);
+h_time_fband = repmat(h_time, nb_f, 1);
+ALL_h = cell(bin_chan); % channel x channel
+for i = 1:bin_chan
+    for j = 1:bin_chan
+        if i == j
+            ALL_h{i, j} = h_time_fband;
+        else
+            ALL_h{i, j} = zeros(size(h_time_fband));
+        end
+    end
+end
+ALL_h = sparse(full(cell2mat(ALL_h))); % convert back to full matrix and then convert to sparse matrix can save some workspace run-time memory
+
+% % % description = 'TimeChan_theta';
+% % % description = 'TimeChan_alpha';
+description = 'TimeChan_beta';
+%}
+
 
 % construct h for channel
 %{
@@ -38,6 +67,56 @@ for i = 1:bin_chan
 end
 ALL_h = cell2mat(ALL_h);
 description = 'chan';
+%}
+
+% construct h for freq bands (theta, alpha, beta)
+%{
+% construct ones for freq bands with different freq bins: length(theta), length(alpha), length(beta)
+h_time_fband = {ones(bin_time * length(ticks_theta), 1), ones(bin_time * length(ticks_alpha), 1), ones(bin_time * length(ticks_beta), 1)};
+bin_freq_band = 3;
+h_time_freq = cell(3);
+for i = 1:bin_freq_band
+    for j = 1:bin_freq_band
+        if i ~= j
+            h_time_freq{i, j} = zeros(size(h_time_fband{i}));
+        else
+            h_time_freq{i, j} = h_time_fband{i};
+        end
+    end
+end
+h_time_freq = cell2mat(h_time_freq);
+
+ALL_h = cell(bin_chan, 1); % channel x 1
+for i = 1:bin_chan
+    ALL_h{i, 1} = h_time_freq; % ones(freq x time, 1)
+end
+ALL_h = cell2mat(ALL_h);
+description = 'freq_3bands';
+%}
+
+% construct h for freq
+%{
+% construct ones for time bins
+h_time = ones(bin_time, 1);
+% construct ones for freq bins
+h_time_freq = cell(bin_freq);
+for i = 1:bin_freq
+    for j = 1:bin_freq
+        if i == j
+            h_time_freq{i, j} = h_time;
+        else
+            h_time_freq{i, j} = zeros(size(h_time));
+        end
+    end
+end
+h_time_freq = cell2mat(h_time_freq);
+
+ALL_h = cell(bin_chan, 1); % channel x 1
+for i = 1:bin_chan
+    ALL_h{i, 1} = h_time_freq; % ones(freq x time, 1)
+end
+ALL_h = cell2mat(ALL_h);
+description = 'freq';
 %}
 
 % construct h for time
@@ -134,29 +213,7 @@ description = 'timeContrast1vs39';
     end
 %}
 
-% construct h for freq
-%{
-    % construct ones for time bins
-    h_time = ones(bin_time, 1);
-    % construct ones for freq bins
-    h_time_freq = cell(bin_freq);
-    for i = 1:bin_freq
-        for j = 1:bin_freq
-            if i == j
-                h_time_freq{i, j} = h_time;
-            else
-                h_time_freq{i, j} = zeros(size(h_time));
-            end
-        end
-    end
-    h_time_freq = cell2mat(h_time_freq);
-    
-    h_sub = cell(bin_chan, 1); % channel x 1
-    for i = 1:bin_chan
-        h_sub{i, 1} = h_time_freq; % ones(freq x time, 1)
-    end
-    h_sub = cell2mat(h_sub);
-%}
+
 
 % construct h for channel and time
 %{
@@ -221,4 +278,4 @@ description = 'timeContrast1vs39';
 %}
 
 %
-save(fullfile(data_dir, ['ALL_h_', description, addition_description]), 'ALL_h', 'bin_freq', 'bin_time', 'bin_chan', '-v7.3');
+save(fullfile(data_dir, ['ALL_h_', description, addition_description]), 'ALL_h', '-v7.3');
