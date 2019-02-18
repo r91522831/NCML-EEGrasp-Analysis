@@ -5,258 +5,300 @@ clear; close all; clc;
 % modified 27-Nov-2018 by Yen-Hsun Wu @ ASU
 % ------------------------------------------------
 
-% Ask if the goal of the process is in IC space or in Electrode space
+%% Section 1: Select raw EEG .vhdr file
+
+% Option if the goal of the process is in IC space or in Electrode space
 switch input('Do you want to make data full rank for analyses in IC space?(y/N)', 's')
     case {'y', 'Y'}
-        reduce2fullrank = true;
+        All_reduce2fullrank = true;
     otherwise
-        reduce2fullrank = false;
+        All_reduce2fullrank = false;
+end
+% Option if the epoch is time-locking at lift onset
+switch input('Does the epoch time locked at lift onset (no if at hold)?(y/N)', 's')
+    case {'y', 'Y'}
+        All_timelocking_type = {  'onset'  };
+    otherwise
+        All_timelocking_type = {  'hold'  };
 end
 
-%% Section 1: Select raw EEG .vhdr file
-% Step 1:
-% '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/Data/Sxxx_EEG/', '*.vhdr'
-[raw_filename, raw_dir, ~] = uigetfile('*.vhdr','Select the raw EEG data file');
-[tmp_dir, foldername, ~]= fileparts(fileparts(raw_dir));
-sub_id = foldername(1:4);
-% '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/Sxxx/';
-[EEG_dir, ~, ~] = fileparts(tmp_dir);
-output_dir = fullfile(EEG_dir, 'eeglab', sub_id);
-[tmp_dir, ~, ~] = fileparts(EEG_dir);
-behavior_dir = fullfile(tmp_dir, 'behavior');
+All_data = uigetdir;
+All_data_list = dir(fullfile(All_data, 'S*'));
 
-%% EEGLab
-% Import raw EEG data
-[ALLEEG, EEG, ~, ALLCOM] = eeglab;
-pop_editoptions('option_single', false); % make sure the EEG.data precision is 'double' not 'single'!
-EEG.etc.eeglabvers = '15.1.1'; % this tracks which version of EEGLAB is being used, you may ignore it
-
-% Step 2:
-EEG = pop_loadbv(raw_dir, raw_filename);
-
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = pop_newset(ALLEEG, EEG, 0, 'setname', [sub_id, '_raw'], 'gui', 'off');
-if ~isfolder(output_dir)
-    mkdir(output_dir);
-end
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-
-%% Section2: Experiment info
-% Load channel locations and insert behavior (lift onset) events
-% Step 1: Load channel locations
-ANTNeuro_montage = {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG'};
-if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, true only for S002
-    EEG = pop_select(EEG, 'channel', {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1'});
-    EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
-end
-
-EEG = pop_chanedit(EEG, 'load', {fullfile(EEG_dir, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
-% Step 2: Insert behavior events
-% run insert_behavior_event_in2EEG to put behavior onset into EEG events
-behavior_results_dir = fullfile(behavior_dir, 'matlab data/preliminary results');
-behavior_filename = [sub_id, '_info_onset_time.mat'];
-EEG = insertEvent2EEG(EEG, behavior_results_dir, behavior_filename);
-
-EEG.setname = [sub_id, '_channel_loc_lift_onset'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-
-%% Section 3: Filtering and downsample
-% Step 1: Lowpass filtering at 512 Hz to remove high freq noise
-EEG = pop_eegfiltnew(EEG, 'hicutoff', 512);
-
-EEG.setname = [sub_id, '_lowpass512Hz'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step 2: Downsample to 256 Hz to reduce computational demand
-EEG = pop_resample( EEG, 256);
-
-EEG.setname = [sub_id, '_resampled256Hz'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step 3: Highpass at 1 Hz to remove slow drift for better ICA
-EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
-
-EEG.setname = [sub_id, '_highpass1Hz'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-
-%% Section 4: Clean data
-% Step 1: Reject bad data use ASR
-% Keep original EEG
-originalEEG = EEG;
-% select only EEG channels
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
-% Interpolate channels.
-EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');   
-% putback EOG channel
-EEG = putback_nonEEG(EEG, originalEEG, EEG.etc.clean_sample_mask);
-
-EEG.setname = [sub_id, '_ASRclean'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step 2: Use cleanline plugin to remove 50 or 60 Hz line noise
-
-% Step 3: Apply average reference after adding initial reference channel
-% base on Makoto Miyakoshi's suggestions (https://sccn.ucsd.edu/wiki/Makoto's_preprocessing_pipeline) 
-% select only EEG channels
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-% add 0 to the reference channel
-EEG.nbchan = EEG.nbchan + 1;
-EEG.data(end+1, :) = zeros(1, EEG.pnts);
-EEG.chanlocs(1, EEG.nbchan).labels = 'initialReference';
-EEG = pop_reref(EEG, []);
-% remove the added reference channel
-EEG = pop_select(EEG, 'nochannel', {'initialReference'});
-% putback EOG channel
-EEG = putback_nonEEG(EEG, originalEEG);
-
-EEG.setname = [sub_id, '_rereference'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-% Step 4: Discard channels to make the data full ranked.
-if reduce2fullrank
-    % select only EEG channels
-    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-    dataRank = rank(EEG.data');
-
-    % discard channels
-    channelSubset = loc_subsets(EEG.chanlocs, dataRank);
-    EEG = pop_select(EEG, 'channel', channelSubset{1});
-    EEG = pop_chanedit(EEG, 'eval', 'chans = pop_chancenter( chans, [], [] );');
-
-    % putback EOG channel
-    EEG = putback_nonEEG(EEG, originalEEG);
-
-    EEG.setname = [sub_id, '_adjust_rank'];
+for All_sub_i = length(All_data_list) - 1:length(All_data_list)
+    clearvars -except All_*; close all; clc;
+    raw_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name);
+    tmp_filelist = dir(fullfile(raw_dir, '*.vhdr'));
+    raw_filename = tmp_filelist.name;
+    
+    % Step 1:
+    % % % % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/Data/Sxxx_EEG/', '*.vhdr'
+% % %     [raw_filename, raw_dir, ~] = uigetfile('*.vhdr','Select the raw EEG data file');
+% % %     [tmp_dir, foldername, ~]= fileparts(fileparts(raw_dir));
+    [tmp_dir, foldername, ~]= fileparts(raw_dir);
+    sub_id = foldername(1:4);
+    % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/Sxxx/';
+    [EEG_dir, ~, ~] = fileparts(tmp_dir);
+    output_dir = fullfile(EEG_dir, 'eeglab', [sub_id, '_', All_timelocking_type{:}]);
+    [tmp_dir, ~, ~] = fileparts(EEG_dir);
+    behavior_dir = fullfile(tmp_dir, 'behavior');
+    
+    %% EEGLab
+    % Import raw EEG data
+    [ALLEEG, EEG, ~, ALLCOM] = eeglab;
+    pop_editoptions('option_single', false); % make sure the EEG.data precision is 'double' not 'single'!
+    EEG.etc.eeglabvers = '15.1.1'; % this tracks which version of EEGLAB is being used, you may ignore it
+    
+    % Step 2:
+    EEG = pop_loadbv(raw_dir, raw_filename);
+    
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = pop_newset(ALLEEG, EEG, 0, 'setname', [sub_id, '_raw'], 'gui', 'off');
+    if ~isfolder(output_dir)
+        mkdir(output_dir);
+    end
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    
+    %% Section2: Experiment info
+    % Load channel locations and insert behavior (lift onset) events
+    % Step 1: Load channel locations
+    ANTNeuro_montage = {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG'};
+    if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, true only for S002
+        EEG = pop_select(EEG, 'channel', {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1'});
+        EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
+    end
+    
+    EEG = pop_chanedit(EEG, 'load', {fullfile(EEG_dir, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
+    % Step 2: Insert behavior events
+    % run insert_behavior_event_in2EEG to put behavior onset into EEG events
+    behavior_results_dir = fullfile(behavior_dir, 'matlab data/preliminary results');
+    behavior_filename = [sub_id, '_info_onset_time.mat'];
+    EEG = insertEvent2EEG(EEG, behavior_results_dir, behavior_filename);
+    
+    EEG.setname = [sub_id, '_channel_loc_lift_onset'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-end
-
-%% Section 5: Epoch around onset
-% Step 1:
-originalEEG_clean = EEG;
-% clean up trials without onset event
-EEG = checkEvent(EEG, 6);
-EEG = eeg_checkset( EEG );
-% find the tightest window for epoching
-ind_event = round([[EEG.event( strcmp({EEG.event.type}, 's9') ).latency]', ...
-                   [EEG.event( strcmp({EEG.event.type}, 's17') ).latency]', ...
-                   [EEG.event( strcmp({EEG.event.type}, 'onset') ).latency]', ...
-                   [EEG.event( strcmp({EEG.event.type}, 's33') ).latency]', ...
-                   [EEG.event( strcmp({EEG.event.type}, 's65') ).latency]', ...
-                   [EEG.event( strcmp({EEG.event.type}, 's129') ).latency]']);
-ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
-EEG = pop_epoch( EEG, {  'onset'  }, ind_b4afonset, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
-EEG = eeg_checkset( EEG );
-EEG.etc.epoch_latency = ind_b4afonset;
-EEG = eeg_checkset( EEG );
-% Step 2: Get experiment conditions
-sub_dir = fullfile(behavior_dir, 'matlab data', sub_id);
-file_list = dir(fullfile(sub_dir, '*.csv'));
-tmp = char({file_list.name});
-notPT = ~strcmp(cellstr(tmp(:, 11:12)), 'PT');
-cond = cell(size(notPT, 1), 1);
-for i  = 1:size(notPT, 1)
-    if notPT(i)
-        cond(i, 1) = cellstr(tmp(i, 11:12));
-    else
-        cond(i, 1) = cellstr(tmp(i, [11:12, 18]));
+    
+    %% Section 3: Filtering and downsample
+    % Step 1: Lowpass filtering at 512 Hz to remove high freq noise
+    EEG = pop_eegfiltnew(EEG, 'hicutoff', 512);
+    
+    EEG.setname = [sub_id, '_lowpass512Hz'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    % Step 2: Downsample to 256 Hz to reduce computational demand
+    EEG = pop_resample( EEG, 256);
+    
+    EEG.setname = [sub_id, '_resampled256Hz'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    % Step 3: Highpass at 1 Hz to remove slow drift for better ICA
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
+    
+    EEG.setname = [sub_id, '_highpass1Hz'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    
+    %% Section 4: Clean data
+    % Step 1: Reject bad data use ASR
+    % Keep original EEG
+    originalEEG = EEG;
+    % select only EEG channels
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
+    % Interpolate channels.
+    EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
+    % putback EOG channel
+    EEG = putback_nonEEG(EEG, originalEEG, EEG.etc.clean_sample_mask);
+    
+    EEG.setname = [sub_id, '_ASRclean'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    % Step 2: Use cleanline plugin to remove 50 or 60 Hz line noise
+    
+    % Step 3: Apply average reference after adding initial reference channel
+    % base on Makoto Miyakoshi's suggestions (https://sccn.ucsd.edu/wiki/Makoto's_preprocessing_pipeline)
+    % select only EEG channels
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    % add 0 to the reference channel
+    EEG.nbchan = EEG.nbchan + 1;
+    EEG.data(end+1, :) = zeros(1, EEG.pnts);
+    EEG.chanlocs(1, EEG.nbchan).labels = 'initialReference';
+    EEG = pop_reref(EEG, []);
+    % remove the added reference channel
+    EEG = pop_select(EEG, 'nochannel', {'initialReference'});
+    % putback EOG channel
+    EEG = putback_nonEEG(EEG, originalEEG);
+    
+    EEG.setname = [sub_id, '_rereference'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    % Step 4: Discard channels to make the data full ranked.
+    if All_reduce2fullrank
+        % select only EEG channels
+        EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+        dataRank = rank(EEG.data');
+        
+        % discard channels
+        channelSubset = loc_subsets(EEG.chanlocs, dataRank);
+        EEG = pop_select(EEG, 'channel', channelSubset{1});
+        EEG = pop_chanedit(EEG, 'eval', 'chans = pop_chancenter( chans, [], [] );');
+        
+        % putback EOG channel
+        EEG = putback_nonEEG(EEG, originalEEG);
+        
+        EEG.setname = [sub_id, '_adjust_rank'];
+        EEG = eeg_checkset( EEG );
+        [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+        EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
     end
-end
-for i = 1:length(EEG.epoch)
-    EEG.epoch(i).cond = cond(i, 1);
-    EEG.epoch(i).trialID = cellstr(tmp(i, 13:14));
-    EEG.epoch(i).condID = cellstr(tmp(i, 7:9));
-end
-EEG = eeg_checkset( EEG ); % ISSUE: for some mysterious reason this line is not exacuted!!!!!!!!!!!!!!!!!!!!!!!!!!!
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-disp(['data size', size(EEG.data)])
+    
+    %% Section 5: Epoch around onset
+    % Step 1:
+    originalEEG_clean = EEG;
+    % clean up trials without onset event
+    EEG = checkEvent(EEG, 6);
+    EEG = eeg_checkset( EEG );
+    % find the tightest window for epoching
+    tmp_ind_event = [find(strcmp({EEG.event.type}, 's9')); find(strcmp({EEG.event.type}, 's129'))];
+    ind_event = nan(length(tmp_ind_event), 4);
+    for i = 1:length(tmp_ind_event)
+        tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
+        
+        if length(tmp_event_series) >= (5 + 2) % {'s9', 's17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior marks
+            ind_event(i, :) = round([ [EEG.event( tmp_event_series(1) ).latency]', ...  % 's9'
+                                      [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
+                                      [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
+                                      [EEG.event( tmp_event_series(end) ).latency]' ]); % 's129'
+        end
+    end
+    ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 2)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 2)) / EEG.srate] * 100) / 100;
+    ind_b4afhold = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
+    ind_win = [max([ind_b4afonset(1), ind_b4afhold(1)]), min([ind_b4afonset(2), ind_b4afhold(2)])];
+    
+    EEG = pop_epoch( EEG, All_timelocking_type, ind_win, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
+    EEG = eeg_checkset( EEG );
+    EEG.etc.epoch_latency = ind_win;
+    EEG = eeg_checkset( EEG );
+    % Step 2: Get experiment conditions
+    sub_dir = fullfile(behavior_dir, 'matlab data', sub_id);
+    file_list = dir(fullfile(sub_dir, '*.csv'));
+    
+    tmp_filename_list = cell(length(ind_event), 1);
+    notPT = false(length(ind_event), 1);
+    tmp_id = 1;
+    for i = 1:length(ind_event)
+        if ~isnan(ind_event(i, 1))
+            tmp = char({file_list(tmp_id).name});
+            tmp_filename_list{i} = tmp;
+            notPT(i) = ~strcmp(tmp(11:12), 'PT');
+            tmp_id = tmp_id + 1;
+        end
+    end
+    cond = cell(size(notPT, 1), 1);
+    for i = 1:size(notPT, 1)
+        tmp_name = tmp_filename_list{i, 1};
+        if ~isempty(tmp_name)
+            if notPT(i)
+                cond(i, 1) = cellstr(tmp_name(11:12));
+            else
+                cond(i, 1) = cellstr(tmp_name([11:12, 18]));
+            end
+        end
+    end
+    for i = 1:length(EEG.epoch)
+        EEG.epoch(i).cond = cond(i, 1);
+        if ~isempty(tmp_filename_list{i, 1})
+            EEG.epoch(i).trialID = cellstr(tmp_filename_list{i, 1}(13:14));
+            EEG.epoch(i).condID = cellstr(tmp_filename_list{i, 1}(7:9));
+        end
+    end
+    EEG = eeg_checkset( EEG ); % ISSUE: for some mysterious reason this line is not exacuted!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    disp(['data size', size(EEG.data)])
+    
+    %% Section 6: ICA
+    % Step 1: Use runica() function
+    % keep original EEG
+    EEG = eeg_checkset( EEG ); % to work around the issue in
+    originalEEG_epoched = EEG;
+    disp(['data size', size(EEG.data)])
+    % select only EEG channels
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    EEG = pop_runica(EEG, 'chanind', [], 'extended', 1, 'interupt', 'on');
+    % putback EOG channel
+    EEG = putback_nonEEG(EEG, originalEEG_epoched);
+    
+    EEG.setname = [sub_id, '_ICA'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    %% Step 2: run MARA
+    % keep original EEG
+    originalEEG_ICA = EEG;
+    % select only EEG channels and get MARA ICs rejection suggestion
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    [ALLEEG, EEG, CURRENTSET] = processMARA( ALLEEG, EEG, CURRENTSET );
+    rejIC_MARA = logical(EEG.reject.gcompreject');
+    % update original EEG
+    EEG = originalEEG_ICA;
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    % Step 3: run SASICA
+    EEG = eeg_SASICA(EEG, 'MARA_enable', 0, 'FASTER_enable', 0, 'FASTER_blinkchanname', 'No channel', ...
+                     'ADJUST_enable', 1, 'chancorr_enable', 0, 'chancorr_channames', 'No channel', 'chancorr_corthresh', 'auto 4', ...
+                     'EOGcorr_enable', 1, 'EOGcorr_Heogchannames', 'HEOG', 'EOGcorr_corthreshH', 'auto 4', ...
+                     'EOGcorr_Veogchannames', 'No channel', 'EOGcorr_corthreshV', 'auto 4', ...
+                     'resvar_enable', 0, 'resvar_thresh', 15, ...
+                     'SNR_enable', 0, 'SNR_snrcut', 1, 'SNR_snrBL', [-Inf, 0], 'SNR_snrPOI', [0, Inf], ...
+                     'trialfoc_enable', 1, 'trialfoc_focaltrialout', 'auto', ...
+                     'focalcomp_enable', 1, 'focalcomp_focalICAout', 'auto', ...
+                     'autocorr_enable', 1, 'autocorr_autocorrint', 20, 'autocorr_dropautocorr', 'auto', ...
+                     'opts_noplot', 1, 'opts_nocompute', 0, 'opts_FontSize',14);
+    rejIC_SASICA = EEG.reject.gcompreject';
+    % Step 4: run ICLabel
+    EEG = pop_iclabel(EEG, 'default');
+    [~, class_i] = max(EEG.etc.ic_classification.ICLabel.classifications, [], 2);
+    ic_label = cell(size(class_i));
+    for i = 1:length(class_i)
+        ic_label(i) = EEG.etc.ic_classification.ICLabel.classes(class_i(i));
+    end
+    % Step 5: combine all suggested ICs rejection (MARA, SASICA, ICLabel)
+    % Keep ICs labeled as 'Brain' by ICLabel.
+    % When ICs are labeled as 'Other' by ICLabel, check MARA or SASICA classification.
+    % Reject the ICs if at least one rejection voted from MARA and SASICA.
+    rejIC_ICLabel_nonBrain = ~(strcmp(ic_label, 'Brain') | strcmp(ic_label, 'Other'));
+    rejIC_ICLabel_other = strcmp(ic_label, 'Other');
+    rejIC_other_vote = (rejIC_MARA | rejIC_SASICA) & rejIC_ICLabel_other;
+    rejIC_final = rejIC_other_vote | rejIC_ICLabel_nonBrain;
+    % Step 6: Remove the artifact components
+    EEG = pop_subcomp( EEG, find(rejIC_final), 0);
+    EEG = eeg_checkset( EEG );
+    EEG.nbic = size(EEG.icaact, 1);
+    % Step 7: Remove HEOG channel
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    EEG.setname = [sub_id, '_pruned_ICA'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
 
-%% Section 6: ICA
-% Step 1: Use runica() function
-% keep original EEG
-EEG = eeg_checkset( EEG ); % to work around the issue in 
-originalEEG_epoched = EEG;
-disp(['data size', size(EEG.data)])
-% select only EEG channels
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-EEG = pop_runica(EEG, 'chanind', [], 'extended', 1, 'interupt', 'on');
-% putback EOG channel
-EEG = putback_nonEEG(EEG, originalEEG_epoched);
-
-EEG.setname = [sub_id, '_ICA'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-%% Step 2: run MARA
-% keep original EEG
-originalEEG_ICA = EEG;
-% select only EEG channels and get MARA ICs rejection suggestion
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-[ALLEEG, EEG, CURRENTSET] = processMARA( ALLEEG, EEG, CURRENTSET );
-rejIC_MARA = logical(EEG.reject.gcompreject');
-% update original EEG
-EEG = originalEEG_ICA;
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-% Step 3: run SASICA
-EEG = eeg_SASICA(EEG, 'MARA_enable', 0, 'FASTER_enable', 0, 'FASTER_blinkchanname', 'No channel', ...
-                      'ADJUST_enable', 1, 'chancorr_enable', 0, 'chancorr_channames', 'No channel', 'chancorr_corthresh', 'auto 4', ...
-                      'EOGcorr_enable', 1, 'EOGcorr_Heogchannames', 'HEOG', 'EOGcorr_corthreshH', 'auto 4', ...
-                      'EOGcorr_Veogchannames', 'No channel', 'EOGcorr_corthreshV', 'auto 4', ...
-                      'resvar_enable', 0, 'resvar_thresh', 15, ...
-                      'SNR_enable', 0, 'SNR_snrcut', 1, 'SNR_snrBL', [-Inf, 0], 'SNR_snrPOI', [0, Inf], ...
-                      'trialfoc_enable', 1, 'trialfoc_focaltrialout', 'auto', ...
-                      'focalcomp_enable', 1, 'focalcomp_focalICAout', 'auto', ...
-                      'autocorr_enable', 1, 'autocorr_autocorrint', 20, 'autocorr_dropautocorr', 'auto', ...
-                      'opts_noplot', 1, 'opts_nocompute', 0, 'opts_FontSize',14);
-rejIC_SASICA = EEG.reject.gcompreject';
-% Step 4: run ICLabel
-EEG = pop_iclabel(EEG);
-[~, class_i] = max(EEG.etc.ic_classification.ICLabel.classifications, [], 2);
-ic_label = cell(size(class_i));
-for i = 1:length(class_i)
-    ic_label(i) = EEG.etc.ic_classification.ICLabel.classes(class_i(i));
-end
-% Step 5: combine all suggested ICs rejection (MARA, SASICA, ICLabel)
-% Keep ICs labeled as 'Brain' by ICLabel.
-% When ICs are labeled as 'Other' by ICLabel, check MARA or SASICA classification.
-% Reject the ICs if at least one rejection voted from MARA and SASICA.
-rejIC_ICLabel_nonBrain = ~(strcmp(ic_label, 'Brain') | strcmp(ic_label, 'Other'));
-rejIC_ICLabel_other = strcmp(ic_label, 'Other');
-rejIC_other_vote = (rejIC_MARA | rejIC_SASICA) & rejIC_ICLabel_other;
-rejIC_final = rejIC_other_vote | rejIC_ICLabel_nonBrain;
-% Step 6: Remove the artifact components
-EEG = pop_subcomp( EEG, find(rejIC_final), 0);
-EEG = eeg_checkset( EEG );
-EEG.nbic = size(EEG.icaact, 1);
-% Step 7: Remove HEOG channel
-EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-EEG.setname = [sub_id, '_pruned_ICA'];
-EEG = eeg_checkset( EEG );
-[ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
-
-% finish with SXXX_pruned_ICA dataset
-
-
-
-
-
-%% Clean up workspace to release memory
-% % % clear originalEEG*
-
-%{
+    % finish with SXXX_pruned_ICA dataset
+    
+    %}
+    
+    
+    
+    %% Clean up workspace to release memory
+    % % % clear originalEEG*
+    
+    %{
 %% Section 7: more behavior info
 % Get peak roll for each trial
 % load peak_roll
@@ -270,18 +312,18 @@ pRoll{1, 5} = peak_roll(and(cond(:, 1) == 'P', cond(:, end) == '2'), 1);
 pRoll{1, 6} = peak_roll(and(cond(:, 1) == 'P', cond(:, end) == '3'), 1);
 pRoll = cell2table(pRoll, 'VariableNames', cond_names);
 %%%%% maybe the roll angle should be plotted on time x trials plot
-%}
-
-%% Section 8: Time-freq analysis on ICs
-
-
-%% Time-freq analysis in tf_transform.m
-%{
+    %}
+    
+    %% Section 8: Time-freq analysis on ICs
+    
+    
+    %% Time-freq analysis in tf_transform.m
+    %{
 %% Section 9: Time-freq analysis on channels
 % For each component, plot the three bands (alpha, beta, and theta) power on time x trials (IL: 1~19, TR: 1-19, PT1: 1-19, PT2: 1-19, PT3: 1-19)
 cond_names = {'ALL', 'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 cond_nb = length(cond_names);
-% typeproc - type of processing: 1 process the raw channel data 
+% typeproc - type of processing: 1 process the raw channel data
 %                                0 process the ICA component data
 typeproc = str2double(input('\nChoose type of processing [1: raw, 0: component]: (default: 0) ', 's'));
 if isnan(typeproc)
@@ -333,20 +375,20 @@ for j = 1:cond_nb
 end
 
 save(fullfile(output_dir, [sub_id, '_tf_info']), 'tf_data', 'tf_ersp', 'tf_itc', 'tf_powbase', 'tf_times', 'tf_freqs', '-v7.3');
-%}
-
-
-%%
-
-
-
-
-
-
-
-%%
-
-%{
+    %}
+    
+    
+    %%
+    
+    
+    
+    
+    
+    
+    
+    %%
+    
+    %{
 EEG = pop_loadset('filename', [sub_id, '_pruned_ICA.set'], 'filepath', output_dir);
 
 
@@ -412,7 +454,7 @@ t_tf4theta_Fz_FCz = cell(1, length(cond_names));
 t_tf4alpha_C3_CP3 = cell(1, length(cond_names));
 t_tf4beta_C3_C1 = cell(1, length(cond_names));
 for j = 1:length(cond_names)
-    t_tf4theta_Fz_FCz{1, j} = mean([t_tf4theta{{'Fz'}, j}{:}, t_tf4theta{{'FCz'}, j}{:}], 2);    
+    t_tf4theta_Fz_FCz{1, j} = mean([t_tf4theta{{'Fz'}, j}{:}, t_tf4theta{{'FCz'}, j}{:}], 2);
     t_tf4alpha_C3_CP3{1, j} = mean([t_tf4alpha{{'C3'}, j}{:}, t_tf4alpha{{'CP3'}, j}{:}], 2);
     t_tf4beta_C3_C1{1, j} = mean([t_tf4beta{{'C3'}, j}{:}, t_tf4beta{{'C1'}, j}{:}], 2);
 end
@@ -461,4 +503,6 @@ tf_power_complex = array2table(tf_power_complex, 'VariableNames', cond_names, 'R
 tmp_filename = [sub_id, '_tf_power.mat'];
 power_change_filename = fullfile(EEG_dir, 'power_change', tmp_filename);
 save(power_change_filename, 'tf_power', 'tf_power_complex', 't_tf_power', 't_tf_power_complex', 'pRoll');
-%}
+    %}
+
+end
