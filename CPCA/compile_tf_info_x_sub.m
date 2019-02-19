@@ -37,13 +37,14 @@ for i = 1:nb_sub
         end
     end
     
-    % Get indices for 4-8 Hz (theta); 9-12 Hz (alpha); 20-30 Hz (beta)
+    % Get indices for 4-8 Hz (theta); 10-15 Hz (alpha); 20-30 Hz (beta)
     ind_theta = tf_freqs >= 4 & tf_freqs <= 8;
     ind_alpha = tf_freqs >= 10 & tf_freqs <= 15;
     ind_beta = tf_freqs >= 20 & tf_freqs <= 30;
     
     % Get indices for [-1000 onset 1000] ms
-    ind_t2s = tf_times >= -1000 & tf_times <= 1000;
+    ind_t2s = find(tf_times >= -1000 & tf_times <= 1000);
+    donwsample = 1;
     
     % average across freq bands
     %{
@@ -52,17 +53,18 @@ for i = 1:nb_sub
     tf_bands_beta = abs(mean(tf_all4d(ind_beta, ind_t2s, :, :), 1));
     %}
     % get all without averaging (too large Z matrix)
-    tf_bands_theta = tf_all4d(ind_theta, ind_t2s, :, :);
-    tf_bands_alpha = tf_all4d(ind_alpha, ind_t2s, :, :);
-    tf_bands_beta = tf_all4d(ind_beta, ind_t2s, :, :);
+    tf_bands_theta = tf_all4d(ind_theta, ind_t2s(1:donwsample:end), :, :);
+    tf_bands_alpha = tf_all4d(ind_alpha, ind_t2s(1:donwsample:end), :, :);
+    tf_bands_beta = tf_all4d(ind_beta, ind_t2s(1:donwsample:end), :, :);
     
     tf_bands_freqs = [tf_bands_theta; tf_bands_alpha; tf_bands_beta];
+% % %     tf_bands_freqs = tf_all4d(:, ind_t2s(1:donwsample:end), :, :);
     
     dimensions(i, :) = size(tf_bands_freqs);
     ticks_theta = tf_freqs(ind_theta);
     ticks_alpha = tf_freqs(ind_alpha);
     ticks_beta = tf_freqs(ind_beta);
-    ticks_time = tf_times(ind_t2s);
+    ticks_time = tf_times(ind_t2s(1:donwsample:end));
     
     %% decimate freqs and times
     %{
@@ -99,26 +101,60 @@ for i = 1:nb_sub
     %}
 
     
-    %% Z matrix
+    %% Z and G matrix
     % z_sub: epoch x (time x freq x channel)
+    %{
     %{
     %                    channel 1                        |                    channel 2                        | ...
     %          freq 1       |          freq 2       | ... |          freq 1       |          freq 2       | ... | ...
     % time 1 | time 2 | ... | time 1 | time 2 | ... | ... | time 1 | time 2 | ... | time 1 | time 2 | ... | ... | ...
     %}
+    
     % % % z_sub = reshape(permute(cat(4, tf_data{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
     % % % z_sub = reshape(permute(cat(4, tf_freq_band{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
     % % % z_sub = reshape(permute(cat(4, tf_ftbands{:, 1}), [3, 2, 1, 4]), EEG.trials, []);
+    
     z_sub{i} = reshape(permute(tf_bands_freqs, [3, 2, 1, 4]), tf_nb_trial, []);
     z_sub_theta{i} = reshape(permute(tf_bands_theta, [3, 2, 1, 4]), tf_nb_trial, []);
     z_sub_alpha{i} = reshape(permute(tf_bands_alpha, [3, 2, 1, 4]), tf_nb_trial, []);
     z_sub_beta{i} = reshape(permute(tf_bands_beta, [3, 2, 1, 4]), tf_nb_trial, []);
     
-    %% G matrix
+    % G matrix
     g_sub{i, 1} = nan(tf_nb_trial, nb_cond);
     for j = 1:nb_cond
         g_sub{i, 1}(:, j) = strcmp(tmp_cond_id, cond_names{j})';
     end
+    %}
+    
+    %%
+    % z_sub: (epoch x time) x (freq x channel)
+    %{
+    %                             channel 1                        |                    channel 2                        | ...
+    %                   freq 1       |          freq 2       | ... |          freq 1       |          freq 2       | ... | ...
+    %          time1
+    % epoch1   time2
+    %}
+    z_sub{i} = reshape(permute(tf_bands_freqs, [2, 3, 1, 4]), tf_nb_trial * length(ticks_time), []);
+    z_sub_theta{i} = reshape(permute(tf_bands_theta, [2, 3, 1, 4]), tf_nb_trial * length(ticks_time), []);
+    z_sub_alpha{i} = reshape(permute(tf_bands_alpha, [2, 3, 1, 4]), tf_nb_trial * length(ticks_time), []);
+    z_sub_beta{i} = reshape(permute(tf_bands_beta, [2, 3, 1, 4]), tf_nb_trial * length(ticks_time), []);
+    
+    % G matrix
+    tmp_sub = false(tf_nb_trial, nb_cond);
+    for j = 1:nb_cond
+        tmp_sub(:, j) = strcmp(tmp_cond_id, cond_names{j});
+    end
+    tmp_g_sub = cell(tf_nb_trial, nb_cond);
+    for j = 1:nb_cond
+        for k = 1:tf_nb_trial
+            if tmp_sub(k, j)
+                tmp_g_sub{k, j} = ones(length(ticks_time), 1);
+            else
+                tmp_g_sub{k, j} = zeros(length(ticks_time), 1);
+            end
+        end
+    end
+    g_sub{i, 1} = cell2mat(tmp_g_sub);
 end
 
 %% combine the huge Z

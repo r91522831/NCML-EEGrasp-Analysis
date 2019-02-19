@@ -27,6 +27,48 @@ addition_description = [];
 nb_tf = bin_time * bin_freq;
 
 
+% construct h for 3 bands x channel (freqs x channel)
+h_theta_alpha_beta = zeros(bin_freq, 3);
+h_theta_alpha_beta(ticks_theta, 1) = 1;
+h_theta_alpha_beta(ticks_alpha, 2) = 1;
+h_theta_alpha_beta(ticks_beta, 3) = 1;
+
+ALL_h = cell(bin_chan); % channel x channel
+for i = 1:bin_chan
+    for j = 1:bin_chan
+        if i == j
+            ALL_h{i, j} = h_theta_alpha_beta;
+        else
+            ALL_h{i, j} = zeros(size(h_theta_alpha_beta));
+        end
+    end
+end
+ALL_h = sparse(full(cell2mat(ALL_h))); % convert back to full matrix and then convert to sparse matrix can save some workspace run-time memory
+
+description = '3bandChan';
+%}
+% construct h for channel (freqs x channel)
+%{
+ALL_h = cell(bin_chan); % channel x channel
+for i = 1:bin_chan
+    for j = 1:bin_chan
+        if i == j
+            ALL_h{i, j} = ones(bin_freq, 1);
+        else
+            ALL_h{i, j} = zeros(bin_freq, 1);
+        end
+    end
+end
+ALL_h = sparse(full(cell2mat(ALL_h))); % convert back to full matrix and then convert to sparse matrix can save some workspace run-time memory
+
+description = 'chan';
+%}
+
+
+
+
+
+
 % construct h for single freq band (theta, alpha, beta) as time x channel
 %{
 % % % nb_f = length(ticks_theta);

@@ -7,41 +7,53 @@ filelist = dir(fullfile(pathname, '*_temp_result.mat'));
 
 nsub = length(filelist);
 all_sub_mx_pRoll = nan(95, 2, nsub);
+cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
+nb_cond = length(cond_names);
+mx_pRoll_cond = cell(nsub, nb_cond);
 for sub = 1:nsub
-    clearvars -except sub filelist pathname all_sub_mx_pRoll nsub
+    clearvars -except sub filelist pathname all_sub_mx_pRoll nsub nb_cond mx_pRoll_cond cond_names
     close all
     load(fullfile(pathname, filelist(sub).name));
     
     % add trial id to mx_onset and peak_roll
     tmp_filename = char({file_list(:).name});
-    trial_id = str2num(tmp_filename(:, 7:9));
+    
+    % get condition for trials
+    tmp_cond_list = file_list;
+    tmp_cond_id = cell(length(tmp_cond_list), 1);
+    for j = 1:length(tmp_cond_list)
+        if strcmp(tmp_cond_list(j).name(11:12), 'PT')
+            tmp_cond_id{j, 1} = tmp_cond_list(j).name([11:12, 18]);
+        else
+            tmp_cond_id{j, 1} = tmp_cond_list(j).name(11:12);
+        end
+    end
+    
+    trial_id = str2double(cellstr(tmp_filename(:, 7:9)));
     tmp_mx_onset = mx_onset;
     tmp_peak_roll = peak_roll{:, 'peakRoll'};
     subID = str2double(filelist(sub).name(2:4));
+    % aligned left and right
     if ~mod(subID, 2)
         tmp_mx_onset = -mx_onset;
         tmp_peak_roll = -tmp_peak_roll;
     end
-    if length(trial_id) ~= 95
-        tmp = nan(95, 2);
-        tmp_forward = 1;
-        for i = 1:95
-            if tmp_forward > length(trial_id)
-                break;
-            end
-            if i ~= trial_id(tmp_forward)
-                continue;
-            end
-            tmp(i, :) = [tmp_mx_onset(tmp_forward), tmp_peak_roll(tmp_forward)];
-            tmp_forward = tmp_forward + 1;
-        end
-    else
-        tmp = [tmp_mx_onset, tmp_peak_roll];
+    
+    tmp = nan(95, 2);
+    for i = 1:length(trial_id)
+        tmp(trial_id(i), :) = [tmp_mx_onset(i), tmp_peak_roll(i)];
     end
     all_sub_mx_pRoll(:, :, sub) = tmp;
+    
+    for j = 1:nb_cond
+        mx_pRoll_cond{sub, j} = tmp(strcmp(tmp_cond_id, cond_names{j}), :);
+    end
 end
 avg_mx_pRoll = nanmean(all_sub_mx_pRoll, 3);
 stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3) ./ sqrt(nsub);
+
+save(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs']), 'all_sub_mx_pRoll', 'mx_pRoll_cond');
+
 %%
 tmp = [str2double(file_list(1).name(7:9)), avg_mx_pRoll(1, :), stde_mx_pRoll(1, :)];
 ntrial = length(file_list);
@@ -92,14 +104,17 @@ for i = 1:length(session)
         otherwise
     end
     if strcmp(session{i, 1}, 'T')
-        errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), line_spec)
+        errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec)
+% % %         errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), line_spec)
     else
         shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), abs(session{i, 2}(:, 5)), line_spec)
     end
 end
 hold off
-ylim([-20, 10])
+ylim([-1, 16])
 ylabel('absolute peak roll ({\circ})')
+% % % ylim([-20, 10])
+% % % ylabel('peak roll ({\circ})')
 xlabel('trial')
 xlim([0, 96])
 mtit('error bars represent SE')
