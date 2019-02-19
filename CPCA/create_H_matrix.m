@@ -26,12 +26,26 @@ addition_description = [];
 
 nb_tf = bin_time * bin_freq;
 
-
 % construct h for 3 bands x channel (freqs x channel)
-h_theta_alpha_beta = zeros(bin_freq, 3);
-h_theta_alpha_beta(ticks_theta, 1) = 1;
-h_theta_alpha_beta(ticks_alpha, 2) = 1;
-h_theta_alpha_beta(ticks_beta, 3) = 1;
+if bin_freq == length(ticks_theta) + length(ticks_alpha) + length(ticks_beta)
+    iof_ticks = [{ticks_theta}; {ticks_alpha}; {ticks_beta}];
+    h_theta_alpha_beta = cell(3, 3);
+    for i = 1:3
+        for j = 1:3
+            if i == j
+                h_theta_alpha_beta{i, j} = ones(length(iof_ticks{i}), 1);
+            else
+                h_theta_alpha_beta{i, j} = zeros(length(iof_ticks{i}), 1);
+            end
+        end
+    end
+    h_theta_alpha_beta = cell2mat(h_theta_alpha_beta);
+else
+    h_theta_alpha_beta = zeros(bin_freq, 3);
+    h_theta_alpha_beta(ticks_theta, 1) = 1;
+    h_theta_alpha_beta(ticks_alpha, 2) = 1;
+    h_theta_alpha_beta(ticks_beta, 3) = 1;
+end
 
 ALL_h = cell(bin_chan); % channel x channel
 for i = 1:bin_chan
