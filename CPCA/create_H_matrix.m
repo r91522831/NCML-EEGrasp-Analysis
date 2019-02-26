@@ -23,10 +23,14 @@ addition_description = [];
 % % % bin_freq = 1;
 % % % addition_description = '_singleFband';
 
-
-nb_tf = bin_time * bin_freq;
+if exist('bin_freq', 'var')
+    nb_tf = bin_time * bin_freq;
+else
+    nb_tf = bin_time;
+end
 
 % construct h for 3 bands x channel (freqs x channel)
+%{
 if bin_freq == length(ticks_theta) + length(ticks_alpha) + length(ticks_beta)
     iof_ticks = [{ticks_theta}; {ticks_alpha}; {ticks_beta}];
     h_theta_alpha_beta = cell(3, 3);
@@ -61,6 +65,7 @@ ALL_h = sparse(full(cell2mat(ALL_h))); % convert back to full matrix and then co
 
 description = '3bandChan';
 %}
+
 % construct h for channel (freqs x channel)
 %{
 ALL_h = cell(bin_chan); % channel x channel
@@ -110,7 +115,7 @@ description = 'TimeChan_beta';
 
 
 % construct h for channel
-%{
+
 ALL_h = cell(bin_chan); % channel x channel
 for i = 1:bin_chan
     for j = 1:bin_chan
@@ -122,7 +127,8 @@ for i = 1:bin_chan
     end
 end
 ALL_h = cell2mat(ALL_h);
-description = 'chan';
+description = 'chan4rawV';
+% % % description = 'chan';
 %}
 
 % construct h for freq bands (theta, alpha, beta)
