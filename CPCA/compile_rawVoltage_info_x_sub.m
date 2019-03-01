@@ -2,7 +2,8 @@ close; clear; clc;
 
 data_dir = uigetdir;
 behavior_dir = fullfile(fileparts(fileparts(fileparts(fileparts(data_dir)))), 'behavior', 'matlab data');
-output_dir = fullfile(fileparts(data_dir), 'rawVoltage');
+% % % output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trial_chanTime');
+output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trialTime_chan');
 if ~isfolder(output_dir)
     mkdir(output_dir);
 end
@@ -56,14 +57,16 @@ for sub_i = 1:nb_sub
     end
     ind_win = (ind_t0 - ind_win_half_width):(ind_t0 + ind_win_half_width);
     extracted_data = sub_data{sub_i, 1}(:, ind_win, :);    
-
+    
+    nb_trial = length(sub_data{sub_i, 4});
+    
     % Z and G matrix
     % z_sub: epoch x (time x channel)
+    %{
     %{
     %                    channel 1                        |                    channel 2                        | ...
     %          time 1       |          time 2       | ... |          time 1       |          time 2       | ... | ...
     %}
-    nb_trial = length(sub_data{sub_i, 4});
     z_sub{sub_i} = reshape(permute(sub_data{sub_i, 1}, [3, 2, 1]), nb_trial, []);
 
     % G matrix
@@ -73,23 +76,23 @@ for sub_i = 1:nb_sub
     end
     %}
     
+    ticks_time = sub_data{sub_i, 2};
     % z_sub: (epoch x time) x channel
-    %{
     %{
     %                             channel 1                        |                    channel 2                        | ...
     %          time1
     % epoch1   time2
     %}
-    z_sub{i} = reshape(permute(tf_bands_freqs, [2, 3, 1, 4]), tf_nb_trial * length(ticks_time), []);
+    z_sub{sub_i} = reshape(permute(sub_data{sub_i, 1}, [2, 3, 1]), nb_trial * length(ticks_time), []);
     
     % G matrix
-    tmp_sub = false(tf_nb_trial, nb_cond);
+    tmp_sub = false(nb_trial, nb_cond);
     for j = 1:nb_cond
-        tmp_sub(:, j) = strcmp(tmp_cond_id, cond_names{j});
+        tmp_sub(:, j) = strcmp(sub_data{sub_i, 4}, cond_names{j})';
     end
-    tmp_g_sub = cell(tf_nb_trial, nb_cond);
+    tmp_g_sub = cell(nb_trial, nb_cond);
     for j = 1:nb_cond
-        for k = 1:tf_nb_trial
+        for k = 1:nb_trial
             if tmp_sub(k, j)
                 tmp_g_sub{k, j} = ones(length(ticks_time), 1);
             else
@@ -97,7 +100,7 @@ for sub_i = 1:nb_sub
             end
         end
     end
-    g_sub{i, 1} = cell2mat(tmp_g_sub);
+    g_sub{sub_i, 1} = cell2mat(tmp_g_sub);
     %}
 end
 

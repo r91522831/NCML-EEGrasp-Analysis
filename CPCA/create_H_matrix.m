@@ -127,7 +127,7 @@ for i = 1:bin_chan
     end
 end
 ALL_h = cell2mat(ALL_h);
-description = 'chan4rawV';
+description = 'chan4rawV_chanTime';
 % % % description = 'chan';
 %}
 
