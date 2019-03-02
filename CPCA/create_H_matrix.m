@@ -115,7 +115,7 @@ description = 'TimeChan_beta';
 
 
 % construct h for channel
-
+%{
 ALL_h = cell(bin_chan); % channel x channel
 for i = 1:bin_chan
     for j = 1:bin_chan
@@ -128,7 +128,12 @@ for i = 1:bin_chan
 end
 ALL_h = cell2mat(ALL_h);
 description = 'chan4rawV_chanTime';
-% % % description = 'chan';
+%}
+
+% construct h for channel
+
+ALL_h = eye(bin_chan); % channel x channel
+description = 'chan';
 %}
 
 % construct h for freq bands (theta, alpha, beta)

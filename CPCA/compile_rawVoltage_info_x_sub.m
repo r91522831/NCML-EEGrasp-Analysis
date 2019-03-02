@@ -44,6 +44,21 @@ for sub_i = 1:nb_sub
     sub_data{sub_i, 1} = sub_data{sub_i, 1}(:, (ind_time(sub_i, 1) - min(ind_time(:, 1)) + 1):(ind_time(sub_i, 1) + min(ind_time(:, 2))), :);
     sub_data{sub_i, 2} = sub_data{sub_i, 2}(1, (ind_time(sub_i, 1) - min(ind_time(:, 1)) + 1):(ind_time(sub_i, 1) + min(ind_time(:, 2))));
 end
+%% Downsample data
+d_factor = 8;
+for sub_i = 1:nb_sub
+    tmp_data = sub_data{sub_i, 1};
+    tmp_dnsampled = nan(size(tmp_data, 1), ceil(size(tmp_data, 2) / d_factor), size(tmp_data, 3));
+    for i = 1:size(tmp_data, 1)
+        for j = 1:size(tmp_data, 3)
+            tmp_dnsampled(i, :, j) = decimate(tmp_data(i, :, j), d_factor);
+        end
+    end
+    sub_data{sub_i, 1} = tmp_dnsampled;
+    sub_data{sub_i, 2} = decimate(sub_data{sub_i, 2}, d_factor);
+    sub_data{sub_i, 3} = ceil(sub_data{sub_i, 3} / d_factor);
+end
+
 
 %% Constrained Principal Component Analysis
 z_sub = cell(nb_sub, 1);
