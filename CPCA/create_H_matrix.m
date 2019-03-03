@@ -30,7 +30,7 @@ else
 end
 
 % construct h for 3 bands x channel (freqs x channel)
-%{
+
 if bin_freq == length(ticks_theta) + length(ticks_alpha) + length(ticks_beta)
     iof_ticks = [{ticks_theta}; {ticks_alpha}; {ticks_beta}];
     h_theta_alpha_beta = cell(3, 3);
@@ -131,7 +131,7 @@ description = 'chan4rawV_chanTime';
 %}
 
 % construct h for channel
-
+%{
 ALL_h = eye(bin_chan); % channel x channel
 description = 'chan';
 %}

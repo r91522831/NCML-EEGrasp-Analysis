@@ -162,6 +162,28 @@ ALL_z = cat(1, z_sub{:});
 ALL_z_theta = cat(1, z_sub_theta{:});
 ALL_z_alpha = cat(1, z_sub_alpha{:});
 ALL_z_beta = cat(1, z_sub_beta{:});
+
+% demean across subjects
+%{
+z_size = size(ALL_z);
+z_size_theta = size(ALL_z_theta);
+z_size_alpha = size(ALL_z_alpha);
+z_size_beta = size(ALL_z_beta);
+a = ALL_z;
+for i = 1:z_size(2)
+    ALL_z(:, i) = ALL_z(:, i) - repmat(mean(ALL_z(:, i)), z_size(1), 1);
+end
+for i = 1:z_size_theta(2)
+    ALL_z_theta(:, i) = ALL_z_theta(:, i) - repmat(mean(ALL_z_theta(:, i)), z_size_theta(1), 1);
+end
+for i = 1:z_size_alpha(2)
+    ALL_z_alpha(:, i) = ALL_z_alpha(:, i) - repmat(mean(ALL_z_alpha(:, i)), z_size_alpha(1), 1);
+end
+for i = 1:z_size_beta(2)
+    ALL_z_beta(:, i) = ALL_z_beta(:, i) - repmat(mean(ALL_z_beta(:, i)), z_size_beta(1), 1);
+end
+%}
+
 %% combine the huge G
 ALL_g = cell(nb_sub);
 for i = 1:nb_sub
