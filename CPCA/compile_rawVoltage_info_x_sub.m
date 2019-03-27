@@ -2,8 +2,8 @@ close; clear; clc;
 
 data_dir = uigetdir;
 behavior_dir = fullfile(fileparts(fileparts(fileparts(fileparts(data_dir)))), 'behavior', 'matlab data');
-% % % output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trial_chanTime');
-output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trialTime_chan');
+output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trial_chanTime');
+% % % output_dir = fullfile(fileparts(data_dir), 'rawVoltage_trialTime_chan');
 if ~isfolder(output_dir)
     mkdir(output_dir);
 end
@@ -78,7 +78,6 @@ for sub_i = 1:nb_sub
     % Z and G matrix
     % z_sub: epoch x (time x channel)
     %{
-    %{
     %                    channel 1                        |                    channel 2                        | ...
     %          time 1       |          time 2       | ... |          time 1       |          time 2       | ... | ...
     %}
@@ -91,14 +90,14 @@ for sub_i = 1:nb_sub
     end
     %}
     
-    ticks_time = sub_data{sub_i, 2};
     % z_sub: (epoch x time) x channel
     %{
     %                             channel 1                        |                    channel 2                        | ...
     %          time1
     % epoch1   time2
     %}
-    z_sub{sub_i} = reshape(permute(sub_data{sub_i, 1}, [2, 3, 1]), nb_trial * length(ticks_time), []);
+    %{
+    z_sub{sub_i} = reshape(permute(sub_data{sub_i, 1}, [2, 3, 1]), nb_trial * length(sub_data{sub_i, 2}), []);
     
     % G matrix
     tmp_sub = false(nb_trial, nb_cond);
@@ -109,9 +108,9 @@ for sub_i = 1:nb_sub
     for j = 1:nb_cond
         for k = 1:nb_trial
             if tmp_sub(k, j)
-                tmp_g_sub{k, j} = ones(length(ticks_time), 1);
+                tmp_g_sub{k, j} = ones(length(sub_data{sub_i, 2}), 1);
             else
-                tmp_g_sub{k, j} = zeros(length(ticks_time), 1);
+                tmp_g_sub{k, j} = zeros(length(sub_data{sub_i, 2}), 1);
             end
         end
     end

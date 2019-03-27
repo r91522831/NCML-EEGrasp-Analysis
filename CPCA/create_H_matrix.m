@@ -30,7 +30,7 @@ else
 end
 
 % construct h for 3 bands x channel (freqs x channel)
-
+%{
 if bin_freq == length(ticks_theta) + length(ticks_alpha) + length(ticks_beta)
     iof_ticks = [{ticks_theta}; {ticks_alpha}; {ticks_beta}];
     h_theta_alpha_beta = cell(3, 3);
@@ -137,7 +137,7 @@ description = 'chan';
 %}
 
 % construct h for freq bands (theta, alpha, beta)
-%{
+
 % construct ones for freq bands with different freq bins: length(theta), length(alpha), length(beta)
 h_time_fband = {ones(bin_time * length(ticks_theta), 1), ones(bin_time * length(ticks_alpha), 1), ones(bin_time * length(ticks_beta), 1)};
 bin_freq_band = 3;
