@@ -63,7 +63,7 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     % Load channel locations and insert behavior (lift onset) events
     % Step 1: Load channel locations
     ANTNeuro_montage = {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG'};
-    if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, true only for S002
+    if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, only for S002
         EEG = pop_select(EEG, 'channel', {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1'});
         EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
     end
@@ -165,13 +165,21 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     % clean up trials without onset event
     EEG = checkEvent(EEG, 6);
     EEG = eeg_checkset( EEG );
+    
+    %%
+    % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    % should re-run epoch before ICA
+    ind_win = [-1.5, 2.5];
+    
+    
+    %{
     % find the tightest window for epoching
     tmp_ind_event = [find(strcmp({EEG.event.type}, 's9')); find(strcmp({EEG.event.type}, 's129'))];
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
         tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
         
-        if length(tmp_event_series) >= (5 + 2) % {'s9', 's17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior marks
+        if length(tmp_event_series) >= (5 + 2) % {'s9', 's17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
             ind_event(i, :) = round([ [EEG.event( tmp_event_series(1) ).latency]', ...  % 's9'
                                       [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
                                       [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
@@ -181,7 +189,7 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 2)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 2)) / EEG.srate] * 100) / 100;
     ind_b4afhold = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
     ind_win = [max([ind_b4afonset(1), ind_b4afhold(1)]), min([ind_b4afonset(2), ind_b4afhold(2)])];
-    
+    %}
     EEG = pop_epoch( EEG, All_timelocking_type, ind_win, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
     EEG = eeg_checkset( EEG );
     EEG.etc.epoch_latency = ind_win;
