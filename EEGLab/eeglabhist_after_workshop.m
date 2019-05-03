@@ -22,34 +22,38 @@ switch input('Does the epoch time locked at lift onset (no if at hold)?(y/N)', '
         All_timelocking_type = {  'hold'  };
 end
 
+disp('Select the project folder in the BIDS_format directory:')
 All_data = uigetdir;
-All_data_list = dir(fullfile(All_data, 'S*'));
+All_data_list = dir(fullfile(All_data, 'sub-*'));
+All_root_dir = fileparts(fileparts(All_data));
 
-for All_sub_i = length(All_data_list) - 1:length(All_data_list)
-    clearvars -except All_*; close all; clc;
-    raw_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name);
+%% for All_sub_i = 1:length(All_data_list) % run for all subjects
+
+%%% design an UI to select which to process!!!!!!!!!!!!!!! May 3, 2019, Yen
+
+for All_sub_i = 7%6:7 % run only sub-09 and sub-10 for meeting on May 7th    
+    clearvars -except All_*; close all;
+    % get path and file name for raw EEG data in BrainVision format
+    disp(['Processing data for ', All_data_list(All_sub_i).name, ' ...'])
+    raw_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'eeg', 'bv');
     tmp_filelist = dir(fullfile(raw_dir, '*.vhdr'));
     raw_filename = tmp_filelist.name;
+    clear tmp_filelist
     
-    % Step 1:
-    % % % % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/Data/Sxxx_EEG/', '*.vhdr'
-% % %     [raw_filename, raw_dir, ~] = uigetfile('*.vhdr','Select the raw EEG data file');
-% % %     [tmp_dir, foldername, ~]= fileparts(fileparts(raw_dir));
-    [tmp_dir, foldername, ~]= fileparts(raw_dir);
-    sub_id = foldername(1:4);
-    % '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/Sxxx/';
-    [EEG_dir, ~, ~] = fileparts(tmp_dir);
-    output_dir = fullfile(EEG_dir, 'eeglab', [sub_id, '_', All_timelocking_type{:}]);
-    [tmp_dir, ~, ~] = fileparts(EEG_dir);
-    behavior_dir = fullfile(tmp_dir, 'behavior');
+    %% Step 1:
+    % Ex: '/Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-xx/eeg/bv', '*.vhdr'
+    % get sub_id
+    [~, sub_id, ~]= fileparts(fileparts(fileparts(raw_dir)));
+    % set EEG output path
+    % output_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/001 Process/Sxxx/';
+    output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '001 Process', [sub_id, '_', All_timelocking_type{:}]);
     
     %% EEGLab
     % Import raw EEG data
     [ALLEEG, EEG, ~, ALLCOM] = eeglab;
     pop_editoptions('option_single', false); % make sure the EEG.data precision is 'double' not 'single'!
-    EEG.etc.eeglabvers = '15.1.1'; % this tracks which version of EEGLAB is being used, you may ignore it
+    EEG.etc.eeglabvers = 'develop'; % this tracks which version of EEGLAB is being used, you may ignore it
     
-    % Step 2:
     EEG = pop_loadbv(raw_dir, raw_filename);
     
     EEG = eeg_checkset( EEG );
@@ -62,18 +66,38 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     %% Section2: Experiment info
     % Load channel locations and insert behavior (lift onset) events
     % Step 1: Load channel locations
-    ANTNeuro_montage = {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG'};
+    ANTNeuro_montage = { 'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', ...
+                         'FC5', 'FC1', 'FC2', 'FC6', ...
+                         'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', ...
+                         'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', ...
+                         'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', ...
+                         'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', ...
+                         'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', ...
+                         'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', ...
+                         'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'HEOG' };
     if ~all(ismember({EEG.chanlocs.labels}, ANTNeuro_montage)) % montage are different, only for S002
-        EEG = pop_select(EEG, 'channel', {'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FC5', 'FC1', 'FC2', 'FC6', 'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', 'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', 'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', 'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', 'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1'});
+        EEG = pop_select(EEG, 'channel', { 'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', ...
+                                           'FC5', 'FC1', 'FC2', 'FC6', ...
+                                           'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', ...
+                                           'CP5', 'CP1', 'CP2', 'CP6', 'P7', 'P3', 'Pz', 'P4', 'P8', ...
+                                           'POz', 'O1', 'O2', 'AF7', 'AF3', 'AF4', 'AF8', ...
+                                           'F5', 'F1', 'F2', 'F6', 'FC3', 'FCz', 'FC4', ...
+                                           'C5', 'C1', 'C2', 'C6', 'CP3', 'CP4', ...
+                                           'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', ...
+                                           'FT7', 'FT8', 'TP7', 'TP8', 'PO7', 'PO8', 'Oz', 'BIP1' });
         EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
-    end
+    end 
     
-    EEG = pop_chanedit(EEG, 'load', {fullfile(EEG_dir, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
+    EEG = pop_chanedit(EEG, 'load', {fullfile(All_data, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
     % Step 2: Insert behavior events
+    % get behavior output path
+    % behavior_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/';
+    behavior_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'behavior');
+    behavior_BIDS_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'beh', 'csv');
     % run insert_behavior_event_in2EEG to put behavior onset into EEG events
-    behavior_results_dir = fullfile(behavior_dir, 'matlab data/preliminary results');
-    behavior_filename = [sub_id, '_info_onset_time.mat'];
-    EEG = insertEvent2EEG(EEG, behavior_results_dir, behavior_filename);
+    behavior_results_dir = fullfile(behavior_dir, 'preliminary results');
+    behavior_filename = ['S0', sub_id(end-1:end), '_info_onset_time.mat'];
+    EEG = insertEvent2EEG(EEG, behavior_results_dir, behavior_filename, behavior_BIDS_dir);
     
     EEG.setname = [sub_id, '_channel_loc_lift_onset'];
     EEG = eeg_checkset( EEG );
@@ -87,18 +111,16 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     EEG.setname = [sub_id, '_lowpass512Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
     % Step 2: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
     
     EEG.setname = [sub_id, '_resampled256Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
     % Step 3: Highpass at 1 Hz to remove slow drift for better ICA
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
     
-    EEG.setname = [sub_id, '_highpass1Hz'];
+    EEG.setname = [sub_id, '_lp512Hz_resample256Hz_hp1Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
@@ -166,14 +188,10 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     EEG = checkEvent(EEG, 6);
     EEG = eeg_checkset( EEG );
     
-    %%
-    % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     % should re-run epoch before ICA
+    % epoch with a window -1500 to 2000 ms around the key event
     ind_win = [-1.5, 2.5];
     
-    
-    %{
-    % find the tightest window for epoching
     tmp_ind_event = [find(strcmp({EEG.event.type}, 's9')); find(strcmp({EEG.event.type}, 's129'))];
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
@@ -186,6 +204,8 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
                                       [EEG.event( tmp_event_series(end) ).latency]' ]); % 's129'
         end
     end
+    %{
+    % find the tightest window for epoching
     ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 2)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 2)) / EEG.srate] * 100) / 100;
     ind_b4afhold = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
     ind_win = [max([ind_b4afonset(1), ind_b4afhold(1)]), min([ind_b4afonset(2), ind_b4afhold(2)])];
@@ -195,38 +215,62 @@ for All_sub_i = length(All_data_list) - 1:length(All_data_list)
     EEG.etc.epoch_latency = ind_win;
     EEG = eeg_checkset( EEG );
     % Step 2: Get experiment conditions
-    sub_dir = fullfile(behavior_dir, 'matlab data', sub_id);
-    file_list = dir(fullfile(sub_dir, '*.csv'));
+    file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
     
+    %!!!!!!!!! condType: IL, TR, PT; cond: IL, TR, PT1, PT2, PT3
     tmp_filename_list = cell(length(ind_event), 1);
     notPT = false(length(ind_event), 1);
+    isIL = false(length(ind_event), 1);
     tmp_id = 1;
     for i = 1:length(ind_event)
         if ~isnan(ind_event(i, 1))
             tmp = char({file_list(tmp_id).name});
             tmp_filename_list{i} = tmp;
             notPT(i) = ~strcmp(tmp(11:12), 'PT');
+            isIL(i) = strcmp(tmp(11:12), 'IL');
             tmp_id = tmp_id + 1;
         end
     end
     cond = cell(size(notPT, 1), 1);
+    condType = cell(size(notPT, 1), 1);
+    condID = cell(size(notPT, 1), 1);
+    condTypeID = cell(size(notPT, 1), 1);
     for i = 1:size(notPT, 1)
         tmp_name = tmp_filename_list{i, 1};
         if ~isempty(tmp_name)
             if notPT(i)
                 cond(i, 1) = cellstr(tmp_name(11:12));
+                if isIL(i)
+                    condID(i, 1) = cellstr(tmp_name(17:18));
+                else
+                    condID(i, 1) = cellstr(num2str(floor(str2double(tmp_name(13:14)) / 2), '%02d'));
+                end
+                condTypeID(i, 1) = condID(i, 1);
             else
                 cond(i, 1) = cellstr(tmp_name([11:12, 18]));
+                condID(i, 1) = cellstr(num2str(floor(str2double(tmp_name(13:14)) / 2), '%02d'));
+                condTypeID(i, 1) = cellstr((num2str((floor(str2double(tmp_name(13:14)) / 2) - 1)  * 3 + str2double(tmp_name(18)), '%02d')));
             end
+            condType(i, 1) = cellstr(tmp_name(11:12));
         end
     end
     for i = 1:length(EEG.epoch)
-        EEG.epoch(i).cond = cond(i, 1);
+        EEG.epoch(i).cond = cond{i, 1};
+        EEG.epoch(i).condType = condType{i, 1};
+        EEG.epoch(i).condID = condID{i, 1};
+        EEG.epoch(i).condTypeID = condTypeID{i, 1};
         if ~isempty(tmp_filename_list{i, 1})
-            EEG.epoch(i).trialID = cellstr(tmp_filename_list{i, 1}(13:14));
-            EEG.epoch(i).condID = cellstr(tmp_filename_list{i, 1}(7:9));
+            EEG.epoch(i).trialID = tmp_filename_list{i, 1}(7:9);
         end
     end
+    for i = 1:length(EEG.event) % for LIMO exp design
+        EEG.event(i).cond = EEG.epoch(EEG.event(i).epoch).cond;
+        EEG.event(i).condType = EEG.epoch(EEG.event(i).epoch).condType;
+        EEG.event(i).condID = EEG.epoch(EEG.event(i).epoch).condID;
+        EEG.event(i).condTypeID = EEG.epoch(EEG.event(i).epoch).condTypeID;
+        EEG.event(i).trialID = EEG.epoch(EEG.event(i).epoch).trialID;
+    end
+    
     EEG = eeg_checkset( EEG ); % ISSUE: for some mysterious reason this line is not exacuted!!!!!!!!!!!!!!!!!!!!!!!!!!!
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);

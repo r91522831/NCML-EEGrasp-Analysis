@@ -1,10 +1,10 @@
-function [EEG] = insertEvent2EEG(EEG, pathname, filename)
+function [EEG] = insertEvent2EEG(EEG, pathname, filename, behavior_BIDS_dir)
 % insertEvent2EEG Summary of this function goes here
 %   Detailed explanation goes here
 behavior = load(fullfile(pathname, filename));
 tmp_ready = [EEG.event(2:5:end-1).latency]';
 
-trial_filelist = dir(fullfile(fileparts(pathname), filename(1:4), '*.csv'));
+trial_filelist = dir(fullfile(behavior_BIDS_dir, '*.csv'));
 trial_list = cellfun(@(x) str2double(x(7:9)), {trial_filelist.name}');
 nb_trial = length(tmp_ready);
 
