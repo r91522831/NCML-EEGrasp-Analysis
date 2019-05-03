@@ -34,7 +34,7 @@ for sub = 1:nsub
     tmp_peak_roll = peak_roll{:, 'peakRoll'};
     subID = str2double(filelist(sub).name(2:4));
     % aligned left and right
-    if ~mod(subID, 2)
+    if ~mod(subID, 2) % Odd number subject started IL with Left handle, while even number subject started with right handle!
         tmp_mx_onset = -mx_onset;
         tmp_peak_roll = -tmp_peak_roll;
     end
