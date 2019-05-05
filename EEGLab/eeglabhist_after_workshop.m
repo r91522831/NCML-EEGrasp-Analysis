@@ -31,7 +31,7 @@ All_root_dir = fileparts(fileparts(All_data));
 
 %%% design an UI to select which to process!!!!!!!!!!!!!!! May 3, 2019, Yen
 
-for All_sub_i = 7%6:7 % run only sub-09 and sub-10 for meeting on May 7th    
+for All_sub_i = 1:length(All_data_list) %6:7 % run only sub-09 and sub-10 for meeting on May 7th    
     clearvars -except All_*; close all;
     % get path and file name for raw EEG data in BrainVision format
     disp(['Processing data for ', All_data_list(All_sub_i).name, ' ...'])
