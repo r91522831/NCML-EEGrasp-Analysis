@@ -7,7 +7,19 @@ if ~exist(All_figpath, 'dir')
     mkdir(All_figpath);
 end
 
-for All_i = 1:length(All_dirlist)
+% save result?
+switch input('Save result figures?(y/N) ', 's')
+    case {'y', 'Y'}
+        All_is_saving = true;
+    otherwise
+        All_is_saving = false;
+end
+% 
+disp([num2cell([1:length(All_dirlist)]'), {All_dirlist.name}']);
+selected_sub = input('Which subject(s) to plot erpimage? ');
+
+%
+for All_i = selected_sub% 1:length(All_dirlist)
     clearvars -except All_*; close all;
     filepath = fullfile(All_dirpath, All_dirlist(All_i).name);
     filelist = dir(fullfile(filepath, '*.set'));
@@ -49,7 +61,10 @@ for All_i = 1:length(All_dirlist)
     erpimage_subplot(EEG, freqName3, chanName1, colID);
     suptitle([subID, ' ', freqName3, ' ', chanName1, ' ', chanName2, ' ', chanName3]);
     filename_fig = [subID, '_', chanName1, '_', chanName2, '_', chanName3, '.fig'];
-    savefig(h_fig1, fullfile(All_figpath, filename_fig),'compact');
+    
+    if All_is_saving
+        savefig(h_fig1, fullfile(All_figpath, filename_fig),'compact');
+    end
     
     figure(h_fig2);
     colID = 3; % column 1, 2, or 3
@@ -93,8 +108,12 @@ for All_i = 1:length(All_dirlist)
     suptitle([subID, ' ', freqName1, ' ', chanName13, ' ', freqName2, ' ', chanName23, ' ', freqName3, ' ', chanName33]);
     
     filename_fig = [subID, '_', chanName12, '_', chanName22, '_', chanName32, '.fig'];
-    savefig(h_fig2, fullfile(All_figpath, filename_fig),'compact');
+    if All_is_saving
+        savefig(h_fig2, fullfile(All_figpath, filename_fig),'compact');
+    end
     filename_fig = [subID, '_', chanName13, '_', chanName23, '_', chanName33, '.fig'];
-    savefig(h_fig3, fullfile(All_figpath, filename_fig),'compact');
+    if All_is_saving
+        savefig(h_fig3, fullfile(All_figpath, filename_fig),'compact');
+    end
 end
 
