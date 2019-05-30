@@ -457,7 +457,12 @@ tf_times = cell(size(electrodes));
 tf_freqs = cell(size(electrodes));
 tf_data = cell(size(electrodes));
 for i = 1:length(electrodes)
-    figure; [tf_ersp{i}, tf_itc{i}, tf_powbase{i}, tf_times{i}, tf_freqs{i}, ~, ~, tf_data{i}] = pop_newtimef( EEG, 1, electrodes{i}, [-1500, 2500], [3, 0.5] , 'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, 'baseline',[-600, -100], 'basenorm', 'on', 'trialbase', 'full', 'plotitc' , 'off', 'plotphase', 'off', 'padratio', 1, 'trialbase', 'full', 'winsize', 512);
+    figure; 
+    [tf_ersp{i}, tf_itc{i}, tf_powbase{i}, tf_times{i}, tf_freqs{i}, ~, ~, tf_data{i}] = ...
+        pop_newtimef( EEG, 1, electrodes{i}, [-1500, 2500], [3, 0.5], ...
+                      'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, ...
+                      'baseline', [-600, -100], 'basenorm', 'on', 'trialbase', 'full', 'plotitc' , 'off', 'plotphase', 'off', ...
+                      'padratio', 1, 'trialbase', 'full', 'winsize', 512);
 end
 
 % sort the tf_data according to conditions
