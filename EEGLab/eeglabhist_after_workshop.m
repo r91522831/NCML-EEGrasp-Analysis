@@ -217,19 +217,22 @@ for All_sub_i = 1:length(All_data_list) %6:7 % run only sub-09 and sub-10 for me
     % Step 2: Get experiment conditions
     file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
     
+    % remove bad trials
+    ind_event(any(isnan(ind_event), 2), :) = [];
+    
     %!!!!!!!!! condType: IL, TR, PT; cond: IL, TR, PT1, PT2, PT3
     tmp_filename_list = cell(length(ind_event), 1);
     notPT = false(length(ind_event), 1);
     isIL = false(length(ind_event), 1);
     tmp_id = 1;
+    
+    
     for i = 1:length(ind_event)
-        if ~isnan(ind_event(i, 1))
-            tmp = char({file_list(tmp_id).name});
-            tmp_filename_list{i} = tmp;
-            notPT(i) = ~strcmp(tmp(11:12), 'PT');
-            isIL(i) = strcmp(tmp(11:12), 'IL');
-            tmp_id = tmp_id + 1;
-        end
+        tmp = char({file_list(tmp_id).name});
+        tmp_filename_list{i} = tmp;
+        notPT(i) = ~strcmp(tmp(11:12), 'PT');
+        isIL(i) = strcmp(tmp(11:12), 'IL');
+        tmp_id = tmp_id + 1;
     end
     cond = cell(size(notPT, 1), 1);
     condType = cell(size(notPT, 1), 1);
