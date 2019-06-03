@@ -2,17 +2,11 @@ close all; clear; clc;
 All_dirpath = uigetdir();
 All_dirlist = dir(fullfile(All_dirpath, 'sub*'));
 
-All_figpath = fullfile(All_dirpath, 'erp_figs');
-if ~exist(All_figpath, 'dir')
-    mkdir(All_figpath);
+All_linearmodel_path = fullfile(All_dirpath, 'linear');
+if ~exist(All_linearmodel_path, 'dir')
+    mkdir(All_linearmodel_path);
 end
-% save result?
-switch input('Save result figures?(y/N) ', 's')
-    case {'y', 'Y'}
-        All_is_saving = true;
-    otherwise
-        All_is_saving = false;
-end
+
 % 
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
 selected_sub = input('Which subject(s) to plot erpimage? ');
@@ -102,7 +96,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     Model_coeff_est = Model_Result; Model_coeff_p = Model_Result; Model_Rsquared = Model_Result;
     Model_Cond = categorical( grp2idx({EEG.epoch.condType}') );
     for time_id = 1:size(tf_ersp{1, 1}, 2)
-        Model_Roll = roll_ang(time_id, :)';
+        Model_Roll = roll_ang(:, time_id);
         for freq_id = 1:size(tf_ersp{1, 1}, 1)
             for electrode_id = 1:length(electrodes)
                 Model_ERSP = squeeze( tf_ersp{electrode_id, 1}(freq_id, time_id, :) );
@@ -118,6 +112,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
         end
     end
     
-    
-    
+    tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel']);
+    save(tmp_filename, 'Model_Result')
+    clear Model_Result
+    tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel_coeff']);
+    save(tmp_filename, 'Model_*')
 end
