@@ -117,4 +117,6 @@ for All_i = selected_sub% 1:length(All_dirlist)
     clear Model_Result
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel_coeff']);
     save(tmp_filename, 'Model_*')
+    tmp_filename = fullfile(All_linearmodel_path, 'misc');
+    save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name')
 end
