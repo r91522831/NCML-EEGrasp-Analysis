@@ -6,15 +6,18 @@ eeg_dataset_list = dir(fullfile(eeg_dataset_folder, 'sub-*'));
 %% turn on EEGLab and select eeg dataset .set file
 [ALLEEG, ~, ~, ALLCOM] = eeglab;
 
+disp([num2cell((1:length(eeg_dataset_list))'), {eeg_dataset_list.name}']);
+selected_sub = input('Which subject(s) to plot erpimage? ');
+
 %% for individual subjects
-for sub_i = 1:length(eeg_dataset_list)
+for sub_i = selected_sub%1:length(eeg_dataset_list)
     tmp_dataset_folder = fullfile(eeg_dataset_folder, eeg_dataset_list(sub_i).name);
     tmp_dataset_list = dir(fullfile(tmp_dataset_folder, '*_combine_behavior.set')); % Should be only one file
     if ~exist(fullfile(tmp_dataset_folder, tmp_dataset_list(1).name), 'file')
         disp('EEG data set name is not correct!')
     end
     
-    if sub_i == 1
+    if sub_i == selected_sub(1)
         %% Create G and H for CSD; only need to run one time for the whole project (across subjects and trials)
         % load eeg dataset
         EEG = pop_loadset('filename', tmp_dataset_list(1).name, 'filepath', tmp_dataset_folder);
