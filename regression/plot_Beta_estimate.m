@@ -8,7 +8,10 @@ if ~exist(All_fig_path, 'dir')
     mkdir(All_fig_path);
 end
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
-selected_sub = input('Which subject(s) to plot erpimage? ');
+selected_sub = input('Which subject(s) to plot erpimage? (default: all)');
+if isempty(selected_sub)
+    selected_sub = 1:length(All_dirlist);
+end
 
 % ERSP = beta0 * IL + beta1 * TR + beta2 * PT + beta3 * IL * Roll + beta4 * TR * Roll + beta5 * PT * Roll
 All_stat_plot = {'coeff est', 'coeff pValue', 'Rsquared'};
