@@ -169,6 +169,7 @@ xlabel('time (ms)')
 title('theta (4-8 Hz) activity across regressors in electode Fcz')
 disp('changing the 2 in theta_h1(:,:,2) changes the electrode')
 
+%%
 for r = 1:6
     for e = 1:5
         p1 = beta_pval(:, r, e);
@@ -182,7 +183,7 @@ ylabel('regressor')
 xlabel('time (ms)')
 title('betalow(15-20 Hz) activity across regressors in electode C3')
 
-
+%%
 for r = 1:6
     for e = 1:5
         p1 = beta_high_pval(:, r, e);
