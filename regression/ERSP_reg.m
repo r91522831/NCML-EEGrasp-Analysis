@@ -52,7 +52,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     electrodes = {Fz; FCz; C3; CP3; C1};
     %}
     electrodes_name = {EEG.chanlocs.labels};
-    electrodes = 1:length(EEG.chanlocs);
+    electrodes = num2cell(1:length(EEG.chanlocs));
     
     nb_epoch = length(EEG.epoch);
     tf_ersp = cell(length(electrodes), 1);
@@ -128,4 +128,6 @@ for All_i = selected_sub% 1:length(All_dirlist)
     save(tmp_filename, 'Model_*')
     tmp_filename = fullfile(All_linearmodel_path, 'misc');
     save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name')
+    
+    disp([All_dirlist(All_i).name, ' finished.']);
 end
