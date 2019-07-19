@@ -10,6 +10,10 @@ end
 % 
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
 selected_sub = input('Which subject(s) to plot erpimage? ');
+if isempty(selected_sub)
+    selected_sub = 1:length(All_dirlist);
+end
+
 % choose which data set to use b4 or after CSD
 switch input('Use data after CSD?(y/N) ', 's')
     case {'y', 'Y'}
@@ -41,10 +45,15 @@ for All_i = selected_sub% 1:length(All_dirlist)
     end
     
     % channel id:
+    %{
     % {'Fz', 'FCz', 'C3', 'CP3', 'C1'} = {6, 41, 15, 47, 44}
     Fz = 6; FCz = 41; C3 = 15; CP3 = 47; C1 = 44;
     electrodes_name = {'Fz', 'FCz', 'C3', 'CP3', 'C1'};
     electrodes = {Fz; FCz; C3; CP3; C1};
+    %}
+    electrodes_name = {EEG.chanlocs.labels};
+    electrodes = 1:length(EEG.chanlocs);
+    
     nb_epoch = length(EEG.epoch);
     tf_ersp = cell(length(electrodes), 1);
     tf_itc = tf_ersp; tf_powbase = tf_ersp;

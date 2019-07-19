@@ -2,9 +2,9 @@ close all; clearvars; clc
 
 %% load aligned data
 [filename, pathname, ~] = uigetfile;
-filelist = dir(fullfile(pathname, [filename(1:4), '*.mat']));
-for i = 1:length(filelist)
-    load(fullfile(pathname, filelist(i).name));
+file_suffix = {'_aligned_data', '_fingerInfo', '_info_onset_time', '_temp_result'};
+for i = 1:length(file_suffix)
+    load(fullfile(pathname, [filename(1:4), file_suffix{i}, '.mat']));
 end
 
 %%

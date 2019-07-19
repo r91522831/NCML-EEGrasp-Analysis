@@ -2,9 +2,11 @@ close all; clearvars; clc
 
 %% load aligned data
 [filename, pathname, ~] = uigetfile;
-% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/S002_aligned_data.mat')
+% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/preliminary results/SXXX_aligned_data.mat')
 
 load(fullfile(pathname, filename));
+% file_list is included in the SXXX_aligned_data.mat file.
+% file_list contains all behavior files name with wrong directory.
 
 n_PSonObj = 8;
 n_PSonFgr = 3;
@@ -32,6 +34,7 @@ fgr_on_obj_kinetic = cell(size(file_list));
 input = data;
 input_surface = data_aligned2surface;
 
+%%
 for i = 1:length(file_list)
     % get which side of the handle on the object is grasped
     obj_side = file_list(i).name(end-4);
