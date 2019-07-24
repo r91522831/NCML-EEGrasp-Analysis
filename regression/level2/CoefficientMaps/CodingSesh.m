@@ -10,12 +10,17 @@ load('misc.mat')
 
 timerstamps = tf_times{1}(:, :, 1);
 freqz = squeeze(tf_freqs{1}(:, :, 1))';
-freqz = freqz(2:2:68);
-freqz = freqz(3:end);
+% % % freqz = freqz(2:2:68);
+% % % freqz = freqz(3:end);
+ntime = length(timerstamps);
+nfreq = length(freqz);
+nelectrode = length(electrodes_name);
+coeff_name = {'b0', 'b1', 'b2', 'b3', 'b4', 'b5'};
+ncoeff = length(coeff_name);
 
 % Get data
 dd = dir(fullfile(All_dirpath, '*LinearModel_coeff.mat'));
-nfreq = 68; ntime = 200; ncoeff = 6; nsub = length(dd); nelectrode = 5;
+nsub = length(dd);
 elec_dat = nan(nfreq, ntime, ncoeff, nsub, nelectrode);
 for s = 1:nsub
     load(dd(s).name, 'Model_coeff_est');
@@ -26,8 +31,8 @@ end
 rmpath(All_dirpath)
 
 %% TOO MANY FREQUENCIES - remove every other
-elec_dat = elec_dat(2:2:68, :, :, :, :);
-elec_dat = elec_dat(3:end, :, :, :, :);
+% % % elec_dat = elec_dat(2:2:68, :, :, :, :);
+% % % elec_dat = elec_dat(3:end, :, :, :, :);
 nfreq = size(elec_dat, 1);
 
 %% mild smoothing, need to account for in p-value
@@ -64,6 +69,9 @@ for b = 1:ncoeff
     end
 end
 close(h)
+% the results of the step
+% save('sig', 'mu')
+
 
 %% calculate p-values
 df = nsub - 1;
@@ -131,18 +139,24 @@ end
 
 disp('here are some example plots')
 figure
-contourf(timerstamps(time_idx), freqz, p_indiv(:, :, 1, 3) .* mu(:, time_idx, 1, 3), 'linecolor', 'none');
-title('cluster corrected mean b0 at electrode C3');
-figure;
-contourf(timerstamps(time_idx), freqz, p_indiv(:, :, 1, 2) .* mu(:, time_idx, 1, 2), 'linecolor', 'none');
-title('cluster corrected mean b0 at electrode Fcz');
-figure;
-contourf(timerstamps(time_idx), freqz, p_indiv(:, :, 4, 2) .* mu(:, time_idx, 4, 2), 'linecolor', 'none');
-title('cluster corrected mean Error*IL at electrode Fcz');
+for b = 2%1:ncoeff
+    for e = 4%1:nelectrode
+        contourf(timerstamps(time_idx), freqz, p_indiv(:, :, b, e) .* mu(:, time_idx, b, e), 'linecolor', 'none');
+        title(['cluster corrected mean ', coeff_name{b}, ' at electrode ', electrodes_name{e}]);
+    end
+end
+
+
+% % % figure;
+% % % contourf(timerstamps(time_idx), freqz, p_indiv(:, :, 1, 2) .* mu(:, time_idx, 1, 2), 'linecolor', 'none');
+% % % title('cluster corrected mean b0 at electrode Fcz');
+% % % figure;
+% % % contourf(timerstamps(time_idx), freqz, p_indiv(:, :, 4, 2) .* mu(:, time_idx, 4, 2), 'linecolor', 'none');
+% % % title('cluster corrected mean Error*IL at electrode Fcz');
 
 
 
-
+%{
 %% I STOPPEd HERE
 %% THIS IS A THRESHOLD OF CLUSTER SIZE USING CLUSTERS FROM ALL ELECTRODES
 all_elec_thres = round(prctile([clustsizes{:}], 100 - cluster_pval * 100));
@@ -216,3 +230,5 @@ title('example of C3 Error*IL regressor using whole electrode Time x frequency F
 %%% NOT COMPLETED
 
 %% YOU COULD ALSO FIND THE PEAK WITHIN A TIME AND FREQUENCY WINDOW
+
+%}
