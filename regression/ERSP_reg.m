@@ -101,8 +101,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
     % E(ERSP) = beta_0 * I(IL) + beta_1 * I(TR) + beta_2 * I(PT) + beta_3 * I(IL) * Roll + beta_4 * I(TR) * Roll + beta_5 * I(PT) * Roll
     % each subject results in 8 beta images in the time frequency plane
 
-    Model_Result = cell(length(electrodes), 1);
-    Model_coeff_est = Model_Result; Model_coeff_p = Model_Result; Model_Rsquared = Model_Result;
+% % %     Model_Result = cell(length(electrodes), 1);
+    Model_coeff_est = cell(length(electrodes), 1);
+    Model_coeff_p = Model_coeff_est; Model_Rsquared = Model_coeff_est;
     Model_Cond = categorical( grp2idx({EEG.epoch.condType}') );
     for time_id = 1:size(tf_ersp{1, 1}, 2)
         Model_Roll = roll_ang(:, time_id);
@@ -113,7 +114,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Cond_IL + Model_Cond_TR + Model_Cond_PT + Model_Cond_IL:Model_Roll + Model_Cond_TR:Model_Roll + Model_Cond_PT:Model_Roll - 1', 'RobustOpts', 'on');
 %                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Roll * Model_Cond', 'RobustOpts', 'on');
                 
-                Model_Result{electrode_id, 1}{freq_id, time_id} = mdl;
+% % %                 Model_Result{electrode_id, 1}{freq_id, time_id} = mdl;
                 Model_coeff_est{electrode_id, 1}(freq_id, time_id, :) = mdl.Coefficients{:, 'Estimate'};
                 Model_coeff_p{electrode_id, 1}(freq_id, time_id, :) = mdl.Coefficients{:, 'pValue'};
                 Model_Rsquared{electrode_id, 1}(freq_id, time_id, :) = mdl.Rsquared.Ordinary;
@@ -121,9 +122,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
         end
     end
     
-    tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel']);
-    save(tmp_filename, 'Model_Result')
-    clear Model_Result
+% % %     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel']);
+% % %     save(tmp_filename, 'Model_Result')
+% % %     clear Model_Result
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel_coeff']);
     save(tmp_filename, 'Model_*')
     tmp_filename = fullfile(All_linearmodel_path, 'misc');
