@@ -69,8 +69,8 @@ for b = 1:ncoeff
     end
 end
 close(h)
-% the results of the step
-% save('sig', 'mu')
+
+save(fullfile(All_dirpath, 'preliminary_result.mat'), 'sig', 'mu')
 
 
 %% calculate p-values
@@ -122,7 +122,7 @@ p_indiv = nan(nfreq, ntime, ncoeff, nelectrode);
 clustsizes = cell(ncoeff, nelectrode);
 for b = 1:ncoeff
     for e = 1:nelectrode
-        clustinfo = bwconncomp(p(:, :, b, e) < voxel_pval);
+        clustinfo = bwconncomp( p(:, :, b, e) < voxel_pval );
         % identify clusters to remove
         clustsizes{b, e} = cellfun(@numel, clustinfo.PixelIdxList);
         clust_thresh = prctile( clustsizes{b, e}, 100 - cluster_pval * 100);
@@ -138,11 +138,15 @@ for b = 1:ncoeff
 end
 
 disp('here are some example plots')
-figure
-for b = 2%1:ncoeff
-    for e = 4%1:nelectrode
+%%
+
+for b = 1:ncoeff
+    figure(b)
+    for e = 1:nelectrode
+        subplot(8, 8, e)
         contourf(timerstamps(time_idx), freqz, p_indiv(:, :, b, e) .* mu(:, time_idx, b, e), 'linecolor', 'none');
-        title(['cluster corrected mean ', coeff_name{b}, ' at electrode ', electrodes_name{e}]);
+% % %         title(['cluster corrected mean ', coeff_name{b}, ' at electrode ', electrodes_name{e}]);
+        title([electrodes_name{e}]);
     end
 end
 
@@ -168,9 +172,9 @@ all_elec_thres = round(prctile([clustsizes{:}], 100 - cluster_pval * 100));
 theta_pval = squeeze(mean(p(2:5, :, :, :), 1));
 beta_pval = squeeze(mean(p(12:17, :, :, :), 1));
 beta_high_pval = squeeze(mean(p(18:28, :, :, :), 1));
-error_rate = 0.1;
-for r = 1:6
-    for e = 1:5
+error_rate = 0.1; % The desired false discovery rate
+for r = 1:ncoeff
+    for e = 1:nelectrode
         p1 = theta_pval(:, r, e);
         p1 = fdr_bh(p1(:)', error_rate);
         theta_h1(:, r, e) = p1';
@@ -184,8 +188,8 @@ title('theta (4-8 Hz) activity across regressors in electode Fcz')
 disp('changing the 2 in theta_h1(:,:,2) changes the electrode')
 
 %%
-for r = 1:6
-    for e = 1:5
+for r = 1:ncoeff
+    for e = 1:nelectrode
         p1 = beta_pval(:, r, e);
             p1 = fdr_bh(p1(:)', error_rate);
             beta_h1(:, r, e) = p1';
@@ -198,8 +202,8 @@ xlabel('time (ms)')
 title('betalow(15-20 Hz) activity across regressors in electode C3')
 
 %%
-for r = 1:6
-    for e = 1:5
+for r = 1:ncoeff
+    for e = 1:nelectrode
         p1 = beta_high_pval(:, r, e);
             p1 = fdr_bh(p1(:)', error_rate);
             beta_high_h1(:, r, e) = p1';
@@ -209,23 +213,31 @@ figure;
 imagesc(timerstamps(time_idx), 1:6, beta_high_h1(:, :, 3)');
 ylabel('regressor')
 xlabel('time (ms)')
-title('betalow(20-30 Hz) activity across regressors in electode C3')
-
+title('betahigh(20-30 Hz) activity across regressors in electode C3')
+%}
 
 %% WHOLE FDR TxF within electrode
-for r = 1:6
-    for e = 1:5
-        
+fp_all = nan(nfreq, ntime, ncoeff, nelectrode);
+for r = 1:ncoeff
+    for e = 1:nelectrode
         p1 = p(:, :, r, e);
         p1 = fdr_bh(p1(:)', 0.15);
-        fp_all(:, :, r, e) = reshape(p1, 32, size(p, 2));
-        
+        fp_all(:, :, r, e) = reshape(p1, nfreq, size(p, 2));
     end
 end
 
-figure;
-contourf(timerstamps(time_idx), freqz, fp_all(:, :, 4, 2) .* mu(:, time_idx, 4, 2), 'Linecolor', 'none');
-title('example of C3 Error*IL regressor using whole electrode Time x frequency FDR')
+b_name = {'IL', 'TR', 'PT', 'Err * IL', 'Err * TR', 'Err * PT'};
+
+for b = 1:ncoeff
+    figure(b)
+    for e = 1:nelectrode
+        subplot(8, 8, e)
+        contourf(timerstamps(time_idx), freqz, fp_all(:, :, b, e) .* mu(:, time_idx, b, e), 'Linecolor', 'none');
+% % %         title(['cluster corrected mean ', coeff_name{b}, ' at electrode ', electrodes_name{e}]);
+        title([electrodes_name{e}]);
+    end
+    suptitle([b_name{b}, ' regressor using whole electrode Time x frequency FDR'])
+end
 %% DIFFERENT APPROACH: set cluster threshold to k=20 and use FDR on all
 %%% NOT COMPLETED
 
