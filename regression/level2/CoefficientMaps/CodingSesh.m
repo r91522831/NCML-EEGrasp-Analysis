@@ -72,15 +72,109 @@ close(h)
 
 save(fullfile(All_dirpath, 'preliminary_result.mat'), 'sig', 'mu')
 
+%% Plot regression lines for each voxel (FxT) on ERSPxErr plan per electrode
+load(fullfile(fileparts(All_dirpath), 'preliminary_result.mat'));
+load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
+
+figure
+subplot(2, 2, 1)
+plot_preliminary('\alpha', 'C3', 'CP3', 9, 12, 450, 650, electrodes_name, freqz, timerstamps, mu, err_range); % alpha
+legend('IL', 'TR', 'PT', 'Location', 'best')
+subplot(2, 2, 3)
+plot_preliminary('\beta', 'C1', 'C3', 20, 30, 450, 650, electrodes_name, freqz, timerstamps, mu, err_range); % beta
+subplot(2, 2, 2)
+plot_preliminary('\theta', 'FZ', 'FCz', 4, 8, 150, 350, electrodes_name, freqz, timerstamps, mu, err_range); % theta
+
+%{
+nf = 20;
+nt = 50;
+for e = 1%:nelectrode
+    for i = 1:nf%nfreq
+        for j = 1:nt%ntime
+            % IL: beta_0 + beta_3 x Err; % TR: beta_1 + beta_4 x Err % PT: beta_2 + beta_5 x Err
+            ersp_est_IL = mu(i, j, 1, e) + mu(i, j, 4, e) * err_range(:, j);
+            ersp_est_TR = mu(i, j, 2, e) + mu(i, j, 5, e) * err_range(:, j);            
+                
+            subplot(nf, nt, (i - 1) * nt + j) %nfreq, ntime, i * ntime + j)
+            plot(err_range(:, j) * 1000, ersp_est_IL, '-r', err_range(:, j) * 1000, ersp_est_TR, '-b');
+            ylim([-1, 1])
+            xlim([-5, 5])
+            set(gca, 'xticklabels', [])
+            set(gca, 'yticklabels', [])
+%                 ylabel('estERSP change (%)')
+%                 xlabel('err ({\circ})'
+        end
+    end
+    
+end
+%}       
+
+
+
 
 %% calculate p-values
+%% for two sample t-test
+% H0: beta_3 = beta_4 (b = 4 and b = 5)
+sig_3 = squeeze(sig(:, :, 4, :));
+sig_4 = squeeze(sig(:, :, 5, :));
+mu_3 = squeeze(mu(:, :, 4, :));
+mu_4 = squeeze(mu(:, :, 5, :));
+dmu = mu_3 - mu_4;
+robust_t2stat = dmu ./ sqrt((sig_3 .^2 ./ nsub) + (sig_4 .^2 ./ nsub));
+% The degrees of freedom nu associated with this variance estimate is approximated using the Welch–Satterthwaite equation
+nu = ((sig_3 .^2 ./ nsub) + (sig_4 .^2 ./ nsub)) .^2 ./ ((sig_3 .^4 ./ (nsub ^2 * (nsub - 1))) + (sig_4 .^4 ./ (nsub ^2 * (nsub - 1))));
+p2 = nan(nfreq, ntime, nelectrode);
+for e = 1:nelectrode
+     p2(:, :, e) = tcdf(robust_t2stat(:, :, e), nu(:, :, e), 'upper'); 
+end
+
+%% WHOLE FDR TxF within electrode
+fp_all = nan(nfreq, ntime, nelectrode);
+
+for e = 1:nelectrode
+    p1 = p2(:, :, e);
+    p1 = fdr_bh(p1(:)', 0.15);
+    fp_all(:, :, e) = reshape(p1, nfreq, size(p2, 2));
+end
+
+% % % b_name = {'IL', 'TR', 'PT', 'Err * IL', 'Err * TR', 'Err * PT'};
+
+
+figure
+for e = 1:nelectrode
+    subplot(8, 8, e)
+    contourf(timerstamps, freqz, fp_all(:, :, e) .* dmu(:, :, e), 'Linecolor', 'none');
+    % % %         title(['cluster corrected mean ', coeff_name{b}, ' at electrode ', electrodes_name{e}]);
+    title([electrodes_name{e}]);
+end
+suptitle('IL-TR regressor using whole electrode Time x frequency FDR')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% for one sample t-test
 df = nsub - 1;
 robust_tstat = mu ./ (sqrt(sig ./ nsub));
 
 p = nan(nfreq, ntime, ncoeff, nelectrode);
 for b = 1:ncoeff
     for e = 1:nelectrode
-         p(:, :, b, e) = tcdf((robust_tstat(:, :, b, e)), df, 'upper'); %% change to correct dof ???? 
+         p(:, :, b, e) = tcdf(robust_tstat(:, :, b, e), df, 'upper'); 
     end
 end
 
@@ -137,9 +231,8 @@ for b = 1:ncoeff
     end
 end
 
-disp('here are some example plots')
 %%
-
+disp('here are some example plots')
 for b = 1:ncoeff
     figure(b)
     for e = 1:nelectrode
