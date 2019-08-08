@@ -128,7 +128,8 @@ for All_i = selected_sub% 1:length(All_dirlist)
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel_coeff']);
     save(tmp_filename, 'Model_*')
     tmp_filename = fullfile(All_linearmodel_path, 'misc');
-    save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name')
+    chanlocs = EEG.chanlocs;
+    save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name', 'chanlocs')
     
     disp([All_dirlist(All_i).name, ' finished.']);
 end

@@ -15,7 +15,7 @@ freqz = squeeze(tf_freqs{1}(:, :, 1))';
 ntime = length(timerstamps);
 nfreq = length(freqz);
 nelectrode = length(electrodes_name);
-coeff_name = {'b0', 'b1', 'b2', 'b3', 'b4', 'b5'};
+coeff_name = {'\beta_0', '\beta_1', '\beta_2', '\beta_3', '\beta_4', '\beta_5'};
 ncoeff = length(coeff_name);
 
 % Get data
@@ -49,6 +49,89 @@ end
 % sigma = 0.84932 => FWHM = 2         %
 % sigma = 1.274 => FWHM = 3           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%% Calucluate robust mean and sigma for freq bands
+% delta: 1.5 ~ 4 Hz; theta: 4 ~ 8 Hz; alpha: 9 ~ 12 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz; low gama: 30 ~ 35 Hz
+rg_freq_band = { {'\delta', '1.5-4 Hz'}, {'\theta', '4-8 Hz'}, {'\alpha', '9-12 Hz'}, {'\beta_{low}', '13-19 Hz'}, {'\beta_{high}', '20-30 Hz'}, {'\gamma_{low}', '30-35 Hz'}; ...
+                 find(freqz >=  1.5 & freqz <=  4), find(freqz >=  4 & freqz <=  8), ...
+                 find(freqz >=  9   & freqz <= 12), find(freqz >= 13 & freqz <= 19), ...
+                 find(freqz >= 20   & freqz <= 30), find(freqz >= 30 & freqz <= 35) };
+nfreqband = length(rg_freq_band);
+sig_banded = nan(nfreqband, ntime, ncoeff, nelectrode);
+mu_banded = nan(nfreqband, ntime, ncoeff, nelectrode);
+ticker = 1;
+h = waitbar(0, 'calculating robust means and covariances.');
+total_iter = ncoeff * nelectrode * nfreqband * ntime;
+for b = 1:ncoeff
+    for e = 1:nelectrode
+        for i = 1:nfreqband
+            for j = 1:ntime
+                tmp_band = squeeze(elec_dat(rg_freq_band{2, i}, j, b, :, e));
+                [sig_banded(i, j, b, e), mu_banded(i, j, b, e)] = robustcov(tmp_band(:), 'Method', 'fmcd');
+                ticker = ticker + 1;
+                progress_precent = 100 * ticker / total_iter;
+                waitbar(ticker / total_iter, h, sprintf('calculating robust means and covariances. %2.2f %%', progress_precent));
+            end
+        end
+    end
+end
+close(h)
+
+save(fullfile(All_dirpath, 'result_freq_banded.mat'), 'sig_banded', 'mu_banded', 'rg_freq_band', 'coeff_name')
+
+%% Plot using topoplot
+% /Users/yenhsunw/Dropbox (Personal)/Programming/Matlab/myLibrary/eeglab-develop/functions/sigprocfunc/topoplot.m
+% % % All_dirpath = uigetdir();
+load(fullfile(All_dirpath, 'misc.mat'));
+load(fullfile(All_dirpath, 'result_freq_banded.mat'));
+nfreqband = length(rg_freq_band);
+
+coeff_trace = nan(ntime, ncoeff);
+cmax = nan(1, ncoeff);
+cmin = nan(1, ncoeff);
+for b = 1:ncoeff
+    coeff_trace(:, b) = mean(reshape(permute(squeeze(mu_banded(:, :, b, :)), [2, 1, 3]), 200, []), 2);
+    tmp_mu = mu_banded(:, :, b, :);
+    cmax(:, b) = max(tmp_mu(:));
+    cmin(:, b) = min(tmp_mu(:));
+end
+
+figure(1)
+time_range = timerstamps >= -200 & timerstamps < 400;
+for j = find(time_range)%1:ntime
+    for b = 1:ncoeff
+        for i = 1:nfreqband
+            subplot(7, nfreqband, i + (b - 1) * nfreqband);
+            % specify ('conv', 'on') to avoid extrapolation
+            [tmp_h, ~, ~, ~, ~] = topoplot(mu_banded(i, j, b, :), chanlocs, 'maplimits', [cmin(1, b), cmax(1, b)], 'style', 'map', 'electrodes', 'off', 'conv', 'on');
+            if b == 1
+                title(rg_freq_band{1, i})
+            end
+            if i == nfreqband
+                colorbar;
+            end
+            if i == 1
+                text(-1, 0, coeff_name{b});
+            end
+        end
+    end
+    subplot(7, nfreqband, [nfreqband * 6 + 1, nfreqband * 7])
+    plot(timerstamps(time_range), coeff_trace(time_range, b))
+    vline(timerstamps(j), '-r')
+    xlabel('time (ms)')
+    ylabel('coeff')
+    drawnow
+end
+
+
+
+
+
+
+
+
 
 %% Calucluate robust mean and sigma
 sig = nan(nfreq, ntime, ncoeff, nelectrode);
