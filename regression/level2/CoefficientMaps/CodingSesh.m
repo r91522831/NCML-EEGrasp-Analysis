@@ -122,7 +122,8 @@ mu_4 = squeeze(mu(:, :, 5, :));
 dmu = mu_3 - mu_4;
 robust_t2stat = dmu ./ sqrt((sig_3 .^2 ./ nsub) + (sig_4 .^2 ./ nsub));
 % The degrees of freedom nu associated with this variance estimate is approximated using the Welch–Satterthwaite equation
-nu = ((sig_3 .^2 ./ nsub) + (sig_4 .^2 ./ nsub)) .^2 ./ ((sig_3 .^4 ./ (nsub ^2 * (nsub - 1))) + (sig_4 .^4 ./ (nsub ^2 * (nsub - 1))));
+nu =   ((sig_3 .^2 ./ nsub) + (sig_4 .^2 ./ nsub)) .^2 ...
+    ./ ((sig_3 .^4 ./ (nsub ^2 * (nsub - 1))) + (sig_4 .^4 ./ (nsub ^2 * (nsub - 1))));
 p2 = nan(nfreq, ntime, nelectrode);
 for e = 1:nelectrode
      p2(:, :, e) = tcdf(robust_t2stat(:, :, e), nu(:, :, e), 'upper'); 
@@ -130,15 +131,15 @@ end
 
 %% WHOLE FDR TxF within electrode
 fp_all = nan(nfreq, ntime, nelectrode);
-
+%??? how to choose the desired false discovery rate? ??????????????????????
+fdr = 0.15; % false discovery rate
 for e = 1:nelectrode
     p1 = p2(:, :, e);
-    p1 = fdr_bh(p1(:)', 0.15);
+    p1 = fdr_bh(p1(:)', fdr);
     fp_all(:, :, e) = reshape(p1, nfreq, size(p2, 2));
 end
 
 % % % b_name = {'IL', 'TR', 'PT', 'Err * IL', 'Err * TR', 'Err * PT'};
-
 
 figure
 for e = 1:nelectrode
