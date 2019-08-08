@@ -85,6 +85,24 @@ plot_preliminary('\beta', 'C1', 'C3', 20, 30, 450, 650, electrodes_name, freqz, 
 subplot(2, 2, 2)
 plot_preliminary('\theta', 'FZ', 'FCz', 4, 8, 150, 350, electrodes_name, freqz, timerstamps, mu, err_range); % theta
 
+
+%%
+load(fullfile(fileparts(All_dirpath), 'preliminary_result.mat'));
+load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
+
+% plot coefficient in electrode x freq animation
+beta_0 = squeeze(mu(:, :, 1, :));
+
+for e = 1:nelectrode
+    for i = 1:nfreq
+        for j = 1:ntime
+            
+        end
+    end
+end
+
+
+
 %{
 nf = 20;
 nt = 50;
