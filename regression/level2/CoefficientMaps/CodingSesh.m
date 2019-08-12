@@ -20,15 +20,60 @@ ncoeff = length(coeff_name);
 
 % Get data
 dd = dir(fullfile(All_dirpath, '*LinearModel_coeff.mat'));
+
 nsub = length(dd);
 elec_dat = nan(nfreq, ntime, ncoeff, nsub, nelectrode);
+roll_ang = cell(nsub, 2);
 for s = 1:nsub
-    load(dd(s).name, 'Model_coeff_est');
+    load(dd(s).name, 'Model_coeff_est', 'Model_Cond', 'Model_Roll');
     for e = 1:nelectrode
         elec_dat(:, :, :, s, e) = Model_coeff_est{e, 1};
     end
+    roll_ang{s, 2} = [cellstr(Model_Cond), mat2cell(Model_Roll, ones(size(Model_Roll, 1), 1))];
+    roll_ang{s, 1} = dd(s).name(1:6);
 end
 rmpath(All_dirpath)
+
+% calculate roll angle for IL, TR1, TR2-19 and PT
+tmp = cell(length(roll_ang), 4);
+for i = 1:length(roll_ang)
+    if mod(str2double(roll_ang{i, 1}(end-1:end)), 2) ~= 1
+        flip_side = 1;
+    else
+        flip_side = -1;
+    end
+    
+    tmp{i, 1} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '1', 2));
+    tmp{i, 2} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '2', 1), 2));
+    tmp_ind = find(cell2mat(roll_ang{i, 2}(:, 1)) == '2');
+    tmp{i, 3} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
+    tmp{i, 4} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '3', 2));
+end
+
+sig_roll = nan(4, ntime);
+mu_roll = nan(4, ntime);
+for i = 1:4
+    mu_roll(i, :) = mean(cell2mat(tmp(:, i)), 1);
+    sig_roll(i, :) = var(cell2mat(tmp(:, i)), 0, 1);
+end
+save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll')
+% plot
+%%
+figure
+h1 = shadedErrorBar(timerstamps, mu_roll(1, :), sqrt(sig_roll(1, :)), '-r', 1);
+hold on
+h2 = shadedErrorBar(timerstamps, mu_roll(2, :), sqrt(sig_roll(2, :)), '-b', 1);
+h3 = shadedErrorBar(timerstamps, mu_roll(3, :), sqrt(sig_roll(3, :)), '-g', 1);
+h4 = shadedErrorBar(timerstamps, mu_roll(4, :), sqrt(sig_roll(4, :)), '-k', 1);
+vline(0, '--r')
+xlabel('time (ms)')
+ylabel('Roll angle ({\circ})')
+hold off
+legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], 'IL', 'TR1', 'TR', 'PT')
+title('Object roll trajectories average across subjects')
+%}
+
+
 
 %% TOO MANY FREQUENCIES - remove every other
 % % % elec_dat = elec_dat(2:2:68, :, :, :, :);
@@ -86,6 +131,7 @@ save(fullfile(All_dirpath, 'result_freq_banded.mat'), 'sig_banded', 'mu_banded',
 % % % All_dirpath = uigetdir();
 load(fullfile(All_dirpath, 'misc.mat'));
 load(fullfile(All_dirpath, 'result_freq_banded.mat'));
+load(fullfile(All_dirpath, 'roll.mat'));
 nfreqband = length(rg_freq_band);
 
 coeff_trace = nan(ntime, ncoeff);
@@ -98,8 +144,15 @@ for b = 1:ncoeff
     cmin(:, b) = min(tmp_mu(:));
 end
 
-figure(1)
+% create the video writer with 1 fps
+writerObj = VideoWriter(fullfile(All_dirpath, 'myVideo.avi'));
+writerObj.FrameRate = 1;
+% set the seconds per image
+% open the video writer
+open(writerObj);
+% write the frames to the video
 time_range = timerstamps >= -200 & timerstamps < 400;
+figure(1)
 for j = find(time_range)%1:ntime
     for b = 1:ncoeff
         for i = 1:nfreqband
@@ -117,14 +170,26 @@ for j = find(time_range)%1:ntime
             end
         end
     end
-    subplot(7, nfreqband, [nfreqband * 6 + 1, nfreqband * 7])
-    plot(timerstamps(time_range), coeff_trace(time_range, b))
+    subplot(7, nfreqband, [nfreqband * 6 + 1, nfreqband * 6 + 3])
+    h1 = shadedErrorBar(timerstamps(time_range), mu_roll(1, time_range), sqrt(sig_roll(1, time_range)), '-r', 1);
+    hold on
+    h2 = shadedErrorBar(timerstamps(time_range), mu_roll(2, time_range), sqrt(sig_roll(2, time_range)), '-b', 1);
+    h3 = shadedErrorBar(timerstamps(time_range), mu_roll(3, time_range), sqrt(sig_roll(3, time_range)), '-g', 1);
+    h4 = shadedErrorBar(timerstamps(time_range), mu_roll(4, time_range), sqrt(sig_roll(4, time_range)), '-k', 1);
+    hold off
+    legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], 'IL', 'TR1', 'TR', 'PT', 'Location', 'eastoutside')
     vline(timerstamps(j), '-r')
     xlabel('time (ms)')
-    ylabel('coeff')
+    ylabel('roll angle (\circ)')
     drawnow
+    writeVideo(writerObj, getframe(gcf));
 end
 
+% close the writer object
+close(writerObj);
+
+
+%% plot one-sample t results and make a movie
 
 
 
@@ -167,48 +232,6 @@ subplot(2, 2, 3)
 plot_preliminary('\beta', 'C1', 'C3', 20, 30, 450, 650, electrodes_name, freqz, timerstamps, mu, err_range); % beta
 subplot(2, 2, 2)
 plot_preliminary('\theta', 'FZ', 'FCz', 4, 8, 150, 350, electrodes_name, freqz, timerstamps, mu, err_range); % theta
-
-
-%%
-load(fullfile(fileparts(All_dirpath), 'preliminary_result.mat'));
-load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
-
-% plot coefficient in electrode x freq animation
-beta_0 = squeeze(mu(:, :, 1, :));
-
-for e = 1:nelectrode
-    for i = 1:nfreq
-        for j = 1:ntime
-            
-        end
-    end
-end
-
-
-
-%{
-nf = 20;
-nt = 50;
-for e = 1%:nelectrode
-    for i = 1:nf%nfreq
-        for j = 1:nt%ntime
-            % IL: beta_0 + beta_3 x Err; % TR: beta_1 + beta_4 x Err % PT: beta_2 + beta_5 x Err
-            ersp_est_IL = mu(i, j, 1, e) + mu(i, j, 4, e) * err_range(:, j);
-            ersp_est_TR = mu(i, j, 2, e) + mu(i, j, 5, e) * err_range(:, j);            
-                
-            subplot(nf, nt, (i - 1) * nt + j) %nfreq, ntime, i * ntime + j)
-            plot(err_range(:, j) * 1000, ersp_est_IL, '-r', err_range(:, j) * 1000, ersp_est_TR, '-b');
-            ylim([-1, 1])
-            xlim([-5, 5])
-            set(gca, 'xticklabels', [])
-            set(gca, 'yticklabels', [])
-%                 ylabel('estERSP change (%)')
-%                 xlabel('err ({\circ})'
-        end
-    end
-    
-end
-%}       
 
 
 

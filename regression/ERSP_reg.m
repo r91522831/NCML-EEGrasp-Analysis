@@ -67,7 +67,6 @@ for All_i = selected_sub% 1:length(All_dirlist)
         tmp_times = tmp_ersp; tmp_freqs = tmp_ersp;
         tmp_data = tmp_ersp;
         for j = 1:nb_epoch
-%             figure;
             [tmp_ersp{j, 1}, tmp_itc{j, 1}, tmp_powbase{j, 1}, tmp_times{j, 1}, tmp_freqs{j, 1}, ~, ~, tmp_data{j, 1}] = ...
             newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ...
                                                       'maxfreq', 35, ...
@@ -86,9 +85,12 @@ for All_i = selected_sub% 1:length(All_dirlist)
     end
     
     % the continuous variables: roll angle (deg)
-    roll_ang = nan(nb_epoch, size(tf_ersp{1, 1}, 2));
+    % ****************************************************
+    % the roll angle is NOT aligned for Left/Right handles
+    % ****************************************************
+    Model_Roll = nan(nb_epoch, size(tf_ersp{1, 1}, 2));
     for i = 1:nb_epoch
-        roll_ang(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time, EEG.behavior.obj_epoch{i, 1}.roll, squeeze(tf_times{1, 1}(:, :, 1)));
+        Model_Roll(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time, EEG.behavior.obj_epoch{i, 1}.roll, squeeze(tf_times{1, 1}(:, :, 1)));
     end
     % the categorical variables: condition (IL, TR, PT)
     dummy_cond = dummyvar( grp2idx({EEG.epoch.condType}'));
@@ -105,12 +107,12 @@ for All_i = selected_sub% 1:length(All_dirlist)
     Model_coeff_est = cell(length(electrodes), 1);
     Model_coeff_p = Model_coeff_est; Model_Rsquared = Model_coeff_est;
     Model_Cond = categorical( grp2idx({EEG.epoch.condType}') );
+    
     for time_id = 1:size(tf_ersp{1, 1}, 2)
-        Model_Roll = roll_ang(:, time_id);
         for freq_id = 1:size(tf_ersp{1, 1}, 1)
             for electrode_id = 1:length(electrodes)
                 Model_ERSP = squeeze( tf_ersp{electrode_id, 1}(freq_id, time_id, :) );
-                tbl = table(Model_Cond_IL, Model_Cond_TR, Model_Cond_PT, Model_Cond, Model_Roll, Model_ERSP);
+                tbl = table(Model_Cond_IL, Model_Cond_TR, Model_Cond_PT, Model_Cond, Model_Roll(:, time_id), Model_ERSP);
                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Cond_IL + Model_Cond_TR + Model_Cond_PT + Model_Cond_IL:Model_Roll + Model_Cond_TR:Model_Roll + Model_Cond_PT:Model_Roll - 1', 'RobustOpts', 'on');
 %                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Roll * Model_Cond', 'RobustOpts', 'on');
                 
