@@ -90,6 +90,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     % ****************************************************
     Model_Roll = nan(nb_epoch, size(tf_ersp{1, 1}, 2));
     for i = 1:nb_epoch
+        % the object roll angles are in radian
         Model_Roll(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time, EEG.behavior.obj_epoch{i, 1}.roll, squeeze(tf_times{1, 1}(:, :, 1)));
     end
     % the categorical variables: condition (IL, TR, PT)

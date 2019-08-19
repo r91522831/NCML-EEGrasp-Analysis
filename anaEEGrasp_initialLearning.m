@@ -21,13 +21,13 @@ for i = 1:length(file_list)
     r_matrix_b4go = coord_obj_b4go{:, {'x_axis', 'y_axis', 'z_axis'}};
     eul_b4go = rotm2eul(r_matrix_b4go, 'ZYX');
     %% frame by frame
-    eul = zeros(height(input{i}), 6);
+    eul = nan(height(input{i}), 6);
     for time_id = 1:height(input{i})
         if isempty(coord_obj{i, 1}{time_id, 1})
             continue;
         end
         r_matrix = coord_obj{i, 1}{time_id, 1}{:, {'x_axis', 'y_axis', 'z_axis'}};
-        tmp_eul = rotm2eul(r_matrix, 'ZYX') - eul_b4go; % ZYX -> pitch, yaw, roll
+        tmp_eul = rotm2eul(r_matrix, 'ZYX') - eul_b4go; % ZYX -> pitch, yaw, roll; angles are in radian
         eul(time_id, :) = [coord_obj{i, 1}{time_id, 1}{:, {'origin'}}', tmp_eul];
     end
     obj{i, 1} = array2table(eul, 'VariableNames', {'x', 'y', 'z', 'pitch', 'yaw', 'roll'});

@@ -29,13 +29,14 @@ for s = 1:nsub
     for e = 1:nelectrode
         elec_dat(:, :, :, s, e) = Model_coeff_est{e, 1};
     end
-    roll_ang{s, 2} = [cellstr(Model_Cond), mat2cell(Model_Roll, ones(size(Model_Roll, 1), 1))];
+    % the Model_Roll angles are in radian
+    roll_ang{s, 2} = [cellstr(Model_Cond), mat2cell(rad2deg(Model_Roll), ones(size(Model_Roll, 1), 1))];
     roll_ang{s, 1} = dd(s).name(1:6);
 end
 rmpath(All_dirpath)
 
-% calculate roll angle for IL, TR1, TR2-19 and PT
-tmp = cell(length(roll_ang), 4);
+% calculate roll angle for IL1, IL2-19, TR1, TR2-19 and PT
+tmp = cell(length(roll_ang), 5);
 for i = 1:length(roll_ang)
     if mod(str2double(roll_ang{i, 1}(end-1:end)), 2) ~= 1
         flip_side = 1;
@@ -43,33 +44,39 @@ for i = 1:length(roll_ang)
         flip_side = -1;
     end
     
-    tmp{i, 1} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '1', 2));
-    tmp{i, 2} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '2', 1), 2));
+    tmp{i, 1} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '1', 1), 2));
+    tmp_ind = find(cell2mat(roll_ang{i, 2}(:, 1)) == '1');
+    tmp{i, 2} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
+    tmp{i, 3} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '2', 1), 2));
     tmp_ind = find(cell2mat(roll_ang{i, 2}(:, 1)) == '2');
-    tmp{i, 3} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
-    tmp{i, 4} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '3', 2));
+    tmp{i, 4} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
+    tmp{i, 5} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '3', 2));
 end
 
-sig_roll = nan(4, ntime);
-mu_roll = nan(4, ntime);
-for i = 1:4
+sig_roll = nan(5, ntime);
+mu_roll = nan(5, ntime);
+for i = 1:5
     mu_roll(i, :) = mean(cell2mat(tmp(:, i)), 1);
     sig_roll(i, :) = var(cell2mat(tmp(:, i)), 0, 1);
 end
 save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll')
-% plot
-%%
+%% plot
 figure
 h1 = shadedErrorBar(timerstamps, mu_roll(1, :), sqrt(sig_roll(1, :)), '-r', 1);
 hold on
-h2 = shadedErrorBar(timerstamps, mu_roll(2, :), sqrt(sig_roll(2, :)), '-b', 1);
-h3 = shadedErrorBar(timerstamps, mu_roll(3, :), sqrt(sig_roll(3, :)), '-g', 1);
-h4 = shadedErrorBar(timerstamps, mu_roll(4, :), sqrt(sig_roll(4, :)), '-k', 1);
+h2 = shadedErrorBar(timerstamps, mu_roll(2, :), sqrt(sig_roll(2, :)), '--m', 1);
+h3 = shadedErrorBar(timerstamps, mu_roll(3, :), sqrt(sig_roll(3, :)), '-b', 1);
+h4 = shadedErrorBar(timerstamps, mu_roll(4, :), sqrt(sig_roll(4, :)), '--c', 1);
+h5 = shadedErrorBar(timerstamps, mu_roll(5, :), sqrt(sig_roll(5, :)), '--w', 1);
+ylim([-20, 20])
+xlim([-300, 1300])
 vline(0, '--r')
 xlabel('time (ms)')
 ylabel('Roll angle ({\circ})')
 hold off
-legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], 'IL', 'TR1', 'TR', 'PT')
+lgnd = legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine, h5.mainLine], 'IL1', 'IL', 'TR1', 'TR', 'PT');
+set(lgnd,'color','none');
+set(gca, 'Color', [.8, .8, .8])
 title('Object roll trajectories average across subjects')
 %}
 
@@ -184,12 +191,181 @@ for j = find(time_range)%1:ntime
     drawnow
     writeVideo(writerObj, getframe(gcf));
 end
-
 % close the writer object
 close(writerObj);
 
 
 %% plot one-sample t results and make a movie
+%{
+nfreqband = length(rg_freq_band);
+% for one sample t-test
+df = nsub - 1;
+robust_tstat = mu_banded ./ (sqrt(sig_banded ./ nsub));
+
+p_fbanded = nan(nfreqband, ntime, ncoeff, nelectrode);
+for b = 1:ncoeff
+    for e = 1:nelectrode
+         p_fbanded(:, :, b, e) = tcdf(robust_tstat(:, :, b, e), df, 'upper'); 
+    end
+end
+% WHOLE FDR TxF within electrode
+fdr = 0.15; % false discovery rate
+%??? how to choose the desired false discovery rate? ??????????????????????
+fp_all_fbanded = nan(nfreqband, ntime, ncoeff, nelectrode);
+for b = 1:ncoeff
+    for e = 1:nelectrode
+        p1_fbanded = p_fbanded(:, :, b, e);
+        p1_fbanded = fdr_bh(p1_fbanded(:)', fdr);
+        fp_all_fbanded(:, :, b, e) = reshape(p1_fbanded, nfreqband, size(p_fbanded, 2));
+    end
+end
+
+% The significant mu array fdr-p-value > 0.15
+fdr_mu_banded = fp_all_fbanded .* mu_banded;
+
+cmax = nan(1, ncoeff);
+cmin = nan(1, ncoeff);
+for b = 1:ncoeff
+    tmp_mu = fdr_mu_banded(:, :, b, :);
+    cmax(:, b) = max(tmp_mu(:));
+    cmin(:, b) = min(tmp_mu(:));
+end
+
+%% create the video writer with 1 fps
+writerObj = VideoWriter(fullfile(All_dirpath, ['oneSample_pValue_fdr_point', num2str(fdr), '.avi']));
+writerObj.FrameRate = 1;
+% set the seconds per image
+% open the video writer
+open(writerObj);
+% write the frames to the video
+time_range = timerstamps >= -200 & timerstamps < 400;
+figure('units','normalized','outerposition',[0 0 1 1])
+for j = find(time_range)%1:ntime
+    for b = 1:ncoeff
+        for i = 1:nfreqband
+            subplot(7, nfreqband, i + (b - 1) * nfreqband);
+            % specify ('conv', 'on') to avoid extrapolation
+            [tmp_h, ~, ~, ~, ~] = topoplot(fdr_mu_banded(i, j, b, :), chanlocs, 'maplimits', [cmin(1, b), cmax(1, b)], 'style', 'map', 'electrodes', 'off', 'conv', 'on');
+            if b == 1
+                title(rg_freq_band{1, i})
+            end
+            if i == nfreqband
+                colorbar;
+            end
+            if i == 1
+                text(-1, 0, coeff_name{b});
+            end
+        end
+    end
+    subplot(7, nfreqband, [nfreqband * 6 + 1, nfreqband * 6 + 3])
+    h1 = shadedErrorBar(timerstamps(time_range), mu_roll(1, time_range), sqrt(sig_roll(1, time_range)), '-r', 1);
+    hold on
+    h2 = shadedErrorBar(timerstamps(time_range), mu_roll(2, time_range), sqrt(sig_roll(2, time_range)), '-b', 1);
+    h3 = shadedErrorBar(timerstamps(time_range), mu_roll(3, time_range), sqrt(sig_roll(3, time_range)), '-g', 1);
+    h4 = shadedErrorBar(timerstamps(time_range), mu_roll(4, time_range), sqrt(sig_roll(4, time_range)), '-k', 1);
+    hold off
+    legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], 'IL', 'TR1', 'TR', 'PT', 'Location', 'eastoutside')
+    vline(timerstamps(j), '-r')
+    xlabel('time (ms)')
+    ylabel('roll angle (\circ)')
+    drawnow
+    writeVideo(writerObj, getframe(gcf));
+end
+% close the writer object
+close(writerObj);
+
+
+
+
+%% for two sample t-test
+nfreqband = length(rg_freq_band);
+% H0: beta_3 = beta_4 (b = 4 and b = 5)
+sig_banded_3 = squeeze(sig_banded(:, :, 4, :));
+sig_banded_4 = squeeze(sig_banded(:, :, 5, :));
+mu_banded_3 = squeeze(mu_banded(:, :, 4, :));
+mu_banded_4 = squeeze(mu_banded(:, :, 5, :));
+dmu_banded = mu_banded_3 - mu_banded_4;
+robust_t2stat = dmu_banded ./ sqrt((sig_banded_3 .^2 ./ nsub) + (sig_banded_4 .^2 ./ nsub));
+% The degrees of freedom nu associated with this variance estimate is approximated using the Welch–Satterthwaite equation
+nu =   ((sig_banded_3 .^2 ./ nsub) + (sig_banded_4 .^2 ./ nsub)) .^2 ...
+    ./ ((sig_banded_3 .^4 ./ (nsub ^2 * (nsub - 1))) + (sig_banded_4 .^4 ./ (nsub ^2 * (nsub - 1))));
+p2_banded = nan(nfreqband, ntime, nelectrode);
+for e = 1:nelectrode
+     p2_banded(:, :, e) = tcdf(robust_t2stat(:, :, e), nu(:, :, e), 'upper'); 
+end
+% WHOLE FDR TxF within electrode
+fdr = 0.35; % false discovery rate
+%??? how to choose the desired false discovery rate? ??????????????????????
+fp_all_fbanded_2 = nan(nfreqband, ntime, nelectrode);
+
+for e = 1:nelectrode
+    p1_fbanded = p2_banded(:, :, e);
+    p1_fbanded = fdr_bh(p1_fbanded(:)', fdr);
+    fp_all_fbanded_2(:, :, e) = reshape(p1_fbanded, nfreqband, size(p2_banded, 2));
+end
+
+% The significant mu array fdr-p-value > 0.15
+fdr_mu_banded = fp_all_fbanded_2 .* mu_banded;
+
+
+
+ncoeff = 1;
+cmax = nan(1, ncoeff);
+cmin = nan(1, ncoeff);
+for b = 1:ncoeff
+    tmp_mu = fdr_mu_banded(:, :, :);
+    cmax(:, b) = max(tmp_mu(:));
+    cmin(:, b) = min(tmp_mu(:));
+end
+%% create the video writer with 1 fps
+writerObj = VideoWriter(fullfile(All_dirpath, 'twoSample_pValue.avi'));
+writerObj.FrameRate = 1;
+% set the seconds per image
+% open the video writer
+open(writerObj);
+% write the frames to the video
+time_range = timerstamps >= -200 & timerstamps < 400;
+figure('units','normalized','outerposition',[0 0 1 1])
+for j = find(time_range)%1:ntime
+    for b = 1:ncoeff
+        for i = 1:nfreqband
+            subplot(7, nfreqband, i + (b - 1) * nfreqband);
+            % specify ('conv', 'on') to avoid extrapolation
+            [tmp_h, ~, ~, ~, ~] = topoplot(fdr_mu_banded(i, j, b, :), chanlocs, 'maplimits', [cmin(1, b), cmax(1, b)], 'style', 'map', 'electrodes', 'off', 'conv', 'on');
+            if b == 1
+                title(rg_freq_band{1, i})
+            end
+            if i == nfreqband
+                colorbar;
+            end
+            if i == 1
+                text(-1, 0, coeff_name{b});
+            end
+        end
+    end
+    subplot(7, nfreqband, [nfreqband * 6 + 1, nfreqband * 6 + 3])
+    h1 = shadedErrorBar(timerstamps(time_range), mu_roll(1, time_range), sqrt(sig_roll(1, time_range)), '-r', 1);
+    hold on
+    h2 = shadedErrorBar(timerstamps(time_range), mu_roll(2, time_range), sqrt(sig_roll(2, time_range)), '-b', 1);
+    h3 = shadedErrorBar(timerstamps(time_range), mu_roll(3, time_range), sqrt(sig_roll(3, time_range)), '-g', 1);
+    h4 = shadedErrorBar(timerstamps(time_range), mu_roll(4, time_range), sqrt(sig_roll(4, time_range)), '-k', 1);
+    hold off
+    legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], 'IL', 'TR1', 'TR', 'PT', 'Location', 'eastoutside')
+    vline(timerstamps(j), '-r')
+    xlabel('time (ms)')
+    ylabel('roll angle (\circ)')
+    drawnow
+    writeVideo(writerObj, getframe(gcf));
+end
+% close the writer object
+close(writerObj);
+
+%}
+
+
+
+
+
 
 
 
