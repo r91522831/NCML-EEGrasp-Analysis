@@ -40,6 +40,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     [All_roll(All_i, :, 1), All_roll(All_i, :, 2)] = bounds(roll_ang);
 end
 
+
 err_range = [max(All_roll(:, :, 1), [], 1); min(All_roll(:, :, 2), [], 1)];
 
 save(fullfile(All_dirpath, 'err_range.mat'), 'err_range');

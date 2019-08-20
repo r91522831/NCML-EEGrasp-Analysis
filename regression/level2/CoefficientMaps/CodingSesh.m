@@ -23,7 +23,8 @@ dd = dir(fullfile(All_dirpath, '*LinearModel_coeff.mat'));
 
 nsub = length(dd);
 elec_dat = nan(nfreq, ntime, ncoeff, nsub, nelectrode);
-roll_ang = cell(nsub, 2);
+ncond = 5; % IL1, IL2-19, TR1, TR2-19, and PT
+roll_ang = cell(nsub, 2 + ncond);
 for s = 1:nsub
     load(dd(s).name, 'Model_coeff_est', 'Model_Cond', 'Model_Roll');
     for e = 1:nelectrode
@@ -35,32 +36,38 @@ for s = 1:nsub
 end
 rmpath(All_dirpath)
 
-% calculate roll angle for IL1, IL2-19, TR1, TR2-19 and PT
-tmp = cell(length(roll_ang), 5);
-for i = 1:length(roll_ang)
-    if mod(str2double(roll_ang{i, 1}(end-1:end)), 2) ~= 1
+% calculate roll angle for IL1, IL2-19, TR1, TR2-19, and PT
+tmp = cell(1, ncond);
+for s = 1:nsub
+    if mod(str2double(roll_ang{s, 1}(end-1:end)), 2) ~= 1
         flip_side = 1;
     else
         flip_side = -1;
     end
     
-    tmp{i, 1} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '1', 1), 2));
-    tmp_ind = find(cell2mat(roll_ang{i, 2}(:, 1)) == '1');
-    tmp{i, 2} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
-    tmp{i, 3} = flip_side .* cell2mat(roll_ang{i, 2}(find(cell2mat(roll_ang{i, 2}(:, 1)) == '2', 1), 2));
-    tmp_ind = find(cell2mat(roll_ang{i, 2}(:, 1)) == '2');
-    tmp{i, 4} = flip_side .* cell2mat(roll_ang{i, 2}(tmp_ind(2:end, :), 2));
-    tmp{i, 5} = flip_side .* cell2mat(roll_ang{i, 2}(cell2mat(roll_ang{i, 2}(:, 1)) == '3', 2));
+    % IL1
+    roll_ang{s, 2 + 1} = flip_side .* cell2mat(roll_ang{s, 2}(find(cell2mat(roll_ang{s, 2}(:, 1)) == '1', 1), 2));
+    % IL2-19
+    tmp_ind = find(cell2mat(roll_ang{s, 2}(:, 1)) == '1');
+    roll_ang{s, 2 + 2} = flip_side .* cell2mat(roll_ang{s, 2}(tmp_ind(2:end, :), 2));
+    % TR1
+    roll_ang{s, 2 + 3} = flip_side .* cell2mat(roll_ang{s, 2}(find(cell2mat(roll_ang{s, 2}(:, 1)) == '2', 1), 2));
+    % TR2-19
+    tmp_ind = find(cell2mat(roll_ang{s, 2}(:, 1)) == '2');
+    roll_ang{s, 2 + 4} = flip_side .* cell2mat(roll_ang{s, 2}(tmp_ind(2:end, :), 2));
+    % PT
+    roll_ang{s, 2 + 5} = flip_side .* cell2mat(roll_ang{s, 2}(cell2mat(roll_ang{s, 2}(:, 1)) == '3', 2));
 end
 
-sig_roll = nan(5, ntime);
-mu_roll = nan(5, ntime);
-for i = 1:5
-    mu_roll(i, :) = mean(cell2mat(tmp(:, i)), 1);
-    sig_roll(i, :) = var(cell2mat(tmp(:, i)), 0, 1);
+sig_roll = nan(ncond, ntime);
+mu_roll = nan(ncond, ntime);
+for c = 1:ncond
+    mu_roll(c, :) = mean(cell2mat(roll_ang(:, 2 + c)), 1);
+    sig_roll(c, :) = var(cell2mat(roll_ang(:, 2 + c)), 0, 1);
 end
-save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll')
-%% plot
+save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll', 'roll_ang')
+% plot
+%{
 figure
 h1 = shadedErrorBar(timerstamps, mu_roll(1, :), sqrt(sig_roll(1, :)), '-r', 1);
 hold on
@@ -80,12 +87,129 @@ set(gca, 'Color', [.8, .8, .8])
 title('Object roll trajectories average across subjects')
 %}
 
+% delta: 1.5 ~ 4 Hz; theta: 4 ~ 8 Hz; alpha: 9 ~ 12 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz; low gama: 30 ~ 35 Hz
+rg_freq_band = { {'\delta', '1.5-4 Hz'}, {'\theta', '4-8 Hz'}, {'\alpha', '9-12 Hz'}, {'\beta_{low}', '13-19 Hz'}, {'\beta_{high}', '20-30 Hz'}, {'\gamma_{low}', '30-35 Hz'}; ...
+                 find(freqz >=  1.5 & freqz <=  4), find(freqz >=  4 & freqz <=  8), ...
+                 find(freqz >=  9   & freqz <= 12), find(freqz >= 13 & freqz <= 19), ...
+                 find(freqz >= 20   & freqz <= 30), find(freqz >= 30 & freqz <= 35) };
+rg_time_win = { {'-50 to 150 ms'}, {'150 to 350 ms'}, {'350 to 450 ms'}, {'450 to 650 ms'}, {'650 to 850 ms'}; ...
+                find(timerstamps >= -50 & timerstamps < 150), find(timerstamps >= 150 & timerstamps < 350), ...
+                find(timerstamps >= 350 & timerstamps < 450), find(timerstamps >= 450 & timerstamps < 650), ...
+                find(timerstamps >= 650 & timerstamps < 850) };
+rg_elec_pick = { {'FZ and FCz'}, {'C3 and CP3'}, {'C1 and C3'}; ...
+                find(strcmp('FZ', electrodes_name) | strcmp('FCz', electrodes_name)), ...
+                find(strcmp('C3', electrodes_name) | strcmp('CP3', electrodes_name)), ...
+                find(strcmp('C1', electrodes_name) | strcmp('C3', electrodes_name)) };
+
+            
+            
+%% ========================================================================
+% The two sections below are for estERSP plot.
+% The estERSP is estimated at the individual subject level.
+% The estERSP vs error is then average across subjects.
+%% Calculate coefficients average across freq bands and time windows for each subject, electrode, and condition
+nfreqband = length(rg_freq_band);
+ntimewin = length(rg_time_win);
+nelecpick = length(rg_elec_pick);
+model_coeff_banded_wined = nan(nfreqband, ntimewin, ncoeff, nsub, nelecpick);
+ticker = 1;
+h = waitbar(0, 'calculating average coefficients.');
+total_iter = nfreqband * ntimewin * ncoeff * nsub * nelecpick;
+for s = 1:nsub
+    for b = 1:ncoeff
+        for e = 1:nelecpick
+            for i = 1:nfreqband
+                for j = 1:ntimewin
+                    tmp = elec_dat(rg_freq_band{2, i}, rg_time_win{2, j}, b, s, rg_elec_pick{2, e});
+                    model_coeff_banded_wined(i, j, b, s, e) = mean(tmp(:));
+                    
+                    ticker = ticker + 1;
+                    progress_precent = 100 * ticker / total_iter;
+                    waitbar(ticker / total_iter, h, sprintf('calculating average coefficients. %2.2f %%', progress_precent));
+                end
+            end
+        end
+    end
+end
+close(h)
+save(fullfile(All_dirpath, 'result_freq_banded_time_wined.mat'), 'model_coeff_banded_wined', 'rg_freq_band', 'rg_time_win', 'coeff_name')
+%% estimate ERSP for each subject with regard to max and min error
+load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
+% err_range is in radian
+ncond = 3;
+estERSP = cell(nfreqband, ntimewin, ncond, nsub, nelecpick);
+err = cell(ntimewin, 1);
+for j = 1:ntimewin
+    err{j, 1} = [max(err_range(1, rg_time_win{2, j})); min(err_range(2, rg_time_win{2, j}))];
+    for s = 1:nsub
+        for e = 1:nelecpick
+            for i = 1:nfreqband
+                for c = 1:ncond
+                    switch c
+                        case 1 % IL1 and IL2-19
+                            estERSP{i, j, c, s, e} = elec_dat(i, j, 1, s, e) + elec_dat(i, j, 4, s, e) * err{j, 1};
+                        case 2 % TR1 and TR2-19
+                            estERSP{i, j, c, s, e} = elec_dat(i, j, 2, s, e) + elec_dat(i, j, 5, s, e) * err{j, 1};
+                        case 3 % PT
+                            estERSP{i, j, c, s, e} = elec_dat(i, j, 3, s, e) + elec_dat(i, j, 6, s, e) * err{j, 1};
+                    end
+                end
+            end
+        end
+    end
+end
+% robust average ERSP across subject
+sig_banded_wined = cell(nfreqband, ntimewin, ncond, nelecpick);
+mu_banded_wined = cell(nfreqband, ntimewin, ncond, nelecpick);
+
+for c = 1:ncond
+    for e = 1:nelecpick
+        for i = 1:nfreqband
+            for j = 1:ntimewin
+                tmp = [estERSP{i, j, c, :, e}];
+                [tmp_sig_min, tmp_mu_min] = robustcov(tmp(1, :), 'Method', 'fmcd');
+                [tmp_sig_max, tmp_mu_max] = robustcov(tmp(2, :), 'Method', 'fmcd');
+                
+                sig_banded_wined{i, j, c, e} = [tmp_sig_min; tmp_sig_max];
+                mu_banded_wined{i, j, c, e} = [tmp_mu_min; tmp_mu_max];
+            end
+        end
+    end
+end
+% plot
+figure
+subplot(2, 2, 1)
+f = 3; t = 4; e = 2;
+plot(rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 1, e}) - 1), '-ob', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 2, e}) - 1), '-sr', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 3, e}) - 1), '--dr');
+ylabel('estERSP (%)')
+xlabel({'err ({\circ})', [rg_freq_band{1, f}{1, 1}, ': ', rg_elec_pick{1, e}{1, 1}, ', freq: ', rg_freq_band{1, f}{1, 1}, ', time: ', rg_time_win{1, t}{1, 1}]})
+legend('IL', 'TR', 'PT', 'Location', 'best')
+subplot(2, 2, 3)
+f = 5; t = 4; e = 3;
+plot(rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 1, e}) - 1), '-ob', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 2, e}) - 1), '-sr', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 3, e}) - 1), '--dr');
+ylabel('estERSP (%)')
+xlabel({'err ({\circ})', [rg_freq_band{1, f}{1, 1}, ': ', rg_elec_pick{1, e}{1, 1}, ', freq: ', rg_freq_band{1, f}{1, 1}, ', time: ', rg_time_win{1, t}{1, 1}]})
+subplot(2, 2, 2)
+f = 2; t = 2; e = 1;
+plot(rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 1, e}) - 1), '-ob', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 2, e}) - 1), '-sr', ...
+     rad2deg(err{t, 1}), 100 * (db2pow(mu_banded_wined{f, t, 3, e}) - 1), '--dr');
+ylabel('estERSP (%)')
+xlabel({'err ({\circ})', [rg_freq_band{1, f}{1, 1}, ': ', rg_elec_pick{1, e}{1, 1}, ', freq: ', rg_freq_band{1, f}{1, 1}, ', time: ', rg_time_win{1, t}{1, 1}]})
+%% ========================================================================
 
 
-%% TOO MANY FREQUENCIES - remove every other
-% % % elec_dat = elec_dat(2:2:68, :, :, :, :);
-% % % elec_dat = elec_dat(3:end, :, :, :, :);
-nfreq = size(elec_dat, 1);
+
+
+ 
+
+
+
+
 
 %% mild smoothing, need to account for in p-value
 for s = 1:nsub
@@ -102,17 +226,11 @@ end
 % sigma = 1.274 => FWHM = 3           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
-%% Calucluate robust mean and sigma for freq bands
-% delta: 1.5 ~ 4 Hz; theta: 4 ~ 8 Hz; alpha: 9 ~ 12 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz; low gama: 30 ~ 35 Hz
-rg_freq_band = { {'\delta', '1.5-4 Hz'}, {'\theta', '4-8 Hz'}, {'\alpha', '9-12 Hz'}, {'\beta_{low}', '13-19 Hz'}, {'\beta_{high}', '20-30 Hz'}, {'\gamma_{low}', '30-35 Hz'}; ...
-                 find(freqz >=  1.5 & freqz <=  4), find(freqz >=  4 & freqz <=  8), ...
-                 find(freqz >=  9   & freqz <= 12), find(freqz >= 13 & freqz <= 19), ...
-                 find(freqz >= 20   & freqz <= 30), find(freqz >= 30 & freqz <= 35) };
+%% Calculate robust mean and sigma for freq bands
 nfreqband = length(rg_freq_band);
 sig_banded = nan(nfreqband, ntime, ncoeff, nelectrode);
 mu_banded = nan(nfreqband, ntime, ncoeff, nelectrode);
+
 ticker = 1;
 h = waitbar(0, 'calculating robust means and covariances.');
 total_iter = ncoeff * nelectrode * nfreqband * ntime;
@@ -130,7 +248,6 @@ for b = 1:ncoeff
     end
 end
 close(h)
-
 save(fullfile(All_dirpath, 'result_freq_banded.mat'), 'sig_banded', 'mu_banded', 'rg_freq_band', 'coeff_name')
 
 %% Plot using topoplot
@@ -195,6 +312,10 @@ end
 close(writerObj);
 
 
+
+
+%% ========================================================================
+% The section below is not a good section since too many comparisons were performed!!!
 %% plot one-sample t results and make a movie
 %{
 nfreqband = length(rg_freq_band);
@@ -361,7 +482,7 @@ end
 close(writerObj);
 
 %}
-
+%% ========================================================================
 
 
 
@@ -402,12 +523,12 @@ load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
 
 figure
 subplot(2, 2, 1)
-plot_preliminary('\alpha', 'C3', 'CP3', 9, 12, 450, 650, electrodes_name, freqz, timerstamps, mu, err_range); % alpha
+plot_preliminary('\alpha', 'C3', 'CP3', 9, 12, 450, 650, electrodes_name, freqz, timerstamps, mu, sig, err_range); % alpha
 legend('IL', 'TR', 'PT', 'Location', 'best')
 subplot(2, 2, 3)
-plot_preliminary('\beta', 'C1', 'C3', 20, 30, 450, 650, electrodes_name, freqz, timerstamps, mu, err_range); % beta
+plot_preliminary('\beta', 'C1', 'C3', 20, 30, 450, 650, electrodes_name, freqz, timerstamps, mu, sig, err_range); % beta
 subplot(2, 2, 2)
-plot_preliminary('\theta', 'FZ', 'FCz', 4, 8, 150, 350, electrodes_name, freqz, timerstamps, mu, err_range); % theta
+plot_preliminary('\theta', 'FZ', 'FCz', 4, 8, 150, 350, electrodes_name, freqz, timerstamps, mu, sig, err_range); % theta
 
 
 
