@@ -2,11 +2,6 @@ close all; clear; clc;
 All_dirpath = uigetdir();
 All_dirlist = dir(fullfile(All_dirpath, 'sub*'));
 
-All_linearmodel_path = fullfile(All_dirpath, 'linear');
-if ~exist(All_linearmodel_path, 'dir')
-    mkdir(All_linearmodel_path);
-end
-
 % 
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
 selected_sub = input('Which subject(s) to plot erpimage? ');
@@ -22,6 +17,14 @@ switch input('Use data after CSD?(y/N) ', 's')
         All_isCSDapplied = false;
 end
 
+if All_linearmodel_path
+    All_linearmodel_path = fullfile(All_dirpath, 'linear', 'CSD');
+else
+    All_linearmodel_path = fullfile(All_dirpath, 'linear', 'RAW');
+end
+if ~exist(All_linearmodel_path, 'dir')
+    mkdir(All_linearmodel_path);
+end
 
 for All_i = selected_sub% 1:length(All_dirlist)
     clearvars -except All_*; close all;
@@ -128,6 +131,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
 % % %     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel']);
 % % %     save(tmp_filename, 'Model_Result')
 % % %     clear Model_Result
+
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel_coeff']);
     save(tmp_filename, 'Model_*')
     tmp_filename = fullfile(All_linearmodel_path, 'misc');
