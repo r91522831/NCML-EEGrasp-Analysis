@@ -5,12 +5,20 @@ close all; clearvars; clc
 pathname = uigetdir;
 filelist = dir(fullfile(pathname, '*_temp_result.mat'));
 
+disp([num2cell((1:length(filelist))'), {filelist.name}']);
+All_selected_sub = input('Which subject(s) to process? ');
+if isempty(All_selected_sub)
+    All_selected_sub = 1:length(filelist);
+end
+
 nsub = length(filelist);
 all_sub_mx_pRoll = nan(95, 2, nsub);
 cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 nb_cond = length(cond_names);
 mx_pRoll_cond = cell(nsub, nb_cond);
-for sub = 1:nsub
+
+
+for sub = All_selected_sub%1:nsub
     clearvars -except sub filelist pathname all_sub_mx_pRoll nsub nb_cond mx_pRoll_cond cond_names
     close all
     load(fullfile(pathname, filelist(sub).name));
@@ -91,6 +99,7 @@ legend({'IL', 'TR', 'PT'}, 'Location', 'northwest')
 ylabel('Tcom (N-mm)')
 xlabel('trial')
 xlim([0, 96])
+set(gca, 'FontSize', 24)
 subplot 212
 hold on
 for i = 1:length(session)
@@ -106,16 +115,19 @@ for i = 1:length(session)
     if strcmp(session{i, 1}, 'T')
         errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec)
 % % %         errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), line_spec)
+        errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc')
     else
         shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), abs(session{i, 2}(:, 5)), line_spec)
     end
 end
 hold off
-ylim([-1, 16])
+ylim([-16, 16])
 ylabel('absolute peak roll ({\circ})')
 % % % ylim([-20, 10])
 % % % ylabel('peak roll ({\circ})')
 xlabel('trial')
 xlim([0, 96])
-mtit('error bars represent SE')
+hline(0, ':r')
+set(gca, 'FontSize', 24)
+mtit('error bars represent SE', 'FontSize', 24)
 savefig(fullfile(pathname, ['behavior_se_', num2str(nsub), 'subs']))

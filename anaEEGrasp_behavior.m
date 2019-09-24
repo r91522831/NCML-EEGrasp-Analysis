@@ -96,7 +96,12 @@ for All_i = All_selected_sub
             obj_center_d(time_id, :) = mean([obj_Rcenter_d(time_id, :), obj_Lcenter_d(time_id, :)]);
 
             % Angle b/w object axis z and table z
-            angTilt2R{i}(time_id, 1) = atan2d(coord_obj{i}{time_id, 1}{'z', 'z_axis'}, coord_obj{i}{time_id, 1}{'y', 'z_axis'}) - tmp_angTilt2R_b4go;
+            tmp_ang = atan2d(coord_obj{i}{time_id, 1}{'z', 'z_axis'}, coord_obj{i}{time_id, 1}{'y', 'z_axis'}) - tmp_angTilt2R_b4go;
+            % make sure the angle is smaller than 90 degree
+            if abs(tmp_ang) > 90
+                tmp_ang = tmp_ang - sign(tmp_ang) * 180;
+            end
+            angTilt2R{i}(time_id, 1) = tmp_ang;
             % Angle b/w object z axis and table xz plane
     % % %         angTilt{i}(time_id, 1) = abs(tmp_angTilt_b4go - asind( abs(dot(coord_table_y, coord_obj{i}{time_id, 1}{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj{i}{time_id, 1}{:, 'z_axis'} .^2))) ));
         end
