@@ -29,6 +29,9 @@ All_root_dir = fileparts(fileparts(All_data));
 
 disp([num2cell((1:length(All_data_list))'), {All_data_list.name}']);
 selected_sub = input('Which subject(s) to plot erpimage? ');
+if isempty(selected_sub)
+    selected_sub = 1:length(filelist);
+end
 
 for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and sub-10 for meeting on May 7th    
     clearvars -except All_*; close all;
