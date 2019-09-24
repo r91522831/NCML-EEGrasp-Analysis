@@ -106,12 +106,13 @@ for i = 1:length(session)
     if strcmp(session{i, 1}, 'T')
         errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec)
 % % %         errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), line_spec)
+        errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc')
     else
         shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), abs(session{i, 2}(:, 5)), line_spec)
     end
 end
 hold off
-ylim([-1, 16])
+ylim([-16, 16])
 ylabel('absolute peak roll ({\circ})')
 % % % ylim([-20, 10])
 % % % ylabel('peak roll ({\circ})')
