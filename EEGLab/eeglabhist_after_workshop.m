@@ -194,18 +194,32 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     % epoch with a window -1500 to 2000 ms around the key event
     ind_win = [-1.5, 2.5];
     
-    tmp_ind_event = [find(strcmp({EEG.event.type}, 's9')); find(strcmp({EEG.event.type}, 's129'))];
+    tmp_ready = find(strcmp({EEG.event.type}, 's9'));
+    use_leftright = false;
+    if size(tmp_ready) < 95
+        tmp_ready = find(strcmp({EEG.event.type}, 's17'));
+        use_leftright = true;
+    end
+        
+    tmp_ind_event = [tmp_ready; find(strcmp({EEG.event.type}, 's129'))];
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
         tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
         
         if length(tmp_event_series) >= (5 + 2) % {'s9', 's17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
-            ind_event(i, :) = round([ [EEG.event( tmp_event_series(1) ).latency]', ...  % 's9'
+            if use_leftright
+                tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]' - (3000 * EEG.srate / 1000);
+            else
+                tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]';
+            end
+            ind_event(i, :) = round([ tmp_ready_latency, ...  % 's9' or 's17'
                                       [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
                                       [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
                                       [EEG.event( tmp_event_series(end) ).latency]' ]); % 's129'
+
         end
     end
+    
     %{
     % find the tightest window for epoching
     ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 2)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 2)) / EEG.srate] * 100) / 100;
