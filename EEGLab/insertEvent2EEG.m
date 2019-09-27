@@ -2,6 +2,20 @@ function [EEG] = insertEvent2EEG(EEG, pathname, filename, behavior_BIDS_dir)
 % insertEvent2EEG Summary of this function goes here
 %   Detailed explanation goes here
 behavior = load(fullfile(pathname, filename));
+
+% EEG.event might have duplicated entries
+[~, uni_id, nonu_id] = unique([EEG.event.latency]);
+dup_id = setdiff(nonu_id, uni_id);
+if ~isempty(dup_id)
+    % remove duplicated entries in EEG.event
+    tmp = struct2table(EEG.event);
+    tmp(dup_id(:), :) = [];
+    nonu_id(dup_id(:), :) = [];
+    tmp(:, 'bvmknum') = table(nonu_id);
+    tmp(:, 'urevent') = table(nonu_id);
+    EEG.event = table2struct(tmp)';
+end
+
 tmp_ready = [EEG.event(strcmp({EEG.event(:).type}', 's9')).latency]';
 
 if length(tmp_ready) < 95
@@ -16,7 +30,7 @@ if length(tmp_ready) < 95
         disp('Estimate ready cue from left/right cue!')
         disp('Warning!')
         % please think if it is necessary to keep original tmp_ready
-        tmp_ready = tmp_leftright - (3000 * EEG.srate / 1000);
+% % %         tmp_ready = tmp_leftright - (3000 * EEG.srate / 1000);
     end
 elseif size(tmp_ready) > 95
     disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than 95'])

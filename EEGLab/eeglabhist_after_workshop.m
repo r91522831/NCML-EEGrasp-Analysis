@@ -185,6 +185,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     
     %% Section 5: Epoch around onset
     % Step 1:
+    file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
+    trial_no = length(file_list);
     originalEEG_clean = EEG;
     % clean up trials without onset event
     EEG = checkEvent(EEG, 6);
@@ -195,15 +197,16 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     ind_win = [-1.5, 2.5];
 
     tmp_ready = find(strcmp({EEG.event.type}, 's9'));
-    use_leftright = false(95, 1);
-    if length(tmp_ready) < 95
-        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than 95.']);
+    tmp_start = tmp_ready';
+    use_leftright = false(trial_no, 1);
+    if length(tmp_ready) < trial_no
+        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than ', num2str(trial_no)]);
         tmp_leftright = find(strcmp({EEG.event.type}, 's17'));
-        if length(tmp_leftright) < 95
-            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' less than 95.']);
+        if length(tmp_leftright) < trial_no
+            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' less than ', num2str(trial_no)]);
             return;
-        elseif length(tmp_leftright) > 95
-            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' more than 95.']);
+        elseif length(tmp_leftright) > trial_no
+            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' more than ', num2str(trial_no)]);
             return;
         else
             tmp_e = [strcmp({EEG.event.type}, 's9')', strcmp({EEG.event.type}, 's17')'];
@@ -227,8 +230,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
                 end
             end
         end
-    elseif length(tmp_ready) > 95
-        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than 95.']);
+    elseif length(tmp_ready) > trial_no
+        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than ', num2str(trial_no)]);
         return;
     end
     
@@ -262,7 +265,7 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     EEG.etc.epoch_latency = ind_win;
     EEG = eeg_checkset( EEG );
     % Step 2: Get experiment conditions
-    file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
+    
     
     % remove bad trials
     ind_event(any(isnan(ind_event), 2), :) = [];
@@ -272,8 +275,7 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     notPT = false(length(ind_event), 1);
     isIL = false(length(ind_event), 1);
     tmp_id = 1;
-    
-    
+        
     for i = 1:length(ind_event)
         tmp = char({file_list(tmp_id).name});
         tmp_filename_list{i} = tmp;
