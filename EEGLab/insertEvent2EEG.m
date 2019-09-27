@@ -3,9 +3,23 @@ function [EEG] = insertEvent2EEG(EEG, pathname, filename, behavior_BIDS_dir)
 %   Detailed explanation goes here
 behavior = load(fullfile(pathname, filename));
 tmp_ready = [EEG.event(strcmp({EEG.event(:).type}', 's9')).latency]';
-if size(tmp_ready) ~= 95
+
+if length(tmp_ready) < 95
+    disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than 95'])
     tmp_leftright = [EEG.event(strcmp({EEG.event(:).type}', 's17')).latency]';
-    tmp_ready = tmp_leftright - (3000 * EEG.srate / 1000);
+    if length(tmp_leftright) < 95
+        disp(['The number of left/right cues is ', num2str(length(tmp_ready)),' less than 95'])
+    elseif length(tmp_leftright) > 95
+        disp(['The number of left/right cues is ', num2str(length(tmp_ready)),' more than 95'])
+    else
+        % estimate ready from left/right cue: ready + 3000 ms -> left/right
+        disp('Estimate ready cue from left/right cue!')
+        disp('Warning!')
+        % please think if it is necessary to keep original tmp_ready
+        tmp_ready = tmp_leftright - (3000 * EEG.srate / 1000);
+    end
+elseif size(tmp_ready) > 95
+    disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than 95'])
 end
 
 trial_filelist = dir(fullfile(behavior_BIDS_dir, '*.csv'));

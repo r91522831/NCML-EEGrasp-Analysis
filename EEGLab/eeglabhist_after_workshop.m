@@ -193,21 +193,52 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     % should re-run epoch before ICA
     % epoch with a window -1500 to 2000 ms around the key event
     ind_win = [-1.5, 2.5];
-    
+
     tmp_ready = find(strcmp({EEG.event.type}, 's9'));
-    use_leftright = false;
-    if size(tmp_ready) < 95
-        tmp_ready = find(strcmp({EEG.event.type}, 's17'));
-        use_leftright = true;
+    use_leftright = false(95, 1);
+    if length(tmp_ready) < 95
+        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than 95.']);
+        tmp_leftright = find(strcmp({EEG.event.type}, 's17'));
+        if length(tmp_leftright) < 95
+            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' less than 95.']);
+            return;
+        elseif length(tmp_leftright) > 95
+            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' more than 95.']);
+            return;
+        else
+            tmp_e = [strcmp({EEG.event.type}, 's9')', strcmp({EEG.event.type}, 's17')'];
+            tmp_count = 1;
+            tmp_start = nan(length(tmp_leftright), 1);
+            for i = 1:length(tmp_leftright)
+                if tmp_leftright(i) <= 5
+                    if tmp_ready(tmp_count) <= 5
+                        tmp_start(i) = tmp_ready(tmp_count);
+                        tmp_count = tmp_count + 1;
+                    end
+                    continue;
+                end
+                tmp_train = tmp_e(tmp_leftright(i) - (1:5), 1);
+                if any(tmp_train)
+                    tmp_start(i) = tmp_ready(tmp_count);
+                    tmp_count = tmp_count + 1;
+                else
+                    use_leftright(i) = true;
+                    tmp_start(i) = tmp_leftright(i);
+                end
+            end
+        end
+    elseif length(tmp_ready) > 95
+        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than 95.']);
+        return;
     end
-        
-    tmp_ind_event = [tmp_ready; find(strcmp({EEG.event.type}, 's129'))];
+    
+    tmp_ind_event = [tmp_start'; find(strcmp({EEG.event.type}, 's129'))];
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
         tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
         
-        if length(tmp_event_series) >= (5 + 2) % {'s9', 's17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
-            if use_leftright
+        if length(tmp_event_series) >= (4 + 2) % 's9' can be estimated from 's17' {'s17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
+            if use_leftright(i)
                 tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]' - (3000 * EEG.srate / 1000);
             else
                 tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]';
