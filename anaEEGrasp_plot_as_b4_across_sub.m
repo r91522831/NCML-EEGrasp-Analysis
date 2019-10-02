@@ -39,7 +39,7 @@ for sub = All_selected_sub%1:nsub
     
     trial_id = str2double(cellstr(tmp_filename(:, 7:9)));
     tmp_mx_onset = mx_onset;
-    tmp_peak_roll = peak_roll{:, 'peakRoll'};
+    tmp_peak_roll = peak_roll{:, 'peakRoll'}; % in degrees
     subID = str2double(filelist(sub).name(2:4));
     % aligned left and right
     if ~mod(subID, 2) % Odd number subject started IL with Left handle, while even number subject started with right handle!
@@ -129,5 +129,5 @@ xlabel('trial')
 xlim([0, 96])
 hline(0, ':r')
 set(gca, 'FontSize', 24)
-mtit('error bars represent SE', 'FontSize', 24)
+mtit('error bars represent SE')
 savefig(fullfile(pathname, ['behavior_se_', num2str(nsub), 'subs']))
