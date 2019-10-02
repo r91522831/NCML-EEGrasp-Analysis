@@ -23,3 +23,9 @@ tmp = tmp(~isnan(tmp(:, 2)), :);
 
 f = fit(tmp(:, 1), tmp(:, 2), 'a * exp(b * x)', 'StartPoint', [1, 1]);
 plot(f, tmp(:, 1), tmp(:, 2))
+
+
+
+
+a = [mx_pRoll_cond{1, 3:5}];
+a1 = a(:, 2:2:6);
