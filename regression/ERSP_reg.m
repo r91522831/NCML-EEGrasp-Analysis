@@ -98,7 +98,11 @@ for All_i = selected_sub% 1:length(All_dirlist)
     end
     % the categorical variables: condition (IL, TR, PT)
     dummy_cond = dummyvar( grp2idx({EEG.epoch.condType}'));
-    Model_Cond_IL = dummy_cond(:, 1); Model_Cond_TR = dummy_cond(:, 2); Model_Cond_PT = dummy_cond(:, 3);    
+    Model_Cond_IL = dummy_cond(:, 1); Model_Cond_TR = dummy_cond(:, 2); Model_Cond_PT = dummy_cond(:, 3);
+    
+    
+    
+    
     
     % perform regression using power as depend variable; dummy conditions
     % and err as independ variables
