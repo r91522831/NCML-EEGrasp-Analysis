@@ -66,7 +66,7 @@ for i = 1:3
     pRoll_fit(:, i) = tmp / max(tmp);
 end
 [~, filename, ~] = fileparts(filelist(1).name);
-save(fullfile(pathname, [filename, '_pRoll_fit']), 'pRoll_fit');
+save(fullfile(pathname, [filename, '_pRoll_fit']), 'pRoll_fit', 'f');
 
 
 %{
