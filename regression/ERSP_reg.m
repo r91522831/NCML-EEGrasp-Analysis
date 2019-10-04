@@ -2,7 +2,10 @@ close all; clear; clc;
 All_dirpath = uigetdir();
 All_dirlist = dir(fullfile(All_dirpath, 'sub*'));
 
-% 
+%% load exp fitte
+load
+
+%% 
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
 selected_sub = input('Which subject(s) to plot erpimage? ');
 if isempty(selected_sub)
@@ -17,7 +20,7 @@ switch input('Use data after CSD?(y/N) ', 's')
         All_isCSDapplied = false;
 end
 
-if All_linearmodel_path
+if All_isCSDapplied
     All_linearmodel_path = fullfile(All_dirpath, 'linear', 'CSD');
 else
     All_linearmodel_path = fullfile(All_dirpath, 'linear', 'RAW');
@@ -63,6 +66,8 @@ for All_i = selected_sub% 1:length(All_dirlist)
     tf_times = tf_ersp; tf_freqs = tf_ersp;
     tf_data = tf_ersp;
     
+    
+    %{
     % time frequency analysis for each channel and each epoch
     for i = 1:length(electrodes)
         tmp_ersp = cell(nb_epoch, 1);
@@ -87,6 +92,8 @@ for All_i = selected_sub% 1:length(All_dirlist)
         tf_data{i} = cat(3, tmp_data{:, 1});
     end
     
+    %}
+    
     % the continuous variables: roll angle (deg)
     % ****************************************************
     % the roll angle is NOT aligned for Left/Right handles
@@ -103,6 +110,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
     
     
     
+    
+    
+    %{
     
     % perform regression using power as depend variable; dummy conditions
     % and err as independ variables
@@ -143,4 +153,6 @@ for All_i = selected_sub% 1:length(All_dirlist)
     save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name', 'chanlocs')
     
     disp([All_dirlist(All_i).name, ' finished.']);
+    
+    %}
 end

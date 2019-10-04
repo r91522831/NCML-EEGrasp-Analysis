@@ -65,8 +65,23 @@ for i = 1:3
     tmp = feval(f{i}, x);
     pRoll_fit(:, i) = tmp / max(tmp);
 end
+
+% construct dummy variables with trial ID 1~95
+pRoll_dummy = nan(95, 2);
+for i = 1:95
+    if i < 20
+        pRoll_dummy(i, :) = [i, pRoll_fit(i, 1)];
+    end
+end
+for i = 20:4:95
+    pRoll_dummy(i, :) = [i, pRoll_fit(round((i - 20) / 4) + 1, 2)];
+    pRoll_dummy(i + 1, :) = [i + 1, pRoll_fit(1, 3)];
+    pRoll_dummy(i + 2, :) = [i + 2, pRoll_fit(2, 3)];
+    pRoll_dummy(i + 3, :) = [i + 3, pRoll_fit(3, 3)];
+end
+
 [~, filename, ~] = fileparts(filelist(1).name);
-save(fullfile(pathname, [filename, '_pRoll_fit']), 'pRoll_fit', 'f');
+save(fullfile(pathname, [filename, '_pRoll_fit']), 'pRoll_fit', 'f', 'pRoll_dummy');
 
 
 %{
