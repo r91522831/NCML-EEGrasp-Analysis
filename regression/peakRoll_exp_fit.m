@@ -67,17 +67,17 @@ for i = 1:3
 end
 
 % construct dummy variables with trial ID 1~95
-pRoll_dummy = nan(95, 2);
+pRoll_dummy = zeros(95, 4);
 for i = 1:95
     if i < 20
-        pRoll_dummy(i, :) = [i, pRoll_fit(i, 1)];
+        pRoll_dummy(i, [1, 2]) = [i, pRoll_fit(i, 1)];
     end
 end
 for i = 20:4:95
-    pRoll_dummy(i, :) = [i, pRoll_fit(round((i - 20) / 4) + 1, 2)];
-    pRoll_dummy(i + 1, :) = [i + 1, pRoll_fit(1, 3)];
-    pRoll_dummy(i + 2, :) = [i + 2, pRoll_fit(2, 3)];
-    pRoll_dummy(i + 3, :) = [i + 3, pRoll_fit(3, 3)];
+    pRoll_dummy(i, [1, 3]) = [i, pRoll_fit(round((i - 20) / 4) + 1, 2)];
+    pRoll_dummy(i + 1, [1, 4]) = [i + 1, pRoll_fit(1, 3)];
+    pRoll_dummy(i + 2, [1, 4]) = [i + 2, pRoll_fit(2, 3)];
+    pRoll_dummy(i + 3, [1, 4]) = [i + 3, pRoll_fit(3, 3)];
 end
 
 [~, filename, ~] = fileparts(filelist(1).name);
