@@ -2,8 +2,8 @@ close all; clear; clc;
 All_dirpath = uigetdir();
 All_dirlist = dir(fullfile(All_dirpath, 'sub*'));
 
-%% load exp fitte
-load
+%% load behaviore exponential fit
+All_beh_expfit = load(fullfile(fileparts(fileparts(fileparts(All_dirpath))), 'behavior', 'preliminary results', 'behavior_pRoll_23subs_pRoll_fit.mat'));
 
 %% 
 disp([num2cell((1:length(All_dirlist))'), {All_dirlist.name}']);
@@ -65,9 +65,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     tf_itc = tf_ersp; tf_powbase = tf_ersp;
     tf_times = tf_ersp; tf_freqs = tf_ersp;
     tf_data = tf_ersp;
-    
-    
-    %{
+
     % time frequency analysis for each channel and each epoch
     for i = 1:length(electrodes)
         tmp_ersp = cell(nb_epoch, 1);
@@ -92,8 +90,6 @@ for All_i = selected_sub% 1:length(All_dirlist)
         tf_data{i} = cat(3, tmp_data{:, 1});
     end
     
-    %}
-    
     % the continuous variables: roll angle (deg)
     % ****************************************************
     % the roll angle is NOT aligned for Left/Right handles
@@ -104,15 +100,13 @@ for All_i = selected_sub% 1:length(All_dirlist)
         Model_Roll(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time, EEG.behavior.obj_epoch{i, 1}.roll, squeeze(tf_times{1, 1}(:, :, 1)));
     end
     % the categorical variables: condition (IL, TR, PT)
-    dummy_cond = dummyvar( grp2idx({EEG.epoch.condType}'));
+    % % % dummy_cond = dummyvar( grp2idx({EEG.epoch.condType}')); % unitary dummies
+    
+    trialID = str2double({EEG.epoch.trialID})';
+    available_trials = intersect(All_beh_expfit.pRoll_dummy(:, 1), trialID);
+    dummy_cond = All_beh_expfit.pRoll_dummy(available_trials, 2:end); % exponetial dummies
+    
     Model_Cond_IL = dummy_cond(:, 1); Model_Cond_TR = dummy_cond(:, 2); Model_Cond_PT = dummy_cond(:, 3);
-    
-    
-    
-    
-    
-    
-    %{
     
     % perform regression using power as depend variable; dummy conditions
     % and err as independ variables
@@ -153,6 +147,4 @@ for All_i = selected_sub% 1:length(All_dirlist)
     save(tmp_filename, 'tf_times', 'tf_freqs', 'electrodes_name', 'chanlocs')
     
     disp([All_dirlist(All_i).name, ' finished.']);
-    
-    %}
 end
