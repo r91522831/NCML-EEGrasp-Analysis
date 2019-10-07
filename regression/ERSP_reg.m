@@ -90,6 +90,10 @@ for All_i = selected_sub% 1:length(All_dirlist)
         tf_data{i} = cat(3, tmp_data{:, 1});
     end
     
+    tmp_filename = fullfile(All_linearmodel_path, [subID, '_timefreq']);
+    save(tmp_filename, 'tf_*')
+    
+    
     % the continuous variables: roll angle (deg)
     % ****************************************************
     % the roll angle is NOT aligned for Left/Right handles
@@ -125,6 +129,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
             for electrode_id = 1:length(electrodes)
                 Model_ERSP = squeeze( tf_ersp{electrode_id, 1}(freq_id, time_id, :) );
                 tbl = table(Model_Cond_IL, Model_Cond_TR, Model_Cond_PT, Model_Cond, Model_Roll(:, time_id), Model_ERSP);
+                tbl.Properties.VariableNames{'Var5'} = 'Model_Roll';
                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Cond_IL + Model_Cond_TR + Model_Cond_PT + Model_Cond_IL:Model_Roll + Model_Cond_TR:Model_Roll + Model_Cond_PT:Model_Roll - 1', 'RobustOpts', 'on');
 %                 mdl = fitlm(tbl, 'Model_ERSP ~ Model_Roll * Model_Cond', 'RobustOpts', 'on');
                 
