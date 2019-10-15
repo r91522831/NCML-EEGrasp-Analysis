@@ -41,6 +41,14 @@ for All_i = All_selected_sub
             end
             r_matrix = coord_obj{i, 1}{time_id, 1}{:, {'x_axis', 'y_axis', 'z_axis'}};
             tmp_eul = rotm2eul(r_matrix, 'ZYX') - eul_b4go; % ZYX -> pitch, yaw, roll; angles are in radian
+            
+            
+            % make sure the roll angle is smaller than 90 degree
+            if abs(tmp_eul(:, 3)) > deg2rad(90)
+                tmp_eul(:, 3) = tmp_eul(:, 3) - sign(tmp_eul(:, 3)) * deg2rad(180);
+            end
+            
+            
             eul(time_id, :) = [coord_obj{i, 1}{time_id, 1}{:, {'origin'}}', tmp_eul];
         end
         obj{i, 1} = array2table(eul, 'VariableNames', {'x', 'y', 'z', 'pitch', 'yaw', 'roll'});

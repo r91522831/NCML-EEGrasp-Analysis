@@ -235,7 +235,46 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
         return;
     end
     
-    tmp_ind_event = [tmp_start'; find(strcmp({EEG.event.type}, 's129'))];
+    tmp_finish = find(strcmp({EEG.event.type}, 's129'));
+    tmp_end = tmp_finish';
+    use_relax = false(trial_no, 1);
+    if length(tmp_finish) < trial_no
+        disp(['The number of finish cues is ', num2str(length(tmp_finish)),' less than ', num2str(trial_no)]);
+        tmp_relax = find(strcmp({EEG.event.type}, 's65'));
+        if length(tmp_relax) < trial_no
+            disp(['The number of relax cues is ', num2str(length(tmp_relax)),' less than ', num2str(trial_no)]);
+            return;
+        elseif length(tmp_relax) > trial_no
+            disp(['The number of relax cues is ', num2str(length(tmp_relax)),' more than ', num2str(trial_no)]);
+            return;
+        else
+            tmp_e = [strcmp({EEG.event.type}, 's65')', strcmp({EEG.event.type}, 's129')'];
+            tmp_count = 1;
+            tmp_end = nan(length(tmp_relax), 1);
+            for i = 1:length(tmp_relax)
+                if tmp_relax(i) <= 5
+                    if tmp_finish(tmp_count) <= 5
+                        tmp_end(i) = tmp_finish(tmp_count);
+                        tmp_count = tmp_count + 1;
+                    end
+                    continue;
+                end
+                tmp_train = tmp_e(tmp_relax(i) - (1:5), 1);
+                if any(tmp_train)
+                    tmp_end(i) = tmp_finish(tmp_count);
+                    tmp_count = tmp_count + 1;
+                else
+                    use_relax(i) = true;
+                    tmp_end(i) = tmp_relax(i);
+                end
+            end
+        end
+    elseif length(tmp_finish) > trial_no
+        disp(['The number of ready cues is ', num2str(length(tmp_finish)),' more than ', num2str(trial_no)]);
+        return;
+    end
+    
+    tmp_ind_event = [tmp_start'; tmp_end'];
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
         tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
@@ -246,10 +285,16 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
             else
                 tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]';
             end
+            if use_relax(i)
+                tmp_finish_latency = [EEG.event( tmp_event_series(1) ).latency]' - (3000 * EEG.srate / 1000);
+            else
+                tmp_finish_latency = [EEG.event( tmp_event_series(end) ).latency]';
+            end
+            
             ind_event(i, :) = round([ tmp_ready_latency, ...  % 's9' or 's17'
                                       [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
                                       [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
-                                      [EEG.event( tmp_event_series(end) ).latency]' ]); % 's129'
+                                      tmp_finish_latency ]); % 's129'
 
         end
     end

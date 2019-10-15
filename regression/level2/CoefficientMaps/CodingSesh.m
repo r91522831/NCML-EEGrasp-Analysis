@@ -133,6 +133,7 @@ for s = 1:nsub
 end
 close(h)
 save(fullfile(All_dirpath, 'result_freq_banded_time_wined.mat'), 'model_coeff_banded_wined', 'rg_freq_band', 'rg_time_win', 'coeff_name')
+
 %% estimate ERSP for each subject with regard to max and min error
 load(fullfile(fileparts(All_dirpath), 'err_range.mat'));
 % err_range is in radian
