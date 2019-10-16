@@ -65,7 +65,10 @@ for All_i = selected_sub% 1:length(All_dirlist)
     tf_itc = tf_ersp; tf_powbase = tf_ersp;
     tf_times = tf_ersp; tf_freqs = tf_ersp;
     tf_data = tf_ersp;
-
+    
+    % find baseline [-600, -100] before left/right cue
+    baseline_b4_leftright
+    
     % time frequency analysis for each channel and each epoch
     for i = 1:length(electrodes)
         tmp_ersp = cell(nb_epoch, 1);
@@ -77,7 +80,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
             newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ...
                                                       'maxfreq', 35, ...
                                                       'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, ...
-                                                      'baseline', [-600, -100], 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
+                                                      'baseline', baseline_b4_leftright(j), 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
                                                       'plotitc' , 'off', 'plotphase', 'off', 'plotersp', 'off');
         end
         
