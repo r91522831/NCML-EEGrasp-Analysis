@@ -133,7 +133,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     originalEEG = EEG;
     % select only EEG channels
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-    EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
+%     EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
+    EEG = clean_artifacts(EEG);
     % Interpolate channels.
     EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
     % putback EOG channel
@@ -194,7 +195,10 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     
     % should re-run epoch before ICA
     % epoch with a window -1500 to 2000 ms around the key event
-    ind_win = [-1.5, 2.5];
+% %     ind_win = [-1.5, 2.5];
+    % epoch with a window -8000 to 4000 ms around the key event to include
+    % the left/right cue
+    ind_win = [-8, 4];
 
     tmp_ready = find(strcmp({EEG.event.type}, 's9'));
     tmp_start = tmp_ready';

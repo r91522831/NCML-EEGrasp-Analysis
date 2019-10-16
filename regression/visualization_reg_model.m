@@ -168,7 +168,7 @@ cmin = nan(1, ncoeff);
 for b = 1:ncoeff
 % % %     coeff_trace(:, b) = mean(reshape(permute(squeeze(mu_banded(:, :, b, :)), [2, 1, 3]), 200, []), 2);
 % % %     tmp_mu = mu_banded(:, :, b, :);
-    tmp_mu = p(:, :, b, :);
+    tmp_mu = robust_tstat(:, :, b, :);
     cmax(:, b) = max(tmp_mu(:));
     cmin(:, b) = min(tmp_mu(:));
 end
@@ -180,7 +180,7 @@ for b = 1:ncoeff
         for i = 1:nfreqband
             subplot(nfreqband, ntimeband + 1, j + (nfreqband - i) * (ntimeband + 1));
             % specify ('conv', 'on') to avoid extrapolation
-            [tmp_h, ~, ~, ~, ~] = topoplot(p(i, j, b, :), chanlocs,'numcontour', 1, 'contourvals', p(i, j, b, :) > critical, 'ccolor', 'w', 'maplimits', [cmin(1, b), cmax(1, b)], 'style', 'map', 'electrodes', 'off', 'conv', 'on');
+            topoplot(robust_tstat(i, j, b, :), chanlocs,'numcontour', 1, 'contourvals', p(i, j, b, :) < critical, 'ccolor', 'w', 'maplimits', [cmin(1, b), cmax(1, b)], 'electrodes', 'off', 'conv', 'on');
             if i == 1
                 text(0, -0.8, rg_time_win{1, j}, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
             end
@@ -190,6 +190,9 @@ for b = 1:ncoeff
         end
     end
     subplot(nfreqband, ntimeband + 1, (ntimeband + 1) + ((1:nfreqband) - 1) .* (ntimeband + 1));
+    surf([])
+    tmp_c = max([abs(cmin(1, b)), abs(cmax(1, b))]);
+	caxis([-tmp_c, tmp_c])
     set(gca, 'visible','off');
     colorbar;
     set(gca, 'FontSize', 16);
