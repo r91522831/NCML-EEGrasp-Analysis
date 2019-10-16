@@ -12,7 +12,10 @@ end
 [ALLEEG, ~, ~, ALLCOM] = eeglab;
 
 disp([num2cell((1:length(eeg_dataset_list))'), {eeg_dataset_list.name}']);
-selected_sub = input('Which subject(s) to plot erpimage? ');
+selected_sub = input('Which subject(s) to combine behavior to EEG? ');
+if isempty(selected_sub)
+    selected_sub = 1:length(eeg_dataset_list);
+end
 
 %% for individual subjects
 for sub_i = selected_sub%1:length(eeg_dataset_list)
