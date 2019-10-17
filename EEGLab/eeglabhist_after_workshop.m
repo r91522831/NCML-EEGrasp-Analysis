@@ -338,6 +338,11 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
                 tmp_finish_latency = [EEG.event( tmp_event_series(end) ).latency]';
             end
             
+            
+            
+            if ~strcmp(EEG.event( tmp_event_series(3) ).type, 'onset')
+                continue;
+            end
             ind_event(i, :) = round([ tmp_ready_latency, ...  % 's9' or 's17'
                                       [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
                                       [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
