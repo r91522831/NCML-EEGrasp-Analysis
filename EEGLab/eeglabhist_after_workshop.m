@@ -231,8 +231,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     %% Section 5: Epoch around onset
     % Step 1:
     file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
-    trial_no = length(file_list);
-%     trial_no = 95;
+%     trial_no = length(file_list);
+    trial_no = 95;
     originalEEG_clean = EEG;
     % clean up trials without onset event
     EEG = checkEvent(EEG, 6);
@@ -253,10 +253,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
         tmp_leftright = find(strcmp({EEG.event.type}, 's17'));
         if length(tmp_leftright) < trial_no
             disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' less than ', num2str(trial_no)]);
-            return;
         elseif length(tmp_leftright) > trial_no
             disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' more than ', num2str(trial_no)]);
-            return;
         else
             tmp_e = [strcmp({EEG.event.type}, 's9')', strcmp({EEG.event.type}, 's17')'];
             tmp_count = 1;
@@ -281,6 +279,7 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
         end
     elseif length(tmp_ready) > trial_no
         disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than ', num2str(trial_no)]);
+        
     end
     
     tmp_finish = find(strcmp({EEG.event.type}, 's129'));
@@ -291,10 +290,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
         tmp_relax = find(strcmp({EEG.event.type}, 's65'));
         if length(tmp_relax) < trial_no
             disp(['The number of relax cues is ', num2str(length(tmp_relax)),' less than ', num2str(trial_no)]);
-            return;
         elseif length(tmp_relax) > trial_no
             disp(['The number of relax cues is ', num2str(length(tmp_relax)),' more than ', num2str(trial_no)]);
-            return;
         else
             tmp_e = [strcmp({EEG.event.type}, 's65')', strcmp({EEG.event.type}, 's129')'];
             tmp_count = 1;
