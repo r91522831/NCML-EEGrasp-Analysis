@@ -280,7 +280,6 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
         end
     elseif length(tmp_ready) > trial_no
         disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than ', num2str(trial_no)]);
-        return;
     end
     
     tmp_finish = find(strcmp({EEG.event.type}, 's129'));
@@ -318,8 +317,7 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
             end
         end
     elseif length(tmp_finish) > trial_no
-        disp(['The number of ready cues is ', num2str(length(tmp_finish)),' more than ', num2str(trial_no)]);
-        return;
+        disp(['The number of finish cues is ', num2str(length(tmp_finish)),' more than ', num2str(trial_no)]);
     end
     
     tmp_ind_event = [tmp_start'; tmp_end'];
