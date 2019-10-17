@@ -17,12 +17,16 @@ if ~isempty(dup_id)
 end
 
 tmp_ready = [EEG.event(strcmp({EEG.event(:).type}', 's9')).latency]';
-
+%{
+% if 's9' is missing, find a way to reconstruct 's9' by 's17' - 3000 ms
+% so far it did not happend.
 if length(tmp_ready) < 95
     disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than 95'])
     tmp_leftright = [EEG.event(strcmp({EEG.event(:).type}', 's17')).latency]';
     if length(tmp_leftright) < 95
         disp(['The number of left/right cues is ', num2str(length(tmp_ready)),' less than 95'])
+        
+        
     elseif length(tmp_leftright) > 95
         disp(['The number of left/right cues is ', num2str(length(tmp_ready)),' more than 95'])
     else
@@ -35,6 +39,10 @@ if length(tmp_ready) < 95
 elseif size(tmp_ready) > 95
     disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than 95'])
 end
+%}
+
+
+
 
 trial_filelist = dir(fullfile(behavior_BIDS_dir, '*.csv'));
 trial_list = cellfun(@(x) str2double(x(7:9)), {trial_filelist.name}');

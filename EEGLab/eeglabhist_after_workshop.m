@@ -159,7 +159,51 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     EEG = pop_select(EEG, 'nochannel', {'initialReference'});
     % putback EOG channel
     EEG = putback_nonEEG(EEG, originalEEG);
-    
+    % remove boundary
+    EEG.event = EEG.event(~cellfun(@isempty, {EEG.event.urevent}));
+    % put back deleted event for 's9' or 's17'; '33' or 's65' or 's129'
+    missing_event = find(diff([EEG.event.urevent]) ~= 1);
+    for i = 1:length(missing_event)
+        switch EEG.event(missing_event(i)).type
+            case 's129' % missing 's9'
+                % find next 's17'
+                tmp_next = missing_event(i) + find(strcmp({EEG.event(missing_event(i):end).type}, 's17'), 1);
+                tmp_missing = EEG.event(tmp_next);
+                tmp_missing.latency = EEG.event(tmp_next).latency - 3 * EEG.srate; % 3 second earlier than 's17'
+                tmp_missing.bvmknum = missing_event(i) + 1;
+                tmp_missing.type = 's9';
+                tmp_missing.urevent = missing_event(i) + 1;
+            case 'hold' % missing 's65'
+                tmp_next = missing_event(i) + find(strcmp({EEG.event(missing_event(i):end).type}, 's129'), 1);
+                tmp_missing = EEG.event(tmp_next);
+                tmp_missing.latency = EEG.event(tmp_next).latency - 3 * EEG.srate; % 3 second earlier than 's129'
+                tmp_missing.bvmknum = missing_event(i) + 1;
+                tmp_missing.type = 's65';
+                tmp_missing.urevent = missing_event(i) + 1;
+            case 's9' % missing 's17'
+                tmp_next = missing_event(i);
+                tmp_missing = EEG.event(tmp_next);
+                tmp_missing.latency = EEG.event(tmp_next).latency + 3 * EEG.srate; % 3 second later than 's9'
+                tmp_missing.bvmknum = missing_event(i) + 1;
+                tmp_missing.type = 's17';
+                tmp_missing.urevent = missing_event(i) + 1;
+            case 's65' % missing 's129'
+                tmp_next = missing_event(i);
+                tmp_missing = EEG.event(tmp_next);
+                tmp_missing.latency = EEG.event(tmp_next).latency + 3 * EEG.srate; % 3 second later than 's9'
+                tmp_missing.bvmknum = missing_event(i) + 1;
+                tmp_missing.type = 's129';
+                tmp_missing.urevent = missing_event(i) + 1;
+            case {'s17', 'onset', 's33'}
+                disp('missing event!!!!!!')
+            otherwise
+        end
+        EEG.event = [EEG.event, tmp_missing];
+    end
+    tmp_event = struct2table(EEG.event);
+	sorted_event = sortrows(tmp_event, 'latency');
+	EEG.event = table2struct(sorted_event);
+    % save dataset
     EEG.setname = [sub_id, '_rereference'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
