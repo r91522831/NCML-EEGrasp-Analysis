@@ -134,7 +134,7 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     % select only EEG channels
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
 %     EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
-    EEG = clean_artifacts(EEG);
+    EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
     % Interpolate channels.
     EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
     % putback EOG channel
@@ -325,29 +325,25 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     ind_event = nan(length(tmp_ind_event), 4);
     for i = 1:length(tmp_ind_event)
         tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
-        
+        tmp_epoch_events = {EEG.event(tmp_event_series).type};
         if length(tmp_event_series) >= (4 + 2) % 's9' can be estimated from 's17' {'s17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
             if use_leftright(i)
-                tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]' - (3000 * EEG.srate / 1000);
+                tmp_ready_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's17')) ).latency]' - (3000 * EEG.srate / 1000);
             else
-                tmp_ready_latency = [EEG.event( tmp_event_series(1) ).latency]';
+                tmp_ready_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's9')) ).latency]';
             end
             if use_relax(i)
-                tmp_finish_latency = [EEG.event( tmp_event_series(1) ).latency]' - (3000 * EEG.srate / 1000);
+                tmp_finish_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's65')) ).latency]' + (3000 * EEG.srate / 1000);
             else
-                tmp_finish_latency = [EEG.event( tmp_event_series(end) ).latency]';
+                tmp_finish_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's129')) ).latency]';
             end
-            
-            
-            
-            if ~strcmp(EEG.event( tmp_event_series(3) ).type, 'onset')
+            if ~any(strcmp(tmp_epoch_events, 'onset'))
                 continue;
             end
             ind_event(i, :) = round([ tmp_ready_latency, ...  % 's9' or 's17'
-                                      [EEG.event( tmp_event_series(3) ).latency]', ...  % 'onset'
-                                      [EEG.event( tmp_event_series(5) ).latency]', ...  % 'hold'
+                                      [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 'onset')) ).latency]', ...  % 'onset'
+                                      [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 'hold')) ).latency]', ...  % 'hold'
                                       tmp_finish_latency ]); % 's129'
-
         end
     end
     
