@@ -231,7 +231,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     %% Section 5: Epoch around onset
     % Step 1:
     file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
-    trial_no = length(file_list);
+%     trial_no = length(file_list);
+    trial_no = 95;
     originalEEG_clean = EEG;
     % clean up trials without onset event
     EEG = checkEvent(EEG, 6);
