@@ -67,7 +67,14 @@ for All_i = selected_sub% 1:length(All_dirlist)
     tf_data = tf_ersp;
     
     % find baseline [-600, -100] before left/right cue
-    baseline_b4_leftright
+    baseline_b4_leftright = cell(nb_epoch, 1);
+    tmp_baseline = [-600, -100]; % in milliseconds
+    for i = 1:nb_epoch
+        if isempty(find(strcmp([EEG.epoch(i).eventtype], 's17'), 1))
+            disp([num2str(subID), ' missing left/right cue in trial ', num2str(i)]);
+        end
+        baseline_b4_leftright{i} = round((EEG.epoch(i).eventlatency{strcmp([EEG.epoch(i).eventtype], 's17')}) * EEG.srate / 1000) + tmp_baseline; % in millisaconds
+    end
     
     % time frequency analysis for each channel and each epoch
     for i = 1:length(electrodes)
@@ -78,9 +85,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
         for j = 1:nb_epoch
             [tmp_ersp{j, 1}, tmp_itc{j, 1}, tmp_powbase{j, 1}, tmp_times{j, 1}, tmp_freqs{j, 1}, ~, ~, tmp_data{j, 1}] = ...
             newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ...
-                                                      'maxfreq', 35, ...
+                                                      'maxfreq', 35, 'timesout', 800, ...
                                                       'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, ...
-                                                      'baseline', baseline_b4_leftright(j), 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
+                                                      'baseline', baseline_b4_leftright{j}, 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
                                                       'plotitc' , 'off', 'plotphase', 'off', 'plotersp', 'off');
         end
         
