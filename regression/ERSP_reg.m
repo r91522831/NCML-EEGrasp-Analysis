@@ -76,6 +76,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
         baseline_b4_leftright{i} = round((EEG.epoch(i).eventlatency{strcmp([EEG.epoch(i).eventtype], 's17')}) * EEG.srate / 1000) + tmp_baseline; % in millisaconds
     end
     
+    ticker = 1;
+    h = waitbar(0, 'time frequency analysis.');
+    total_iter = nb_epoch * length(electrodes);
     % time frequency analysis for each channel and each epoch
     for i = 1:length(electrodes)
         tmp_ersp = cell(nb_epoch, 1);
@@ -89,6 +92,10 @@ for All_i = selected_sub% 1:length(All_dirlist)
                                                       'topovec', 15, 'elocs', EEG.chanlocs, 'chaninfo', EEG.chaninfo, 'caption', electrodes_name{i}, ...
                                                       'baseline', baseline_b4_leftright{j}, 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
                                                       'plotitc' , 'off', 'plotphase', 'off', 'plotersp', 'off');
+                                                  
+            ticker = ticker + 1;
+            progress_precent = 100 * ticker / total_iter;
+            waitbar(ticker / total_iter, h, sprintf('time frequency analysis. %2.2f %%', progress_precent));
         end
         
         % convert
@@ -99,6 +106,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
         tf_freqs{i} = cat(3, tmp_freqs{:, 1});
         tf_data{i} = cat(3, tmp_data{:, 1});
     end
+    close(h);
     
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_timefreq']);
     save(tmp_filename, 'tf_*')
@@ -110,8 +118,12 @@ for All_i = selected_sub% 1:length(All_dirlist)
     % ****************************************************
     Model_Roll = nan(nb_epoch, size(tf_ersp{1, 1}, 2));
     for i = 1:nb_epoch
+        % something is weird with the last few rows of EEG.behavior.obj_epoch{i, 1}
+        tmp_ind = [true; diff(EEG.behavior.obj_epoch{i, 1}.time) == (1000 / EEG.behavior.behavior_srate)];
+        
         % the object roll angles are in radian
-        Model_Roll(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time, EEG.behavior.obj_epoch{i, 1}.roll, squeeze(tf_times{1, 1}(:, :, 1)));
+        Model_Roll(i, :) = spline(EEG.behavior.obj_epoch{i, 1}.time(tmp_ind), EEG.behavior.obj_epoch{i, 1}.roll(tmp_ind), squeeze(tf_times{1, 1}(:, :, 1)));
+        
     end
     % the categorical variables: condition (IL, TR, PT)
     % % % dummy_cond = dummyvar( grp2idx({EEG.epoch.condType}')); % unitary dummies
@@ -134,6 +146,9 @@ for All_i = selected_sub% 1:length(All_dirlist)
     Model_coeff_p = Model_coeff_est; Model_Rsquared = Model_coeff_est;
     Model_Cond = categorical( grp2idx({EEG.epoch.condType}') );
     
+    ticker = 1;
+    h = waitbar(0, 'calculating robust regression coefficients.');
+    total_iter = size(tf_ersp{1, 1}, 2) * size(tf_ersp{1, 1}, 1) * length(electrodes);
     for time_id = 1:size(tf_ersp{1, 1}, 2)
         for freq_id = 1:size(tf_ersp{1, 1}, 1)
             for electrode_id = 1:length(electrodes)
@@ -147,9 +162,14 @@ for All_i = selected_sub% 1:length(All_dirlist)
                 Model_coeff_est{electrode_id, 1}(freq_id, time_id, :) = mdl.Coefficients{:, 'Estimate'};
                 Model_coeff_p{electrode_id, 1}(freq_id, time_id, :) = mdl.Coefficients{:, 'pValue'};
                 Model_Rsquared{electrode_id, 1}(freq_id, time_id, :) = mdl.Rsquared.Ordinary;
+                
+                ticker = ticker + 1;
+                progress_precent = 100 * ticker / total_iter;
+                waitbar(ticker / total_iter, h, sprintf('calculating robust regression coefficients. %2.2f %%', progress_precent));
             end
         end
     end
+    close(h);
     
 % % %     tmp_filename = fullfile(All_linearmodel_path, [subID, '_LinearModel']);
 % % %     save(tmp_filename, 'Model_Result')
