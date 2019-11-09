@@ -25,7 +25,9 @@ for s = 1:nsub
     for e = 1:nelectrode
         elec_dat(:, :, :, s, e) = Model_coeff_est{e, 1};
     end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % the Model_Roll angles are in radian
+    % rad2deg rad2deg rad2deg rad2deg rad2deg rad2deg rad2deg rad2deg
     roll_ang{s, 2} = [cellstr(Model_Cond), mat2cell(rad2deg(Model_Roll), ones(size(Model_Roll, 1), 1))];
     roll_ang{s, 1} = dd(s).name(1:6);
 end
@@ -61,24 +63,29 @@ for c = 1:ncond
     sig_roll(c, :) = var(cell2mat(roll_ang(:, 2 + c)), 0, 1);
 end
 save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll', 'roll_ang')
+
 %% plot
-figure
-h1 = shadedErrorBar(timerstamps, mu_roll(1, :), sqrt(sig_roll(1, :)), '-r', 1);
+tmp_timewin = timerstamps >= -1000;
+figure(ncoeff + 1);
+h1 = shadedErrorBar(timerstamps(tmp_timewin) / 1000, mu_roll(1, tmp_timewin), sqrt(sig_roll(1, tmp_timewin)), '-r', 1);
 hold on
-h2 = shadedErrorBar(timerstamps, mu_roll(2, :), sqrt(sig_roll(2, :)), '--m', 1);
-h3 = shadedErrorBar(timerstamps, mu_roll(3, :), sqrt(sig_roll(3, :)), '-b', 1);
-h4 = shadedErrorBar(timerstamps, mu_roll(4, :), sqrt(sig_roll(4, :)), '--c', 1);
-h5 = shadedErrorBar(timerstamps, mu_roll(5, :), sqrt(sig_roll(5, :)), '--w', 1);
+h2 = shadedErrorBar(timerstamps(tmp_timewin) / 1000, mu_roll(2, tmp_timewin), sqrt(sig_roll(2, tmp_timewin)), '--m', 1);
+h3 = shadedErrorBar(timerstamps(tmp_timewin) / 1000, mu_roll(3, tmp_timewin), sqrt(sig_roll(3, tmp_timewin)), '-b', 1);
+h4 = shadedErrorBar(timerstamps(tmp_timewin) / 1000, mu_roll(4, tmp_timewin), sqrt(sig_roll(4, tmp_timewin)), '--c', 1);
+h5 = shadedErrorBar(timerstamps(tmp_timewin) / 1000, mu_roll(5, tmp_timewin), sqrt(sig_roll(5, tmp_timewin)), '--y', 1);
 % % % ylim([-20, 20])
 % % % xlim([-300, 1300])
 vline(0, '--r')
-xlabel('time (ms)')
+xlabel('time (s)')
 ylabel('Roll angle ({\circ})')
 hold off
 lgnd = legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine, h5.mainLine], 'IL1', 'IL', 'TR1', 'TR', 'PT');
 set(lgnd,'color','none');
 set(gca, 'Color', [.8, .8, .8])
+set(gca, 'FontSize', 24)
 title('Object roll trajectories average across subjects')
+set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
+savefig(fullfile(All_dirpath, 'figures', 'roll_trajectory'))
 
 %% delta: 2 ~ 4 Hz; theta: 4 ~ 8 Hz; alpha: 8 ~ 13 Hz; low beta: 13 ~ 20 Hz; high beta: 20 ~ 30 Hz; low gama: 30 ~ 35 Hz
 rg_freq_band = { {'\delta', '2~4 Hz'}, {'\theta', '4~8 Hz'}, {'\alpha', '8~13 Hz'}, {'\beta_{low}', '13~20 Hz'}, {'\beta_{high}', '20~30 Hz'}, {'\gamma_{low}', '30~35 Hz'}; ...
@@ -173,6 +180,11 @@ for b = 1:ncoeff
     cmin(:, b) = min(tmp_mu(:));
 end
 
+if ~isfolder(fullfile(All_dirpath, 'figures'))
+    mkdir(fullfile(All_dirpath, 'figures'));
+end
+
+
 critical = 0.05;
 for b = 1:ncoeff
     figure(b)
@@ -197,14 +209,9 @@ for b = 1:ncoeff
     colorbar;
     set(gca, 'FontSize', 16);
     text(-10, 1, coeff_name{b}, 'FontWeight', 'bold', 'FontSize', 18);
-    savefig(fullfile(All_dirpath, ['coeff_beta_', num2str(b - 1), '_p_value']))
+    set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
+    savefig(fullfile(All_dirpath, 'figures', ['coeff_beta_', num2str(b - 1), '_p_value']))
 end
-
-
-
-
-
-
 
 
 
