@@ -40,7 +40,7 @@ for sub_i = selected_sub%1:length(eeg_dataset_list)
         tmp_time = array2table(behavior.info_time_trigger{i, 1} - lft_onset(i) * 1000, 'VariableNames', {'time'});
         tmp_time.Properties.VariableUnits = {'ms'};
         tmp_obj = behavior.obj{i};
-        tmp_obj.Properties.VariableUnits = {'mm', 'mm', 'mm', 'deg', 'deg', 'deg'};
+        tmp_obj.Properties.VariableUnits = {'mm', 'mm', 'mm', 'rad', 'rad', 'rad'};
         obj_behavior{i} = [tmp_time, tmp_obj];
     end
     

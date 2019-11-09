@@ -19,7 +19,7 @@ mx_pRoll_cond = cell(nsub, nb_cond);
 
 
 for sub = All_selected_sub%1:nsub
-    clearvars -except sub filelist pathname all_sub_mx_pRoll nsub nb_cond mx_pRoll_cond cond_names
+    clearvars -except sub filelist pathname all_sub_mx_pRoll nsub nb_cond mx_pRoll_cond cond_names All_selected_sub
     close all
     load(fullfile(pathname, filelist(sub).name));
     
@@ -78,6 +78,9 @@ for i = 2:ntrial
 end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
+%% The expoential fit for the peak Roll
+All_beh_expfit = load(fullfile(pathname, 'behavior_pRoll_23subs_pRoll_fit.mat'));
+
 %%
 figure(1)
 subplot 211
@@ -92,42 +95,62 @@ for i = 1:length(session)
             line_spec = '-xk';
         otherwise
     end
+    if strcmp(session{i, 1}, 'T')
+        errorbar(session{i, 2}(:, 1), -(session{i, 2}(:, 2)), session{i, 2}(:, 4), '-sc')
+    end
     errorbar(session{i, 2}(:, 1), session{i, 2}(:, 2), session{i, 2}(:, 4), line_spec)
 end
 hold off
-legend({'IL', 'TR', 'PT'}, 'Location', 'northwest')
-ylabel('Tcom (N-mm)')
-xlabel('trial')
+legend({'IL', '-TR', 'TR', 'PT'}, 'Location', 'northwest')
+ylabel('peak Tcom (N-mm)')
+% xlabel('trial')
+title(['error bars represent SE across ', num2str(length(All_selected_sub)), ' subjects'])
+xticklabels([])
 xlim([0, 96])
 set(gca, 'FontSize', 24)
+
+
 subplot 212
 hold on
 for i = 1:length(session)
     switch session{i, 1}
         case 'I'
             line_spec = '-*r';
+            line_spec_fit = '-.r';
+            fit = 2;
         case 'T'
             line_spec = '-ob';
+            line_spec_fit = '-.b';
+            fit = 3;
         case 'P'
             line_spec = '-xk';
+            line_spec_fit = '-.k';
+            fit = 4;
         otherwise
     end
     if strcmp(session{i, 1}, 'T')
-        errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec)
-% % %         errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), line_spec)
-        errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc')
+        h_err(i) = errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
+        h_mirror(i) = errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc');
     else
-        shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), abs(session{i, 2}(:, 5)), line_spec)
+        h(i) = shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
+        
+        pf(i) = plot(session{i, 2}(:, 1), 10 * All_beh_expfit.pRoll_dummy(session{i, 2}(:, 1), fit), line_spec_fit);
     end
 end
+
+pf(2) = plot(20:4:95, -10 * All_beh_expfit.pRoll_dummy(20:4:end, 3), '-.b');
+
+
 hold off
 ylim([-16, 16])
-ylabel('absolute peak roll ({\circ})')
+ylabel('peak roll ({\circ})')
 % % % ylim([-20, 10])
 % % % ylabel('peak roll ({\circ})')
+% % % legend([h(1).mainLine, h_err(20), h_mirror(20), h(21).mainLine], 'IL', 'abs(TR)', 'TR', 'PT', 'Location', 'best')
+legend(pf(1:3), 'IL_{fit}', 'TR_{fit}', 'PT_{fit}', 'Location', 'southwest')
 xlabel('trial')
 xlim([0, 96])
 hline(0, ':r')
 set(gca, 'FontSize', 24)
-mtit('error bars represent SE')
+set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
 savefig(fullfile(pathname, ['behavior_se_', num2str(nsub), 'subs']))
