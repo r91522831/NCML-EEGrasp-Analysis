@@ -169,13 +169,18 @@ load(fullfile(All_dirpath, 'roll.mat'));
 nfreqband = length(rg_freq_band);
 ntimeband = length(rg_time_win);
 
+%
+% % % plotting_var = mu_banded;
+% % % plotting_var = sqrt(sig_banded ./ nsub);
+plotting_var = robust_tstat;
+
 % % % coeff_trace = nan(ntime, ncoeff);
 cmax = nan(1, ncoeff);
 cmin = nan(1, ncoeff);
 for b = 1:ncoeff
 % % %     coeff_trace(:, b) = mean(reshape(permute(squeeze(mu_banded(:, :, b, :)), [2, 1, 3]), 200, []), 2);
 % % %     tmp_mu = mu_banded(:, :, b, :);
-    tmp_mu = robust_tstat(:, :, b, :);
+    tmp_mu = plotting_var(:, :, b, :);
     cmax(:, b) = max(tmp_mu(:));
     cmin(:, b) = min(tmp_mu(:));
 end
@@ -184,7 +189,6 @@ if ~isfolder(fullfile(All_dirpath, 'figures'))
     mkdir(fullfile(All_dirpath, 'figures'));
 end
 
-
 critical = 0.05;
 for b = 1:ncoeff
     figure(b)
@@ -192,7 +196,7 @@ for b = 1:ncoeff
         for i = 1:nfreqband
             subplot(nfreqband, ntimeband + 1, j + (nfreqband - i) * (ntimeband + 1));
             % specify ('conv', 'on') to avoid extrapolation
-            topoplot(robust_tstat(i, j, b, :), chanlocs,'numcontour', 1, 'contourvals', p(i, j, b, :) < critical, 'ccolor', 'w', 'maplimits', [cmin(1, b), cmax(1, b)], 'electrodes', 'off', 'conv', 'on');
+            topoplot(plotting_var(i, j, b, :), chanlocs,'numcontour', 1, 'contourvals', p(i, j, b, :) < critical, 'ccolor', 'w', 'maplimits', [cmin(1, b), cmax(1, b)], 'electrodes', 'off', 'conv', 'on');
             if i == 1
                 text(0, -0.8, rg_time_win{1, j}, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
             end
@@ -208,10 +212,62 @@ for b = 1:ncoeff
     set(gca, 'visible','off');
     colorbar;
     set(gca, 'FontSize', 16);
-    text(-10, 1, coeff_name{b}, 'FontWeight', 'bold', 'FontSize', 18);
     set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
+    text(0, -0.1, ['coeff ', coeff_name{b}], 'FontWeight', 'bold', 'FontSize', 18);
     savefig(fullfile(All_dirpath, 'figures', ['coeff_beta_', num2str(b - 1), '_p_value']))
 end
+
+%% Plot avg across electrodes beta_0 + beta_3 * Roll for each conditions (IL, TR, PT) for Roll = -5 ~ 5
+mu_beta = nan(nfreqband, ntimeband, ncoeff);
+sig_beta = nan(nfreqband, ntimeband, ncoeff);
+for i = 1:nfreqband
+    for j = 1:ntimeband
+        for b = 1:ncoeff
+            tmp_beta = squeeze(mu_banded(i, j, b, :));
+            [sig_beta(i, j, b), mu_beta(i, j, b) ]= robustcov(tmp_beta(:)); % beta_0
+        end
+    end
+end
+
+figure
+for j = 1:ntimeband
+    for i = 1:nfreqband
+        subplot(nfreqband, ntimeband, j + (nfreqband - i) * ntimeband);
+        % specify ('conv', 'on') to avoid extrapolation
+        x = -5:5;
+        hold on
+        % assume coeff_beta are not covary
+% % %         h1 = plot(x, mu_beta(i, j, 1) + mu_beta(i, j, 4) * x, '-r');
+% % %         h2 = plot(x, mu_beta(i, j, 2) + mu_beta(i, j, 5) * x, '-b');
+% % %         h3 = plot(x, mu_beta(i, j, 3) + mu_beta(i, j, 6) * x, '-k');
+        h1 = shadedErrorBar(x, mu_beta(i, j, 1) + mu_beta(i, j, 4) * x, sqrt(sig_beta(i, j, 1) + sig_beta(i, j, 4) * x.^2) ./ sqrt(nelectrode), '-r', 1);
+        h2 = shadedErrorBar(x, mu_beta(i, j, 2) + mu_beta(i, j, 5) * x, sqrt(sig_beta(i, j, 2) + sig_beta(i, j, 5) * x.^2) ./ sqrt(nelectrode), '-b', 1);
+        h3 = shadedErrorBar(x, mu_beta(i, j, 3) + mu_beta(i, j, 6) * x, sqrt(sig_beta(i, j, 3) + sig_beta(i, j, 6) * x.^2) ./ sqrt(nelectrode), '-k', 1);
+        hold off
+        if i == 1
+            xlabel('roll ang ({\circ})');%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+        else
+            xticklabels([])
+            if i == nfreqband
+                title(rg_time_win{1, j});%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+                if j == 1
+% % %                     legend({'IL', 'TR', 'PT'});
+                    legend([h1.mainLine, h2.mainLine, h3.mainLine], 'IL', 'TR', 'PT');
+                end
+            end
+        end
+        if j == 1
+            ylabel(rg_freq_band{1, i});%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+        else
+            yticklabels([])
+        end
+        ylim([-10, 10])
+        set(gca, 'FontSize', 16);
+    end
+end
+set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1]);
+% % % savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode'))
+savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode_with se'))
 
 
 
