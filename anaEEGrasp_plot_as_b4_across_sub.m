@@ -11,7 +11,7 @@ if isempty(All_selected_sub)
     All_selected_sub = 1:length(filelist);
 end
 
-nsub = length(filelist);
+nsub = length(All_selected_sub);
 all_sub_mx_pRoll = nan(95, 2, nsub);
 cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 nb_cond = length(cond_names);
