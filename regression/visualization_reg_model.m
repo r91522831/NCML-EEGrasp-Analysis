@@ -62,7 +62,7 @@ for c = 1:ncond
     mu_roll(c, :) = mean(cell2mat(roll_ang(:, 2 + c)), 1);
     sig_roll(c, :) = var(cell2mat(roll_ang(:, 2 + c)), 0, 1);
 end
-save(fullfile(All_dirpath, 'roll.mat'), 'sig_roll', 'mu_roll', 'roll_ang')
+save(fullfile(All_dirpath, ['roll_', num2str(nsub),'.mat']), 'sig_roll', 'mu_roll', 'roll_ang')
 
 %% plot
 tmp_timewin = timerstamps >= -1000;
@@ -83,9 +83,9 @@ lgnd = legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine, h5.mainLine],
 set(lgnd,'color','none');
 set(gca, 'Color', [.8, .8, .8])
 set(gca, 'FontSize', 24)
-title('Object roll trajectories average across subjects')
+title(['Object roll trajectories average across ', num2str(nsub), ' subjects'])
 set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
-savefig(fullfile(All_dirpath, 'figures', 'roll_trajectory'))
+savefig(fullfile(All_dirpath, 'figures', ['roll_trajectory_', num2str(nsub)]))
 
 %% delta: 2 ~ 4 Hz; theta: 4 ~ 8 Hz; alpha: 8 ~ 13 Hz; low beta: 13 ~ 20 Hz; high beta: 20 ~ 30 Hz; low gama: 30 ~ 35 Hz
 rg_freq_band = { {'\delta', '2~4 Hz'}, {'\theta', '4~8 Hz'}, {'\alpha', '8~13 Hz'}, {'\beta_{low}', '13~20 Hz'}, {'\beta_{high}', '20~30 Hz'}, {'\gamma_{low}', '30~35 Hz'}; ...
@@ -144,7 +144,7 @@ for b = 1:ncoeff
     end
 end
 close(h)
-save(fullfile(All_dirpath, 'result_ft_banded.mat'), 'sig_banded', 'mu_banded', 'rg_freq_band', 'coeff_name')
+save(fullfile(All_dirpath, ['result_ft_banded_', num2str(nsub), '.mat']), 'sig_banded', 'mu_banded', 'rg_freq_band', 'coeff_name')
 
 
 %% for one sample t-test
@@ -163,9 +163,9 @@ end
 % /Users/yenhsunw/Dropbox (Personal)/Programming/Matlab/myLibrary/eeglab-develop/functions/sigprocfunc/topoplot.m
 % % % All_dirpath = uigetdir();
 load(fullfile(All_dirpath, 'misc.mat'));
-load(fullfile(All_dirpath, 'result_ft_banded.mat'));
+load(fullfile(All_dirpath, ['result_ft_banded_', num2str(nsub), '.mat']));
 % % % load(fullfile(All_dirpath, 'result_freq_banded.mat'));
-load(fullfile(All_dirpath, 'roll.mat'));
+load(fullfile(All_dirpath, ['roll_', num2str(nsub), '.mat']));
 nfreqband = length(rg_freq_band);
 ntimeband = length(rg_time_win);
 
@@ -214,7 +214,7 @@ for b = 1:ncoeff
     set(gca, 'FontSize', 16);
     set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
     text(0, -0.1, ['coeff ', coeff_name{b}], 'FontWeight', 'bold', 'FontSize', 18);
-    savefig(fullfile(All_dirpath, 'figures', ['coeff_beta_', num2str(b - 1), '_p_value']))
+    savefig(fullfile(All_dirpath, 'figures', ['coeff_beta_', num2str(b - 1), '_p_value_', num2str(nsub), 'subs']))
 end
 
 %% Plot avg across electrodes beta_0 + beta_3 * Roll for each conditions (IL, TR, PT) for Roll = -5 ~ 5
@@ -267,7 +267,7 @@ for j = 1:ntimeband
 end
 set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1]);
 % % % savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode'))
-savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode_with se'))
+savefig(fullfile(All_dirpath, 'figures', ['est_power_across electrode_with se_', num2str(nsub), 'subs']))
 
 
 

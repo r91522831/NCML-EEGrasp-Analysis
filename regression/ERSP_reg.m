@@ -93,6 +93,14 @@ for All_i = selected_sub% 1:length(All_dirlist)
                                                       'baseline', baseline_b4_leftright{j}, 'basenorm', 'on', 'trialbase', 'full', 'padratio', 1, 'winsize', 512, ...
                                                       'plotitc' , 'off', 'plotphase', 'off', 'plotersp', 'off');
                                                   
+                                                  
+
+            %%%%%% resample tf_* to reduce size
+            
+                                                  
+                                                  
+                                                  
+            
             ticker = ticker + 1;
             progress_precent = 100 * ticker / total_iter;
             waitbar(ticker / total_iter, h, sprintf('time frequency analysis. %2.2f %%', progress_precent));
