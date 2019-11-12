@@ -233,7 +233,6 @@ figure
 for j = 1:ntimeband
     for i = 1:nfreqband
         subplot(nfreqband, ntimeband, j + (nfreqband - i) * ntimeband);
-        % specify ('conv', 'on') to avoid extrapolation
         x = -5:5;
         hold on
         % assume coeff_beta are not covary
@@ -268,6 +267,63 @@ end
 set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1]);
 % % % savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode'))
 savefig(fullfile(All_dirpath, 'figures', ['est_power_across electrode_with se_', num2str(nsub), 'subs']))
+
+%% plot regression for each electrode
+% /Users/yenhsunw/Dropbox (Personal)/Programming/Matlab/myLibrary/eeglab-develop/functions/sigprocfunc/topoplot.m
+% % % All_dirpath = uigetdir();
+load(fullfile(All_dirpath, 'misc.mat'));
+load(fullfile(All_dirpath, 'result_ft_banded.mat'));
+% % % load(fullfile(All_dirpath, 'result_freq_banded.mat'));
+load(fullfile(All_dirpath, 'roll.mat'));
+nfreqband = length(rg_freq_band);
+ntimeband = length(rg_time_win);
+
+for e = 1:nelectrode
+    figure
+    for j = 1:ntimeband
+        for i = 1:nfreqband
+            subplot(nfreqband, ntimeband, j + (nfreqband - i) * ntimeband);
+            x = -5:5;
+            hold on
+            % assume coeff_beta are not covary
+            % % %         h1 = plot(x, mu_banded(i, j, 1, e) + mu_banded(i, j, 4, e) * x, '-r');
+            % % %         h2 = plot(x, mu_banded(i, j, 2, e) + mu_banded(i, j, 5, e) * x, '-b');
+            % % %         h3 = plot(x, mu_banded(i, j, 3, e) + mu_banded(i, j, 6, e) * x, '-k');
+            h1 = shadedErrorBar(x, mu_banded(i, j, 1, e) + mu_banded(i, j, 4, e) * x, sqrt(sig_banded(i, j, 1, e) + sig_banded(i, j, 4, e) * x.^2) ./ sqrt(nsub), '-r', 1);
+            h2 = shadedErrorBar(x, mu_banded(i, j, 2, e) + mu_banded(i, j, 5, e) * x, sqrt(sig_banded(i, j, 2, e) + sig_banded(i, j, 5, e) * x.^2) ./ sqrt(nsub), '-b', 1);
+            h3 = shadedErrorBar(x, mu_banded(i, j, 3, e) + mu_banded(i, j, 6, e) * x, sqrt(sig_banded(i, j, 3, e) + sig_banded(i, j, 6, e) * x.^2) ./ sqrt(nsub), '-k', 1);
+            hold off
+            if i == 1
+                xlabel('roll ang ({\circ})');%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+            else
+                xticklabels([])
+                if i == nfreqband
+                    title(rg_time_win{1, j});%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+                    if j == 1
+                        % % %                     legend({'IL', 'TR', 'PT'});
+                        legend([h1.mainLine, h2.mainLine, h3.mainLine], 'IL', 'TR', 'PT');%, 'Location', 'northwestoutside');
+                    end
+                end
+            end
+            if j == 1
+                ylabel(rg_freq_band{1, i});%, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'FontSize', 18);
+            else
+                yticklabels([])
+            end
+            ylim([-10, 10])
+            set(gca, 'FontSize', 16);
+            vline(0, ':c')
+            hline(0, ':c')
+        end
+    end
+    suptitle(electrodes_name{e})
+    set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1]);
+    % % % savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode'))
+    savefig(fullfile(All_dirpath, 'figures', ['est_power_', electrodes_name{e}]))
+end
+
+
+
 
 
 
