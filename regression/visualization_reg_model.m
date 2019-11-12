@@ -170,9 +170,9 @@ nfreqband = length(rg_freq_band);
 ntimeband = length(rg_time_win);
 
 %
-% % % plotting_var = mu_banded;
+plotting_var = mu_banded;
 % % % plotting_var = sqrt(sig_banded ./ nsub);
-plotting_var = robust_tstat;
+% % % plotting_var = robust_tstat;
 
 % % % coeff_trace = nan(ntime, ncoeff);
 cmax = nan(1, ncoeff);
@@ -319,7 +319,7 @@ for e = 1:nelectrode
     suptitle(electrodes_name{e})
     set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1]);
     % % % savefig(fullfile(All_dirpath, 'figures', 'est_power_across electrode'))
-    savefig(fullfile(All_dirpath, 'figures', ['est_power_', electrodes_name{e}]))
+    savefig(fullfile(All_dirpath, 'figures', ['est_power_', electrodes_name{e}, '_', num2str(nsub), 'subs']))
 end
 
 
