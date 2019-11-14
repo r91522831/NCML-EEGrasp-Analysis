@@ -12,7 +12,7 @@ if isempty(All_selected_sub)
 end
 
 nsub = length(All_selected_sub);
-all_sub_mx_pRoll = nan(95, 2, nsub);
+all_sub_mx_pRoll = nan(95, 3, nsub);
 cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 nb_cond = length(cond_names);
 mx_pRoll_cond = cell(nsub, nb_cond);
@@ -47,9 +47,9 @@ for sub = All_selected_sub%1:nsub
         tmp_peak_roll = -tmp_peak_roll;
     end
     
-    tmp = nan(95, 2);
+    tmp = nan(95, 3);
     for i = 1:length(trial_id)
-        tmp(trial_id(i), :) = [tmp_mx_onset(i), tmp_peak_roll(i)];
+        tmp(trial_id(i), :) = [tmp_mx_onset(i), tmp_peak_roll(i), fy_onset(i)];
     end
     all_sub_mx_pRoll(:, :, sub) = tmp;
     
@@ -57,8 +57,8 @@ for sub = All_selected_sub%1:nsub
         mx_pRoll_cond{sub, j} = tmp(strcmp(tmp_cond_id, cond_names{j}), :);
     end
 end
-avg_mx_pRoll = nanmean(all_sub_mx_pRoll, 3);
-stde_mx_pRoll = nanstd(all_sub_mx_pRoll, 0, 3) ./ sqrt(nsub);
+avg_mx_pRoll = nanmean(all_sub_mx_pRoll(:, 1:2, :), 3);
+stde_mx_pRoll = nanstd(all_sub_mx_pRoll(:, 1:2, :), 0, 3) ./ sqrt(nsub);
 
 save(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs']), 'all_sub_mx_pRoll', 'mx_pRoll_cond');
 
@@ -79,7 +79,7 @@ end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
 %% The expoential fit for the peak Roll
-All_beh_expfit = load(fullfile(pathname, 'behavior_pRoll_23subs_pRoll_fit.mat'));
+All_beh_expfit = load(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs_pRoll_fit.mat']));
 
 %%
 figure(1)

@@ -11,6 +11,10 @@ All_selected_sub = input('Which subject(s) to process? ');
 % [filename, pathname, ~] = uigetfile;
 % load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/SXXX_fingerInfo.mat')
 
+if isempty(All_selected_sub)
+    All_selected_sub = 1:length(All_filelist);
+end
+
 for All_i = All_selected_sub
     clearvars -except All_*; close all;
     sub_id = All_filelist(All_i).name(1:4);
@@ -39,6 +43,7 @@ for All_i = All_selected_sub
     peak_roll = table(nan(size(file_list)), nan(size(file_list)), 'VariableNames', {'peakRoll', 'index'});
     peak_mx = table(nan(size(file_list)), nan(size(file_list)), 'VariableNames', {'peakMx', 'index'});
     mx_onset = nan(length(file_list), 1);
+    fy_onset = nan(length(file_list), 1);
 
     %%
     input = data;
@@ -160,27 +165,34 @@ for All_i = All_selected_sub
 
 
         %% choosen onset
-        tmp_ind_onset = 3; % 3 mm    
-        info_onset_time(i, 1) = 0.001 * info_time_trigger{i, 1}(ind_lft_onset(i, tmp_ind_onset)); % in seconds
+        tmp_ind_onset = 3; % 3 mm
+        tmp_fy_equal_obj_w = 6;
+        if abs(ind_lft_onset(i, tmp_ind_onset) - ind_lft_onset(i, tmp_fy_equal_obj_w)) < 20 % 20 is a value from all good trials, i.e. 80 ms (4 ms/frame at 250 Hz)
+            tmp_ind_lft_onset = ind_lft_onset(i, tmp_ind_onset);
+        else
+            tmp_ind_lft_onset = ind_lft_onset(i, tmp_fy_equal_obj_w);
+        end 
+        info_onset_time(i, 1) = 0.001 * info_time_trigger{i, 1}(tmp_ind_lft_onset); % in seconds
 
         %% find peak roll after lift onset
         roll_win = 250; % in ms
         ind_roll_win = floor(roll_win ./ (dt * 1000));
-        [~, tmp_ind] = max( abs(angTilt2R{i, 1}(ind_lft_onset(i, tmp_ind_onset):(ind_lft_onset(i, tmp_ind_onset) + ind_roll_win), 1)) );
+        [~, tmp_ind] = max( abs(angTilt2R{i, 1}(tmp_ind_lft_onset:(tmp_ind_lft_onset + ind_roll_win), 1)) );
         tmp_roll = angTilt2R{i, 1}(ind_lft_onset(i, tmp_ind_onset) + tmp_ind, 1);
-        peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, ind_lft_onset(i, tmp_ind_onset) + tmp_ind];
+        peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, tmp_ind_lft_onset + tmp_ind];
 
         %% find peak mx around lift onset
         % this might need to be rewrite
         pmx_win = 50; % in ms
         ind_pmx_win = floor(pmx_win ./ (dt * 1000));
-        [~, tmp_ind] = max( abs(resultantF{i, 1}{(ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win):ind_lft_onset(i, tmp_ind_onset), 'mx'}) );
-        tmp_ind = (ind_lft_onset(i, tmp_ind_onset) - ind_pmx_win) + tmp_ind;
+        [~, tmp_ind] = max( abs(resultantF{i, 1}{(tmp_ind_lft_onset - ind_pmx_win):tmp_ind_lft_onset, 'mx'}) );
+        tmp_ind = (tmp_ind_lft_onset - ind_pmx_win) + tmp_ind;
         peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
 
 
         %% mx at lift onset
-        mx_onset(i) = resultantF{i, 1}{ind_lft_onset(i, tmp_ind_onset), 'mx'};
+        mx_onset(i) = resultantF{i, 1}{tmp_ind_lft_onset, 'mx'};
+        fy_onset(i) = resultantF{i, 1}{tmp_ind_lft_onset, 'fy'};
 
         %% compute finger tip coordinate without missing frames
 
@@ -198,7 +210,7 @@ for All_i = All_selected_sub
     %%
     ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
 
-    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset');
+    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset');
 
     %%
     % remember to put the onset infor corresponding to the correct trial number

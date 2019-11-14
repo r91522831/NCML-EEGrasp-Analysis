@@ -2,7 +2,8 @@ close all; clearvars; clc
 
 %% load aligned data
 pathname = uigetdir;
-filelist = dir(fullfile(pathname, 'behavior_pRoll_23subs.mat'));
+nsub = 12; %23
+filelist = dir(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs.mat']));
 
 load(fullfile(pathname, filelist(1).name));
 
@@ -12,7 +13,7 @@ for sub_i = 1:nsub
     for cond_i = 1:size(mx_pRoll_cond, 2)
         if length(mx_pRoll_cond{sub_i, cond_i}) < 19
             for t_i = (length(mx_pRoll_cond{sub_i, cond_i}) + 1):19
-                mx_pRoll_cond{sub_i, cond_i} = [mx_pRoll_cond{sub_i, cond_i}; [NaN, NaN]];
+                mx_pRoll_cond{sub_i, cond_i} = [mx_pRoll_cond{sub_i, cond_i}; [NaN, NaN, NaN]];
             end
         end
     end
@@ -41,7 +42,7 @@ end
 pRoll_PT = cell(nsub, 1);
 for sub_i = 1:nsub
     tmp = [mx_pRoll_cond{sub_i, 3:5}];
-    tmp = tmp(:, 2:2:6)';
+    tmp = tmp(:, 2:size(mx_pRoll_cond{sub_i, 3}, 2):end)';
     tmp = [repmat([1; 2; 3], length(tmp), 1), reshape(tmp, [], 1)];
     
     tmp = tmp(~isnan(tmp(:, 2)), :);    

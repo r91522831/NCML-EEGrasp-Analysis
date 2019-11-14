@@ -15,13 +15,18 @@ end
 
 
 %%
+non_zero = [true(1); info_time_trigger{i, 1}(2:end) ~= 0];
 figure
 subplot(3, 1, 1)
-plot(info_time_trigger{i, 1}(1:end-5)./1000, resultantF{i, 1}{1:end-5, 'mx'});
-vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000);
+plot(info_time_trigger{i, 1}(non_zero)./1000, resultantF{i, 1}{non_zero, 'fy'});
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 6})./1000, ':r');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000, ':b');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 2})./1000, '--k');
 subplot(3, 1, 2)
-plot(info_time_trigger{i, 1}(1:end-5)./1000, obj_height{i, 1}(1:end-5));
-vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000);
+plot(info_time_trigger{i, 1}(non_zero)./1000, obj_height{i, 1}(non_zero));
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 6})./1000, ':r');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000, ':b');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 2})./1000, '--k');
 subplot(3, 1, 3)
 for j = 1:length(angTilt2R{i, 1})
     if angTilt2R{i, 1}(j) > 90
@@ -30,5 +35,7 @@ for j = 1:length(angTilt2R{i, 1})
         angTilt2R{i, 1}(j) = angTilt2R{i, 1}(j) + 180;
     end
 end
-plot(info_time_trigger{i, 1}(1:end-5)./1000, angTilt2R{i, 1}(1:end-5));
-vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000);
+plot(info_time_trigger{i, 1}(non_zero)./1000, angTilt2R{i, 1}(non_zero));
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 6})./1000, ':r');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 3})./1000, ':b');
+vline(info_time_trigger{i, 1}(ind_lft_onset{i, 2})./1000, '--k');
