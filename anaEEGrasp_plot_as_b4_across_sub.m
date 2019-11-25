@@ -12,7 +12,7 @@ if isempty(All_selected_sub)
 end
 
 nsub = length(All_selected_sub);
-all_sub_mx_pRoll = nan(95, 3, nsub);
+all_sub_mx_pRoll = nan(95, 4, nsub);
 cond_names = {'IL', 'TR', 'PT1', 'PT2', 'PT3'};
 nb_cond = length(cond_names);
 mx_pRoll_cond = cell(nsub, nb_cond);
@@ -47,9 +47,9 @@ for sub = All_selected_sub%1:nsub
         tmp_peak_roll = -tmp_peak_roll;
     end
     
-    tmp = nan(95, 3);
+    tmp = nan(95, 4);
     for i = 1:length(trial_id)
-        tmp(trial_id(i), :) = [tmp_mx_onset(i), tmp_peak_roll(i), fy_onset(i)];
+        tmp(trial_id(i), :) = [tmp_mx_onset(i), tmp_peak_roll(i), fy_onset(i), y_onset(i)];
     end
     all_sub_mx_pRoll(:, :, sub) = tmp;
     

@@ -44,6 +44,7 @@ for All_i = All_selected_sub
     peak_mx = table(nan(size(file_list)), nan(size(file_list)), 'VariableNames', {'peakMx', 'index'});
     mx_onset = nan(length(file_list), 1);
     fy_onset = nan(length(file_list), 1);
+    y_onset = nan(length(file_list), 1);
 
     %%
     input = data;
@@ -193,6 +194,7 @@ for All_i = All_selected_sub
         %% mx at lift onset
         mx_onset(i) = resultantF{i, 1}{tmp_ind_lft_onset, 'mx'};
         fy_onset(i) = resultantF{i, 1}{tmp_ind_lft_onset, 'fy'};
+        y_onset(i) = obj_height{i, 1}(tmp_ind_lft_onset, 1);
 
         %% compute finger tip coordinate without missing frames
 
@@ -210,7 +212,7 @@ for All_i = All_selected_sub
     %%
     ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
 
-    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset');
+    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
 
     %%
     % remember to put the onset infor corresponding to the correct trial number
