@@ -15,6 +15,8 @@ if isempty(All_selected_sub)
     All_selected_sub = 1:length(All_filelist);
 end
 
+All_cutoff = 5; % unit: Hz
+
 for All_i = All_selected_sub
     clearvars -except All_*; close all;
     sub_id = All_filelist(All_i).name(1:4);
@@ -113,10 +115,11 @@ for All_i = All_selected_sub
         end
 
         %% define lift onset
-        obj_height{i, 1} = min([obj_Rcenter_v(:, 2), obj_Lcenter_v(:, 2)], [], 2);
+        obj_vertical = min([obj_Rcenter_v(:, 2), obj_Lcenter_v(:, 2)], [], 2);
         obj_height{i, 2} = min([obj_Rcenter_d, obj_Lcenter_d], [], 2);
         obj_height{i, 3} = obj_center_d;
 
+        obj_height{i, 1} = filtmat_class( dt, All_cutoff, obj_vertical(~isnan(obj_vertical)) );
         % based on kinematics
         ind_hold = find(tmp_audio == 3);
         for j = ind_hold(end, 1):-1:1 % 10 mm

@@ -36,6 +36,7 @@ for All_i = All_selected_sub
     fgr_on_obj_kinetic = cell(size(file_list));
 
     %% lowpass filtered
+    % % % dt = 4/1000; % unit: second
     % % % for i = 1:length(mx)
     % % %     mx_filtered{i} = filtmat_class( dt, cutoff_plot, mx{i} );
     % % %     obj_height_filtered{i} = filtmat_class( dt, cutoff_plot, obj_height{i} );

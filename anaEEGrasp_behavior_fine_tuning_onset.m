@@ -13,7 +13,8 @@ if isempty(All_selected_sub)
     All_selected_sub = 1:length(All_filelist);
 end
     
-load(fullfile(All_path, 'behavior_pRoll_23subs.mat'));
+% load(fullfile(All_path, 'behavior_pRoll_23subs.mat'));
+load(fullfile(All_path, 'behavior_pRoll_12subs.mat'));
 
 All_period_3mm2objweight = nan(length(All_filelist), 1);
 for All_i = All_selected_sub
