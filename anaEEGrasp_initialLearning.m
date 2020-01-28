@@ -9,6 +9,10 @@ All_selected_sub = input('Which subject(s) to process? ');
 
 % [filename, pathname, ~] = uigetfile;
 
+if isempty(All_selected_sub)
+    All_selected_sub = 1:length(All_filelist);
+end
+
 for All_i = All_selected_sub
     clearvars -except All_*; close all;
     sub_id = All_filelist(All_i).name(1:4);
