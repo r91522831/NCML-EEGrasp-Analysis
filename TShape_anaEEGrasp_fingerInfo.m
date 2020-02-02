@@ -101,10 +101,13 @@ for All_i = All_selected_sub
                 z_vector = tmp_markers{5, 1} - tmp_markers{7, 1};
                 tmp_origin_markers = [1, 2, 3, 4];
             end
-            coord_obj_y = y_vector / norm(y_vector);
+            tmp_coord_obj_y = y_vector / norm(y_vector);
             coord_obj_z = z_vector / norm(z_vector);
-            tmp = cross(coord_obj_y, coord_obj_z);
+            tmp = cross(tmp_coord_obj_y, coord_obj_z);
             coord_obj_x = tmp / norm(tmp);
+            tmp = cross(coord_obj_z, coord_obj_x);
+            coord_obj_y = tmp / norm(tmp);
+            
             tmp = [coord_obj_x; coord_obj_y; coord_obj_z]';
             tmp_coordBasis = array2table(tmp, 'RowNames', {'x', 'y', 'z'}, 'VariableNames', {'x_axis', 'y_axis', 'z_axis'});
             

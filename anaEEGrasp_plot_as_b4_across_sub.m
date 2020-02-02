@@ -83,7 +83,7 @@ All_beh_expfit = load(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'sub
 
 %%
 figure(1)
-subplot 211
+subplot 311
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -100,6 +100,8 @@ for i = 1:length(session)
     end
     errorbar(session{i, 2}(:, 1), session{i, 2}(:, 2), session{i, 2}(:, 4), line_spec)
 end
+hline(395, '--r')
+hline(-395, '--r')
 hold off
 legend({'IL', '-TR', 'TR', 'PT'}, 'Location', 'northwest')
 ylabel('peak Tcom (N-mm)')
@@ -109,7 +111,35 @@ xticklabels([])
 xlim([0, 96])
 set(gca, 'FontSize', 18)
 
-subplot 212
+subplot 312
+hold on
+for i = 1:length(session)
+    switch session{i, 1}
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    if strcmp(session{i, 1}, 'T')
+        errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 2) - 395), session{i, 2}(:, 4), line_spec)
+    else
+        errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 2) + 395), session{i, 2}(:, 4), line_spec)
+    end
+end
+hline(0, '--r')
+hold off
+legend({'IL', '-TR', 'TR', 'PT'}, 'Location', 'northeast')
+ylabel('abs |peak Tcom_\epsilon| (N-mm)')
+% xlabel('trial')
+title('absolute Tcom error')
+xticklabels([])
+xlim([0, 96])
+set(gca, 'FontSize', 18)
+
+subplot 313
 hold on
 for i = 1:length(session)
     switch session{i, 1}

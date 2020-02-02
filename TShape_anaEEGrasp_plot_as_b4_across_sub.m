@@ -100,7 +100,7 @@ session(19, :) = {'P', tmp};
 
 %%
 figure(1)
-subplot 211
+subplot 311
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -130,7 +130,7 @@ xlim([0, All_total_trial_n + 1])
 set(gca, 'FontSize', 18)
 
 
-subplot 212
+subplot 312
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -156,9 +156,13 @@ legend({'IL', 'TR', 'PT'}, 'Location', 'northwest')
 % % % legend({'IL', 'TR', '-TR', 'PT'}, 'Location', 'northwest')
 ylabel('abs |peak Tcom_\epsilon| (N-mm)')
 title('absolute Tcom error')
+xticklabels([])
+xlim([0, All_total_trial_n + 1])
+set(gca, 'FontSize', 18)
 
 
-%{
+subplot 313
+hold on
 for i = 1:length(session)
     switch session{i, 1}
         case 'I'
@@ -178,7 +182,7 @@ for i = 1:length(session)
     if strcmp(session{i, 1}, 'T')
 % % %         yyaxis left
         h_err(i) = errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
-        h_mirror(i) = errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc');
+% % %         h_mirror(i) = errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc');
     else
 % % %         yyaxis left
         h(i) = shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
@@ -198,9 +202,10 @@ ylabel('peak roll ({\circ})')
 % % % yyaxis right
 % % % ylim([-1.4, 1.4])
 % % % ylabel('exp fit dummy', 'rotation', 270, 'VerticalAlignment', 'bottom')
-ylim([-30, 40])
+ylim([-10, 40])
 % % % ylabel('peak roll ({\circ})')
-legend([h(1).mainLine, h_err(16), h_mirror(16), h(17).mainLine], 'IL', 'abs(TR)', 'TR', 'PT', 'Location', 'best')
+legend([h(1).mainLine, h_err(16), h(17).mainLine], 'IL', 'abs(TR)', 'PT', 'Location', 'northwest')
+% % % legend([h(1).mainLine, h_err(16), h_mirror(16), h(17).mainLine], 'IL', 'abs(TR)', 'TR', 'PT', 'Location', 'best')
 % % % legend(pf(1:3), 'IL_{fit}', 'TR_{fit}', 'PT_{fit}', 'Location', 'southwest')
 % % % hline(0, ':r')
 %}
