@@ -13,6 +13,7 @@ end
 % [filename, pathname, ~] = uigetfile;
 % load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/preliminary results/SXXX_aligned_data.mat')
 
+All_cutoff = 5; % lowpass cutoff freq for behavior, in Hz
 
 %%
 for All_i = All_selected_sub
@@ -61,16 +62,22 @@ for All_i = All_selected_sub
         % get trigger indices
         tmp_audio = input{i}{:, {'trigger'}};
         info_time_trigger{i, 2} = tmp_audio;
+        
+        tmp_audio = info_time_trigger{i, 2};
+        dt = 0.001 * diff(tmp_tstamp(1:2)); % in second
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %% Check the PS sensor in each frame
+        % lowpass markers coordinates without touching conditions
         markers = cell(n_PSonObj, 1);
         for m = 1:n_PSonObj
-            markers{m, 1} = input{i}{:, [var_PS{m}, var_PS_cond{m}]};
+            lp_coord = filtmat_class( dt, All_cutoff, input{i}{:, var_PS{m}});
+            markers{m, 1} = [lp_coord, input{i}{:, var_PS_cond{m}}];
         end
         markers_fgr = cell(n_PSonFgr, 1);
         for m = 1:n_PSonFgr
-            markers_fgr{m, 1} = input{i}{:, [var_PS{m + 8}, var_PS_cond{m + 8}]};
+            lp_coord = filtmat_class( dt, All_cutoff, input{i}{:, var_PS{m + 8}});
+            markers_fgr{m, 1} = [lp_coord, input{i}{:, var_PS_cond{m + 8}}];
         end
 
         tmp_fgr_on_obj = cell(n_PSonFgr, 1);
