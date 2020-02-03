@@ -3,7 +3,8 @@ clear; close all; clc;
 eeg_dataset_folder = uigetdir();
 eeg_dataset_list = dir(fullfile(eeg_dataset_folder, 'sub-*'));
 [project_root, ~, ~] = fileparts(fileparts(fileparts(eeg_dataset_folder)));
-behavior_folder = fullfile(project_root, 'behavior', 'preliminary results');
+% % % behavior_folder = fullfile(project_root, 'behavior', 'preliminary results');
+behavior_folder = fullfile(project_root, 'behavior', 'results');
 if ~exist(behavior_folder, 'dir')
     disp('Behavior folder is not correct!!')
 end
