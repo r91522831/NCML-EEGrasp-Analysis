@@ -63,7 +63,6 @@ for All_i = All_selected_sub
         tmp_audio = input{i}{:, {'trigger'}};
         info_time_trigger{i, 2} = tmp_audio;
         
-        tmp_audio = info_time_trigger{i, 2};
         dt = 0.001 * diff(tmp_tstamp(1:2)); % in second
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
