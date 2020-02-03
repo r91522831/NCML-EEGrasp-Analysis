@@ -43,7 +43,8 @@ for All_i = All_selected_sub
     tmp_cond = {tmp_tid_IL, tmp_tid_TR, tmp_tid_PT1};
     
     ncond = length(tmp_cond);
-    figure
+    figure('units', 'normalized', 'outerposition', [0, 0, 1, 1])
+% % %     set(0, 'defaultAxesFontSize', 20)
     for i = 1:ncond
         tmp_ntrial = length(tmp_cond{i});
         for j = 1:tmp_ntrial
@@ -69,7 +70,6 @@ for All_i = All_selected_sub
                 else
                     xlabel('time (s)')
                 end
-                set(gca, 'FontSize', 18)
             end
             
             subplot(3, 2, i * 2)
@@ -84,10 +84,11 @@ for All_i = All_selected_sub
                 else
                     xlabel('time (s)')
                 end
-                set(gca, 'FontSize', 18)
             end
         end
     end
+    
     mtit(['Sub ', file_list(1, 1).name(2:4)], 'FontSize', 24)
+    
     savefig(fullfile(All_path, [sub_id, '_peakRolls.fig']));
 end

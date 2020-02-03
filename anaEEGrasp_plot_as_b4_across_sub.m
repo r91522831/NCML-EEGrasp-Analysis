@@ -79,10 +79,11 @@ end
 session(j, :) = {file_list(end).name(:, 11), tmp};
 
 %% The expoential fit for the peak Roll
-All_beh_expfit = load(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs_pRoll_fit.mat']));
+% % % All_beh_expfit = load(fullfile(pathname, ['behavior_pRoll_', num2str(nsub), 'subs_pRoll_fit.mat']));
 
 %%
 figure(1)
+%{
 subplot 311
 hold on
 for i = 1:length(session)
@@ -140,6 +141,7 @@ xlim([0, 96])
 set(gca, 'FontSize', 18)
 
 subplot 313
+%}
 hold on
 for i = 1:length(session)
     switch session{i, 1}
@@ -158,35 +160,36 @@ for i = 1:length(session)
         otherwise
     end
     if strcmp(session{i, 1}, 'T')
-        yyaxis left
+% % %         yyaxis left
         h_err(i) = errorbar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
         h_mirror(i) = errorbar(session{i, 2}(:, 1), session{i, 2}(:, 3), session{i, 2}(:, 5), '-oc');
     else
-        yyaxis left
+% % %         yyaxis left
         h(i) = shadedErrorBar(session{i, 2}(:, 1), abs(session{i, 2}(:, 3)), session{i, 2}(:, 5), line_spec);
         % exp fit for IL and PT
-        yyaxis right
-        pf(i) = plot(session{i, 2}(:, 1), All_beh_expfit.pRoll_dummy(session{i, 2}(:, 1), fit), line_spec_fit);
+% % %         yyaxis right
+% % %         pf(i) = plot(session{i, 2}(:, 1), All_beh_expfit.pRoll_dummy(session{i, 2}(:, 1), fit), line_spec_fit);
     end
 end
 % exp fit for TR
-yyaxis right
-pf(2) = plot(20:4:95, -All_beh_expfit.pRoll_dummy(20:4:end, 3), '-.b');
+% % % yyaxis right
+% % % pf(2) = plot(20:4:95, -All_beh_expfit.pRoll_dummy(20:4:end, 3), '-.b');
 
 hold off
-yyaxis left
+% % % yyaxis left
 ylim([-16, 16])
 ylabel('peak roll ({\circ})')
-yyaxis right
-ylim([-1.4, 1.4])
-ylabel('exp fit dummy', 'rotation', 270, 'VerticalAlignment', 'bottom')
+% % % yyaxis right
+% % % ylim([-1.4, 1.4])
+% % % ylabel('exp fit dummy', 'rotation', 270, 'VerticalAlignment', 'bottom')
 % % % ylim([-20, 10])
 % % % ylabel('peak roll ({\circ})')
-% % % legend([h(1).mainLine, h_err(20), h_mirror(20), h(21).mainLine], 'IL', 'abs(TR)', 'TR', 'PT', 'Location', 'best')
-legend(pf(1:3), 'IL_{fit}', 'TR_{fit}', 'PT_{fit}', 'Location', 'southwest')
+legend([h(1).mainLine, h_err(20), h_mirror(20), h(21).mainLine], 'IL', 'abs(TR)', 'TR', 'PT', 'Location', 'best')
+% % % legend(pf(1:3), 'IL_{fit}', 'TR_{fit}', 'PT_{fit}', 'Location', 'southwest')
 xlabel('trial')
 xlim([0, 96])
 hline(0, ':r')
+title(['error bars represent SE across ', num2str(length(All_selected_sub)), ' subjects'])
 set(gca, 'FontSize', 18)
 set(gcf, 'Units', 'normalized', 'Position', [0 0 1 1])
 savefig(fullfile(pathname, ['behavior_se_', num2str(nsub), 'subs']))
