@@ -48,7 +48,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     [~, sub_id, ~]= fileparts(fileparts(fileparts(raw_dir)));
     % set EEG output path
     % output_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/001 Process/Sxxx/';
-    output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '001 Process', [sub_id, '_', All_timelocking_type{:}]);
+% % %     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '001 Process', [sub_id, '_', All_timelocking_type{:}]);
+    output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '002 ProcessAgain', [sub_id, '_', All_timelocking_type{:}]);
     
     %% EEGLab
     % Import raw EEG data
@@ -97,7 +98,8 @@ for All_sub_i = selected_sub %1:length(All_data_list) %6:7 % run only sub-09 and
     behavior_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'behavior');
     behavior_BIDS_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'beh', 'csv');
     % run insert_behavior_event_in2EEG to put behavior onset into EEG events
-    behavior_results_dir = fullfile(behavior_dir, 'preliminary results');
+% % %     behavior_results_dir = fullfile(behavior_dir, 'preliminary results');
+    behavior_results_dir = fullfile(behavior_dir, 'results');
     behavior_filename = ['S0', sub_id(end-1:end), '_info_onset_time.mat'];
     EEG = insertEvent2EEG(EEG, behavior_results_dir, behavior_filename, behavior_BIDS_dir);
     
