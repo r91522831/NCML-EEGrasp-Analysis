@@ -52,7 +52,7 @@ for All_i = All_selected_sub
     input = data;
     for i = 1:length(file_list)
         tmp_audio = info_time_trigger{i, 2};
-        dt = 0.001 * (info_time_trigger{i, 1}(2, 1) - info_time_trigger{i, 1}(1, 1)); % in second
+        dt = 0.001 * diff(info_time_trigger{i, 1}(1:2, 1)); % in second
         %% Get object coordinate before reaching initiation
         % object coordinate before audio go cue and should keep the same until object lift onset*
         ind_b4go = (tmp_audio == 1);
@@ -136,7 +136,16 @@ for All_i = All_selected_sub
         end
         for j = ind_hold(end, 1):-1:1 %  3 mm
             if obj_height{i, 1}(j, 1) < 3
-                ind_lft_onset(i, 3) = j;
+                % when the obj height reach 3 mm, check the velocity larger
+                % than 20 mm/s
+                dv = gradient(obj_height{i, 1}(1:ind_hold(end, 1), 1)) / dt;
+                for k = j:ind_hold(end, 1)
+                    if dv(k) > 20 % mm/s
+                        ind_lft_onset(i, 3) = k;
+                        break;
+                    end
+                end
+% % % %                 ind_lft_onset(i, 3) = j; % without checking the velocity
                 break;
             end
         end
@@ -216,10 +225,12 @@ for All_i = All_selected_sub
     ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
 
     save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
+% % %     save(fullfile(All_path, 'vel_onset', [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
 
     %%
     % remember to put the onset infor corresponding to the correct trial number
     % in the file_list!!!!!!!!!!!!!!
     save(fullfile(All_path, [sub_id, '_info_onset_time.mat']), 'info_onset_time');
+% % %     save(fullfile(All_path, 'vel_onset', [sub_id, '_info_onset_time.mat']), 'info_onset_time');
     disp(['Finish processing ', sub_id, '!']);
 end

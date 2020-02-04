@@ -74,6 +74,9 @@ for All_i = All_selected_sub
             
             subplot(3, 2, i * 2)
             hold on
+            % plot velocity profile
+% % %             plot(time_label, gradient(tmp_height)/0.004, 'Color', All_colorset(j * All_color_id, :))
+            
             plot(time_label, tmp_roll, 'Color', All_colorset(j * All_color_id, :))
             if j == tmp_ntrial
                 xlim([-2, 7])
