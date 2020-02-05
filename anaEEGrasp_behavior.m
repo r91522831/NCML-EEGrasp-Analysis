@@ -137,6 +137,7 @@ for All_i = All_selected_sub
         end
         for j = ind_hold(end, 1):-1:1 %  3 mm
             if obj_height{i, 1}(j, 1) < 3
+                %{
                 % when the obj height reach 3 mm, check the velocity larger
                 % than 20 mm/s
                 dv = gradient(obj_height{i, 1}(1:ind_hold(end, 1), 1)) / dt;
@@ -146,7 +147,8 @@ for All_i = All_selected_sub
                         break;
                     end
                 end
-% % % %                 ind_lft_onset(i, 3) = j; % without checking the velocity
+                %}
+                ind_lft_onset(i, 3) = j; % without checking the velocity
                 break;
             end
         end
