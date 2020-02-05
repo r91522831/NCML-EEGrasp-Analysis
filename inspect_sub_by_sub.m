@@ -66,7 +66,7 @@ for All_i = All_selected_sub
                 hline(3, ':b')
                 ylabel({All_cond{i}, 'obj height (mm)'})
                 if i ~= ncond
-                    xticklabels([])
+% % %                     xticklabels([])
                 else
                     xlabel('time (s)')
                 end
@@ -83,7 +83,7 @@ for All_i = All_selected_sub
                 vline(0, '--r', 'onset')
                 ylabel('obj roll ({\circ})')
                 if i ~= ncond
-                    xticklabels([])
+% % %                     xticklabels([])
                 else
                     xlabel('time (s)')
                 end
