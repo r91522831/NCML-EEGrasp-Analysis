@@ -18,7 +18,8 @@ for All_i = All_selected_sub
     sub_id = All_filelist(All_i).name(1:4);
     disp(['Start processing ', sub_id, ' ...']);
     
-    file_suffix = {'_aligned_data', '_fingerInfo', '_info_onset_time', '_temp_result'};
+% % %     file_suffix = {'_aligned_data', '_fingerInfo', '_info_onset_time', '_temp_result'};
+    file_suffix = {'_fingerInfo', '_info_onset_time', '_temp_result'};
 
     for i = 1:length(file_suffix)
         load(fullfile(All_path, [sub_id, file_suffix{i}, '.mat']));
