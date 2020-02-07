@@ -4,16 +4,16 @@ All_filelist = dir(fullfile(All_path, '*_timefreq.mat'));
 
 %% 
 disp([num2cell((1:length(All_filelist))'), {All_filelist.name}']);
-selected_sub = input('Which subject(s) to run regression? ');
-if isempty(selected_sub)
-    selected_sub = 1:length(All_filelist);
+All_selected_sub = input('Which subject(s) to run regression? ');
+if isempty(All_selected_sub)
+    All_selected_sub = 1:length(All_filelist);
 end
 
 coeff_name = {'\beta_0', '\beta_1', '\beta_2', '\beta_3', '\beta_4', '\beta_5'};
 ncoeff = length(coeff_name);
 
-All_power_roll = cell(length(selected_sub), 1);
-for All_i = selected_sub% 1:length(All_dirlist)
+All_power_roll = cell(length(All_selected_sub), 1);
+for All_i = All_selected_sub% 1:length(All_dirlist)
     clearvars -except All_*; close all;
     subID = All_filelist(All_i).name(1:6);
     filepath_eeg = dir(fullfile(fileparts(fileparts(All_path)), [subID, '*']));
@@ -36,8 +36,8 @@ for All_i = selected_sub% 1:length(All_dirlist)
     nelectrode = length(electrodes);
     nb_epoch = size(tf.tf_ersp{1, 1}{:}, 3);
     
-    rg_time = find(timerstamps >= 400 & timerstamps < 600);
-    rg_freq = find(freqz >  4 & freqz <=  8);
+    rg_time = find(timerstamps >= 400 & timerstamps < 600); % 400 to 600 ms after lift onset
+    rg_freq = find(freqz >  4 & freqz <=  8); % 4 to 8 Hz: theta band
     
     for i_electrode = 1:nelectrode
         tmp_power = nan(nb_epoch, 2);
@@ -45,7 +45,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
             tmp_p = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq, rg_time, i_trial);
             tmp_power(i_trial, 1) = mean(tmp_p(:));
         end
-        tmp_power(:, 2) = table2array(EEG.behavior.obj_roll_peak);
+        tmp_power(:, 2) = abs(table2array(EEG.behavior.obj_roll_peak));
         tmp_r = corr(tmp_power);
         
         All_power_roll{All_i, 1}{i_electrode, 1} = tmp_power;
@@ -166,6 +166,15 @@ for All_i = selected_sub% 1:length(All_dirlist)
     
     disp([subID, ' finished.']);
 end
+
+
+%%
+sub_pow_roll = cellfun(@(x) x{1, 1}, All_power_roll, 'UniformOutput', false);
+sub_r_theta_400to600ms = cellfun(@(x) x{1, 2}, All_power_roll, 'UniformOutput', false);
+sub_r_time_freq = cellfun(@(x) x{1, 3}, All_power_roll, 'UniformOutput', false);
+sub_time = tf.tf_times;
+sub_freq = tf.tf_freqs;
+save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*')
 
 %%
 All_r = nan(length(All_power_roll), 1);
