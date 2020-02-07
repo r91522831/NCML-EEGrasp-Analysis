@@ -34,16 +34,26 @@ for sub_i = selected_sub%1:length(eeg_dataset_list)
     tmp = fieldnames(lft_onset);
     lft_onset = lft_onset.(tmp{:}); % lift onset for each epoch in seconds
     % load behavior
+    obj_roll = load(fullfile(behavior_folder, [beh_sub_id, '_temp_result.mat']));
     behavior = load(fullfile(behavior_folder, [beh_sub_id, '_for_plot.mat']));
+    
     obj_behavior = cell(length(behavior.obj), 1);
+    obj_roll_epoch = cell(length(behavior.obj), 1);
     ind_lft_onset = nan(length(behavior.obj), 1);
     for i = 1:length(behavior.obj)
         tmp_time = array2table(behavior.info_time_trigger{i, 1} - lft_onset(i) * 1000, 'VariableNames', {'time'});
         tmp_time.Properties.VariableUnits = {'ms'};
+        
         tmp_obj = behavior.obj{i};
         tmp_obj.Properties.VariableUnits = {'mm', 'mm', 'mm', 'rad', 'rad', 'rad'};
         obj_behavior{i} = [tmp_time, tmp_obj];
+        
+        tmp_obj_roll = table(obj_roll.angTilt2R{i}); % in degrees;
+        tmp_obj_roll.Properties.VariableNames = {'Roll'};
+        tmp_obj_roll.Properties.VariableUnits = {'deg'};
+        obj_roll_epoch{i} = [tmp_time, tmp_obj_roll];
     end
+    obj_roll_peak = obj_roll.peak_roll(:, 'peakRoll');
     
     %% load eeg dataset
     EEG = pop_loadset('filename', tmp_dataset_list(1).name, 'filepath', tmp_dataset_folder);
@@ -52,7 +62,9 @@ for sub_i = selected_sub%1:length(eeg_dataset_list)
     for i = 1:length(obj_behavior)
         EEG.behavior.obj_epoch{i, 1} = obj_behavior{i, 1}(obj_behavior{i, 1}.time >= EEG.times(1) & obj_behavior{i, 1}.time <= EEG.times(end), :);
         EEG.behavior.behavior_srate = 1000 / (EEG.behavior.obj_epoch{1, 1}{2, 'time'} - EEG.behavior.obj_epoch{1, 1}{1, 'time'});
+        EEG.behavior.obj_roll_epoch{i, 1} = obj_roll_epoch{i, 1}(obj_roll_epoch{i, 1}.time >= EEG.times(1) & obj_roll_epoch{i, 1}.time <= EEG.times(end), :);
     end
+    EEG.behavior.obj_roll_peak = obj_roll_peak;
     
     EEG.setname = [sub_id, '_combine_behavior'];
     EEG = eeg_checkset( EEG );

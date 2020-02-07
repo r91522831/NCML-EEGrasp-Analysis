@@ -225,16 +225,12 @@ for All_i = All_selected_sub
     %%
     ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
 
-% % %     save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
-% % %     save(fullfile(All_path, 'vel_onset', [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
-    save(fullfile(All_path, 'max_handle', [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
+    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
 
     %%
     % remember to put the onset infor corresponding to the correct trial number
     % in the file_list!!!!!!!!!!!!!!
-% % %     save(fullfile(All_path, [sub_id, '_info_onset_time.mat']), 'info_onset_time');
-% % %     save(fullfile(All_path, 'vel_onset', [sub_id, '_info_onset_time.mat']), 'info_onset_time');
-    save(fullfile(All_path, 'max_handle', [sub_id, '_info_onset_time.mat']), 'info_onset_time');
+    save(fullfile(All_path, [sub_id, '_info_onset_time.mat']), 'info_onset_time');
     
     disp(['Finish processing ', sub_id, '!']);
 end
