@@ -12,7 +12,7 @@ end
 coeff_name = {'\beta_0', '\beta_1', '\beta_2', '\beta_3', '\beta_4', '\beta_5'};
 ncoeff = length(coeff_name);
 
-All_power_roll = cell(length(All_selected_sub), 1);
+All_power_roll = cell(length(All_selected_sub), 2);
 for All_i = All_selected_sub% 1:length(All_dirlist)
     clearvars -except All_*; close all;
     subID = All_filelist(All_i).name(1:6);
@@ -48,6 +48,9 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
         tmp_power(:, 2) = abs(table2array(EEG.behavior.obj_roll_peak));
         tmp_r = corr(tmp_power);
         
+        tmp_power = array2table(tmp_power, 'VariableNames', {'power', 'peakRoll'});
+        tmp_power{:, 'cond'} = {EEG.epoch.cond}';
+        
         All_power_roll{All_i, 1}{i_electrode, 1} = tmp_power;
         All_power_roll{All_i, 1}{i_electrode, 2} = tmp_r(1, 2);
         
@@ -61,6 +64,7 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
         end
         
         All_power_roll{All_i, 1}{i_electrode, 3} = tmp_corr;
+        All_power_roll{All_i, 2} = subID;
     end
     
     
@@ -169,12 +173,41 @@ end
 
 
 %%
-sub_pow_roll = cellfun(@(x) x{1, 1}, All_power_roll, 'UniformOutput', false);
-sub_r_theta_400to600ms = cellfun(@(x) x{1, 2}, All_power_roll, 'UniformOutput', false);
-sub_r_time_freq = cellfun(@(x) x{1, 3}, All_power_roll, 'UniformOutput', false);
+sub_pow_roll = cell(size(All_power_roll));
+sub_pow_roll(:, 1) = cellfun(@(x) x{:, 1}, All_power_roll(:, 1), 'UniformOutput', false);
+sub_pow_roll(:, 2) = All_power_roll(:, 2);
+sub_r_theta_400to600ms = cellfun(@(x) x{:, 2}, All_power_roll(:, 1), 'UniformOutput', false);
+sub_r_time_freq = cellfun(@(x) x{:, 3}, All_power_roll(:, 1), 'UniformOutput', false);
 sub_time = tf.tf_times;
 sub_freq = tf.tf_freqs;
-save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*')
+save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*');
+
+%% power x peak roll plot
+figure('units', 'normalized', 'outerposition', [0, 0, 1, 1])
+set(0, 'defaultAxesFontSize', 18)
+for i = 1:length(sub_pow_roll)
+    tmp_IL = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'IL');
+    tmp_TR = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'TR');
+    tmp_PT1 = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'PT1');
+    tmp_PT2 = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'PT2');
+    tmp_PT3 = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'PT3');
+    subplot(4, 5, i)
+    hold on
+    scatter(sub_pow_roll{i, 1}{tmp_IL, 'peakRoll'}, sub_pow_roll{i, 1}{tmp_IL, 'power'}, 'or')
+    scatter(sub_pow_roll{i, 1}{tmp_TR, 'peakRoll'}, sub_pow_roll{i, 1}{tmp_TR, 'power'}, 'xb')
+    scatter(sub_pow_roll{i, 1}{tmp_PT1, 'peakRoll'}, sub_pow_roll{i, 1}{tmp_PT1, 'power'}, '*k')
+    scatter(sub_pow_roll{i, 1}{tmp_PT2, 'peakRoll'}, sub_pow_roll{i, 1}{tmp_PT2, 'power'}, '+y')
+    scatter(sub_pow_roll{i, 1}{tmp_PT3, 'peakRoll'}, sub_pow_roll{i, 1}{tmp_PT3, 'power'}, 'xc')
+    hold off
+    
+    xlabel('peak roll ({\circ})')
+    ylabel('tf power')
+    title(sub_pow_roll{i, 2})
+end
+legend('IL', 'TR', 'PT1', 'PT2', 'PT3')
+
+
+savefig(fullfile(All_path, ['roll_power_', num2str(length(All_selected_sub)), 'sub.fig']));
 
 %%
 All_r = nan(length(All_power_roll), 1);
@@ -183,8 +216,8 @@ for i = 1:length(All_power_roll)
 end
 disp(mean(All_r))
 
-%%
-figure
-% plot(All_power_roll{}
+%% power, correlation plot
+% % % figure
+% % % plot(All_power_roll{}
 
 
