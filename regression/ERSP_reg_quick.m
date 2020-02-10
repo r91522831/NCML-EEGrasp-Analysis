@@ -12,7 +12,7 @@ end
 coeff_name = {'\beta_0', '\beta_1', '\beta_2', '\beta_3', '\beta_4', '\beta_5'};
 ncoeff = length(coeff_name);
 
-All_power_roll = cell(length(All_selected_sub), 2);
+All_power_roll = cell(length(All_selected_sub), 4);
 for All_i = All_selected_sub% 1:length(All_dirlist)
     clearvars -except All_*; close all;
     subID = All_filelist(All_i).name(1:6);
@@ -39,13 +39,38 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
     rg_time = find(timerstamps >= 400 & timerstamps < 600); % 400 to 600 ms after lift onset
     rg_freq = find(freqz >  4 & freqz <=  8); % 4 to 8 Hz: theta band
     
+    % define a window size of ~300 ms moving across the range from 0 to 5000 ms
+    rg_all_time = timerstamps(timerstamps >= 0 & timerstamps < 5000);
+    rg_ind_dt = round(300 / mean(diff(rg_all_time))); % find number of indices corresponding to 300 ms window
+    n_mv_win = length(rg_all_time) - rg_ind_dt;
+    rg_300_time = cell(n_mv_win, 1);
+    for i_win = 1:n_mv_win
+        [~, rg_300_time{i_win, 1}] = ismember(rg_all_time(i_win:(i_win + rg_ind_dt)), timerstamps); % find the indices in the timerstamps
+    end
+    
+    % correlation for each electrode
     for i_electrode = 1:nelectrode
+        tmp_peak_roll = abs(table2array(EEG.behavior.obj_roll_peak));
+        
+        tmp_power_mw = cell(n_mv_win, 2);
+        % mean with a window size of ~300 ms moving across the range from 0 to 5000 ms for theata band
+        for i_win = 1:n_mv_win
+            for i_trial = 1:nb_epoch
+                tmp_p_mw = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq, rg_300_time{i_win, 1}, i_trial);
+                tmp_power_mw{i_win, 1}(i_trial, 1) = mean(tmp_p_mw(:));
+            end
+            tmp_power_mw{i_win, 1}(:, 2) = tmp_peak_roll;
+            tmp_r_mw = corr(tmp_power_mw{i_win, 1});
+            tmp_power_mw{i_win, 2} = tmp_r_mw(1, 2);
+        end
+        
         tmp_power = nan(nb_epoch, 2);
         for i_trial = 1:nb_epoch
+            % mean with 400 to 600 ms window for theta band (4 to 8 Hz)
             tmp_p = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq, rg_time, i_trial);
             tmp_power(i_trial, 1) = mean(tmp_p(:));
         end
-        tmp_power(:, 2) = abs(table2array(EEG.behavior.obj_roll_peak));
+        tmp_power(:, 2) = tmp_peak_roll;
         tmp_r = corr(tmp_power);
         
         tmp_power = array2table(tmp_power, 'VariableNames', {'power', 'peakRoll'});
@@ -53,7 +78,6 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
         
         All_power_roll{All_i, 1}{i_electrode, 1} = tmp_power;
         All_power_roll{All_i, 1}{i_electrode, 2} = tmp_r(1, 2);
-        
         
         tmp_corr = nan(nfreq, ntime);
         for i_f = 1:nfreq
@@ -65,6 +89,8 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
         
         All_power_roll{All_i, 1}{i_electrode, 3} = tmp_corr;
         All_power_roll{All_i, 2} = subID;
+        All_power_roll{All_i, 3} = tf.tf_ersp{electrodes(i_electrode), 1}{1};
+        All_power_roll{All_i, 4} = tmp_power_mw;
     end
     
     
@@ -173,19 +199,19 @@ end
 
 
 %%
-sub_pow_roll = cell(size(All_power_roll));
+sub_pow_roll = cell(size(All_power_roll, 1), 2);
 sub_pow_roll(:, 1) = cellfun(@(x) x{:, 1}, All_power_roll(:, 1), 'UniformOutput', false);
 sub_pow_roll(:, 2) = All_power_roll(:, 2);
 sub_r_theta_400to600ms = cellfun(@(x) x{:, 2}, All_power_roll(:, 1), 'UniformOutput', false);
 sub_r_time_freq = cellfun(@(x) x{:, 3}, All_power_roll(:, 1), 'UniformOutput', false);
 sub_time = tf.tf_times;
 sub_freq = tf.tf_freqs;
-save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*');
+save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*', 'All_power_roll');
 
 %% power x peak roll plot
 figure('units', 'normalized', 'outerposition', [0, 0, 1, 1])
 set(0, 'defaultAxesFontSize', 18)
-for i = 1:length(sub_pow_roll)
+for i = 1:size(sub_pow_roll, 1)
     tmp_IL = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'IL');
     tmp_TR = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'TR');
     tmp_PT1 = strcmp(sub_pow_roll{i, 1}{:, 'cond'}, 'PT1');
@@ -211,13 +237,41 @@ savefig(fullfile(All_path, ['roll_power_', num2str(length(All_selected_sub)), 's
 
 %%
 All_r = nan(length(All_power_roll), 1);
-for i = 1:length(All_power_roll)
+for i = 1:size(All_power_roll, 1)
     All_r(i) = All_power_roll{i, 1}{1, 2};
 end
 disp(mean(All_r))
 
-%% power, correlation plot
-% % % figure
-% % % plot(All_power_roll{}
+%% correlation plot
+h = figure('units', 'normalized', 'outerposition', [0, 0, 1, 1]);
+set(0, 'defaultAxesFontSize', 18)
+for i = 1:size(All_power_roll, 1)
+    subplot(4, 5, i)
+    contourf(sub_time(sub_time >= -1)/1000, sub_freq, All_power_roll{i, 1}{1, 3}(:, sub_time >= -1), 40, 'LineStyle', 'none')
+end
+mtit('Correlation r')
+% % % savefig(h, fullfile(All_path, ['corr_r_', num2str(length(All_selected_sub)), 'sub.fig']));
+
+%% power plot
+h = figure('units', 'normalized', 'outerposition', [0, 0, 1, 1]);
+set(0, 'defaultAxesFontSize', 18)
+for i = 1:size(All_power_roll, 1)
+    tmp_p = trimmean(All_power_roll{i, 3}, 10, 3);
+    subplot(4, 5, i)
+    contourf(sub_time(sub_time >= -1)/1000, sub_freq, tmp_p(:, sub_time >= -1), 40, 'LineStyle', 'none')
+end
+mtit('Power')
+% % % savefig(h, fullfile(All_path, ['raw_p_', num2str(length(All_selected_sub)), 'sub.fig']));
 
 
+
+
+%% plot correlation time trjectory
+figure
+hold on
+for i = 1:length(All_power_roll)
+    plot([All_power_roll{i, 4}{:, 2}])
+    xlabel('moveing window (width ~300ms)')
+    ylabel('corr r')
+    title('Mean power of \theta 4~8 Hz moving window ~300 ms vs peark roll corr r time trajectory')
+end
