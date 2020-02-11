@@ -1,6 +1,6 @@
 close all; clear; clc;
 All_path = uigetdir;
-All_filelist = dir(fullfile(All_path, '*_timefreq.mat'));
+All_filelist = dir(fullfile(All_path, '*_timefreq_ersp.mat'));
 
 %% 
 disp([num2cell((1:length(All_filelist))'), {All_filelist.name}']);
@@ -37,60 +37,64 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
     nb_epoch = size(tf.tf_ersp{1, 1}{:}, 3);
     
     rg_time = find(timerstamps >= 400 & timerstamps < 600); % 400 to 600 ms after lift onset
-    rg_freq = find(freqz >  4 & freqz <=  8); % 4 to 8 Hz: theta band
+    % theta band: 4 to 8 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz
+    rg_freq = {find(freqz > 4 & freqz <= 8), find(freqz > 13 & freqz <= 20), find(freqz > 20 & freqz <= 30) };
+    nfreqband = length(rg_freq);
     
     % define a window size of ~300 ms moving across the range from 0 to 5000 ms
     rg_all_time = timerstamps(timerstamps >= 0 & timerstamps < 5000);
-    rg_ind_dt = round(300 / mean(diff(rg_all_time))); % find number of indices corresponding to 300 ms window
+    rg_ind_dt = round(50 / mean(diff(rg_all_time))); % find number of indices corresponding to 20 ms window
     n_mv_win = length(rg_all_time) - rg_ind_dt;
-    rg_300_time = cell(n_mv_win, 1);
+    rg_50_time = cell(n_mv_win, 1);
     for i_win = 1:n_mv_win
-        [~, rg_300_time{i_win, 1}] = ismember(rg_all_time(i_win:(i_win + rg_ind_dt)), timerstamps); % find the indices in the timerstamps
+        [~, rg_50_time{i_win, 1}] = ismember(rg_all_time(i_win:(i_win + rg_ind_dt)), timerstamps); % find the indices in the timerstamps
     end
     
+    
+    tmp_peak_roll = abs(table2array(EEG.behavior.obj_roll_peak));
     % correlation for each electrode
     for i_electrode = 1:nelectrode
-        tmp_peak_roll = abs(table2array(EEG.behavior.obj_roll_peak));
-        
-        tmp_power_mw = cell(n_mv_win, 2);
-        % mean with a window size of ~300 ms moving across the range from 0 to 5000 ms for theata band
-        for i_win = 1:n_mv_win
+        for i_freqband = 1:nfreqband
+            tmp_power_mw = cell(n_mv_win, 2);
+            % mean with a window size of ~300 ms moving across the range from 0 to 5000 ms for theata band
+            for i_win = 1:n_mv_win
+                for i_trial = 1:nb_epoch
+                    tmp_p_mw = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq{i_freqband}, rg_50_time{i_win, 1}, i_trial);
+                    tmp_power_mw{i_win, 1}(i_trial, 1) = mean(tmp_p_mw(:));
+                end
+                tmp_power_mw{i_win, 1}(:, 2) = tmp_peak_roll;
+                tmp_r_mw = corr(tmp_power_mw{i_win, 1});
+                tmp_power_mw{i_win, 2} = tmp_r_mw(1, 2);
+            end
+            
+            tmp_power = nan(nb_epoch, 2);
             for i_trial = 1:nb_epoch
-                tmp_p_mw = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq, rg_300_time{i_win, 1}, i_trial);
-                tmp_power_mw{i_win, 1}(i_trial, 1) = mean(tmp_p_mw(:));
+                % mean with 400 to 600 ms window for theta band (4 to 8 Hz)
+                tmp_p = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq{i_freqband}, rg_time, i_trial);
+                tmp_power(i_trial, 1) = mean(tmp_p(:));
             end
-            tmp_power_mw{i_win, 1}(:, 2) = tmp_peak_roll;
-            tmp_r_mw = corr(tmp_power_mw{i_win, 1});
-            tmp_power_mw{i_win, 2} = tmp_r_mw(1, 2);
-        end
-        
-        tmp_power = nan(nb_epoch, 2);
-        for i_trial = 1:nb_epoch
-            % mean with 400 to 600 ms window for theta band (4 to 8 Hz)
-            tmp_p = tf.tf_ersp{electrodes(i_electrode), 1}{1}(rg_freq, rg_time, i_trial);
-            tmp_power(i_trial, 1) = mean(tmp_p(:));
-        end
-        tmp_power(:, 2) = tmp_peak_roll;
-        tmp_r = corr(tmp_power);
-        
-        tmp_power = array2table(tmp_power, 'VariableNames', {'power', 'peakRoll'});
-        tmp_power{:, 'cond'} = {EEG.epoch.cond}';
-        
-        All_power_roll{All_i, 1}{i_electrode, 1} = tmp_power;
-        All_power_roll{All_i, 1}{i_electrode, 2} = tmp_r(1, 2);
-        
-        tmp_corr = nan(nfreq, ntime);
-        for i_f = 1:nfreq
-            for i_t = 1:ntime
-                tmp_pow_r = corr([squeeze(tf.tf_ersp{electrodes(i_electrode), 1}{1}(i_f, i_t, :)), table2array(EEG.behavior.obj_roll_peak)]);
-                tmp_corr(i_f, i_t) = tmp_pow_r(1, 2);
+            tmp_power(:, 2) = tmp_peak_roll;
+            tmp_r = corr(tmp_power);
+            
+            tmp_power = array2table(tmp_power, 'VariableNames', {'power', 'peakRoll'});
+            tmp_power{:, 'cond'} = {EEG.epoch.cond}';
+            
+            All_power_roll{All_i, 1}{i_electrode, 1}(:, i_freqband) = tmp_power;
+            All_power_roll{All_i, 1}{i_electrode, 2}(:, i_freqband) = tmp_r(1, 2);
+            
+            tmp_corr = nan(nfreq, ntime);
+            for i_f = 1:nfreq
+                for i_t = 1:ntime
+                    tmp_pow_r = corr([squeeze(tf.tf_ersp{electrodes(i_electrode), 1}{1}(i_f, i_t, :)), table2array(EEG.behavior.obj_roll_peak)]);
+                    tmp_corr(i_f, i_t) = tmp_pow_r(1, 2);
+                end
             end
+            
+            All_power_roll{All_i, 1}{i_electrode, 3}(:, i_freqband) = tmp_corr;
+            All_power_roll{All_i, 2} = subID;
+            All_power_roll{All_i, 3} = tf.tf_ersp{electrodes(i_electrode), 1}{1};
+            All_power_roll{All_i, 4} = tmp_power_mw;
         end
-        
-        All_power_roll{All_i, 1}{i_electrode, 3} = tmp_corr;
-        All_power_roll{All_i, 2} = subID;
-        All_power_roll{All_i, 3} = tf.tf_ersp{electrodes(i_electrode), 1}{1};
-        All_power_roll{All_i, 4} = tmp_power_mw;
     end
     
     
