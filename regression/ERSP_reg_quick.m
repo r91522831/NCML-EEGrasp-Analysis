@@ -208,6 +208,32 @@ sub_time = tf.tf_times;
 sub_freq = tf.tf_freqs;
 save(fullfile(All_path, ['corr_', num2str(length(All_selected_sub)), 'sub.mat']), 'sub_*', 'All_power_roll');
 
+
+%% plot TR1/IL1 peakRoll
+for i = 1:length(All_power_roll)
+    % find TR1
+    i_tr1 = find(strcmp([All_power_roll{1, 1}{1, 1}{:, 'cond'}], 'TR'), 1);
+    % find IL1
+    i_il1 = find(strcmp([All_power_roll{1, 1}{1, 1}{:, 'cond'}], 'IL'), 1);
+    %
+    All_power_roll{i, 5} = All_power_roll{i, 1}{1, 1}{i_tr1, 'peakRoll'} / All_power_roll{i, 1}{1, 1}{i_il1, 'peakRoll'};
+end
+All_power_roll = sortrows(All_power_roll, 5, 'descend');
+
+%%
+figure('units', 'normalized', 'outerposition', [0, 0, 1, 1]);
+set(0, 'defaultAxesFontSize', 18)
+plot(1:size(All_power_roll, 1), [All_power_roll{:, 5}], 'x')
+hline([3, 1], {'r', 'b'}, {'3', '1'})
+xticks(1:size(All_power_roll, 1))
+xticklabels(cellfun(@(x) x(end-1:end), All_power_roll(:, 2), 'UniformOutput', false))
+xlabel('Suject ID')
+ylabel('ratio (TR_1/IL_1)')
+title('pealRoll_{TR_1} / peakRoll_{IL_1} ')
+
+
+
+
 %% power x peak roll plot
 figure('units', 'normalized', 'outerposition', [0, 0, 1, 1])
 set(0, 'defaultAxesFontSize', 18)
