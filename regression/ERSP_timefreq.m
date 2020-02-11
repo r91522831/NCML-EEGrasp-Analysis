@@ -126,7 +126,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
     close(h);
     
     tmp_filename = fullfile(All_linearmodel_path, [subID, '_timefreq']);
-    save(tmp_filename, 'tf_*')
+    save(tmp_filename, 'tf_times', 'tf_freqs', 'tf_ersp'); %, 'tf_*');
     
     
     %{
