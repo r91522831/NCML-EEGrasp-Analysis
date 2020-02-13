@@ -65,10 +65,12 @@ for All_i = selected_sub% 1:length(All_dirlist)
     
     nb_epoch = length(EEG.epoch);
     tf_ersp = cell(length(electrodes), 1);
-    tf_itc = tf_ersp;
-    tf_data = tf_ersp;
+% % %     tf_itc = tf_ersp;
+% % %     tf_data = tf_ersp;
+    
     
     % find baseline [-600, -100] before left/right cue
+    %{
     baseline_b4_leftright = cell(nb_epoch, 1);
     tmp_baseline = [-600, -100]; % in milliseconds
     for i = 1:nb_epoch
@@ -77,6 +79,8 @@ for All_i = selected_sub% 1:length(All_dirlist)
         end
         baseline_b4_leftright{i} = round((EEG.epoch(i).eventlatency{strcmp([EEG.epoch(i).eventtype], 's17')}) * EEG.srate / 1000) + tmp_baseline; % in millisaconds
     end
+    %}
+    
     
     ticker = 1;
     h = waitbar(0, 'time frequency analysis.');
@@ -84,11 +88,12 @@ for All_i = selected_sub% 1:length(All_dirlist)
     % time frequency analysis for each channel and each epoch
     for i = All_selected_elec % 1:length(electrodes)
         tmp_ersp = cell(nb_epoch, 1);
-        tmp_itc = tmp_ersp;
-        tmp_data = tmp_ersp;
+% % %         tmp_itc = tmp_ersp;
+% % %         tmp_data = tmp_ersp;
         for j = 1:nb_epoch % 
-            [tmp_ersp{j, 1}, tmp_itc{j, 1}, ~, tmp_times, tmp_freqs, ~, ~, tmp_data{j, 1}] = ...
-            evalc([' newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ', ...
+% % %             evalc([' [tmp_ersp{j, 1}, tmp_itc{j, 1}, ~, tmp_times, tmp_freqs, ~, ~, tmp_data{j, 1}] = ', ...
+            evalc([' [tmp_ersp{j, 1}, ~, ~, tmp_times, tmp_freqs, ~, ~, ~] = ', ...
+                   ' newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ', ...
                                                       ' ''freqs'', [2, 40], ''timesout'', 800, ', ...
                                                       ' ''topovec'', 15, ''elocs'', EEG.chanlocs, ''chaninfo'', EEG.chaninfo, ''caption'', electrodes_name{i}, ', ...
                                                       ' ''baseline'', [-250, -50], ''basenorm'', ''on'', ''trialbase'', ''full'', ''padratio'', 1, ''winsize'', 512, ', ...
@@ -124,14 +129,14 @@ for All_i = selected_sub% 1:length(All_dirlist)
         end
         % convert
         tf_ersp{i} = cat(3, tmp_ersp{:, 1});
-        tf_itc{i} = cat(3, tmp_itc{:, 1});
-        tf_data{i} = cat(3, tmp_data{:, 1});
+% % %         tf_itc{i} = cat(3, tmp_itc{:, 1});
+% % %         tf_data{i} = cat(3, tmp_data{:, 1});
     end
     tf_times = tmp_times;
     tf_freqs = tmp_freqs;
     tf_ersp = cell2table(tf_ersp(~cellfun('isempty', tf_ersp)), 'RowNames', {EEG.chanlocs(All_selected_elec).labels});
-    tf_itc = cell2table(tf_itc(~cellfun('isempty', tf_itc)), 'RowNames', {EEG.chanlocs(All_selected_elec).labels});
-    tf_data = cell2table(tf_data(~cellfun('isempty', tf_data)), 'RowNames', {EEG.chanlocs(All_selected_elec).labels});
+% % %     tf_itc = cell2table(tf_itc(~cellfun('isempty', tf_itc)), 'RowNames', {EEG.chanlocs(All_selected_elec).labels});
+% % %     tf_data = cell2table(tf_data(~cellfun('isempty', tf_data)), 'RowNames', {EEG.chanlocs(All_selected_elec).labels});
     
     close(h);
     
