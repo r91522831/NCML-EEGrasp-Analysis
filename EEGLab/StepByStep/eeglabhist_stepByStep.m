@@ -142,7 +142,7 @@ for All_sub_i = All_selected_sub
     % Interpolate channels.
     EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
     % putback EOG channel
-    EEG = putback_nonEEG(EEG, originalEEG, EEG.etc.clean_sample_mask);
+    EEG = putback_nonEEG_v1(EEG, originalEEG, EEG.etc.clean_sample_mask);
     
     EEG.setname = [sub_id, '_ASRclean'];
     EEG = eeg_checkset( EEG );
