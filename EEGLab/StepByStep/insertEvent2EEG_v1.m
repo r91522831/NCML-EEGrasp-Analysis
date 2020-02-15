@@ -2,6 +2,7 @@ function [EEG] = insertEvent2EEG_v1(EEG, pathname, filename, behavior_BIDS_dir)
 % insertEvent2EEG Summary of this function goes here
 %   Detailed explanation goes here
 behavior = load(fullfile(pathname, filename));
+n_trial_nominal = 95;
 trial_filelist = dir(fullfile(behavior_BIDS_dir, '*.csv'));
 trial_list = cellfun(@(x) str2double(x(7:9)), {trial_filelist.name}');
 
@@ -37,7 +38,7 @@ name_var_event = tmp_event.Properties.VariableNames;
 n_beh_trial = length(trial_list);
 name_var_beh = {'cond', 'condID', 'condType', 'condTypeID', 'trialID', 'handleSide'};
 n_var_beh = length(name_var_beh);
-tmp_trial_tbl = cell2table( cell(95, n_var_beh), 'VariableNames', name_var_beh);
+tmp_trial_tbl = cell2table( cell(n_trial_nominal, n_var_beh), 'VariableNames', name_var_beh);
 % use trial_list, i.e. trial ID, to create the correct trial info
 for i = 1:n_beh_trial
     tmp_trial_id = trial_list(i);
@@ -72,8 +73,8 @@ tmp_raw_event = cell(n_tgr_state, 1);
 for i = 1:n_tgr_state
     tmp_raw_event{i, 1} = tmp_event(strcmp(tmp_event.triggerState, tgr_state{i}), :);
     tmp_n_trg = height(tmp_raw_event{i, 1});
-    if tmp_n_trg < 95
-        tmp_missing = 95 - tmp_n_trg;
+    if tmp_n_trg < n_trial_nominal
+        tmp_missing = n_trial_nominal - tmp_n_trg;
         tmp_empty = cell2table( cell(tmp_missing, n_var_event), 'VariableNames', name_var_event);
         tmp_empty.latency = nan(tmp_missing, 1);
         tmp_empty.duration = nan(tmp_missing, 1);
@@ -83,7 +84,7 @@ for i = 1:n_tgr_state
         tmp_empty.triggerID = nan(tmp_missing, 1);
 
         tmp_raw_event{i, 1} = vertcat( tmp_raw_event{i, 1},  tmp_empty);
-    elseif tmp_n_trg > 95
+    elseif tmp_n_trg > n_trial_nominal
         disp('trigger number is larger than trial numbers.')
     end
 end
@@ -118,7 +119,7 @@ tmp_onset_tbl.bvmknum = nan(n_tgr_trial, 1);
 tmp_onset_tbl.urevent = nan(n_tgr_trial, 1);
 tmp_onset_tbl.triggerID = nan(n_tgr_trial, 1);
 tmp_onset_tbl.triggerState = repmat({'NA'}, n_tgr_trial, 1);
-tmp_onset_tbl = [tmp_onset_tbl, tmp_trial_tbl];
+tmp_onset_tbl = [tmp_onset_tbl, tmp_trial_tbl(1:n_tgr_trial, :)];
 
 % for hold time
 % middle point between hold and relax cues
@@ -133,7 +134,7 @@ tmp_hold_tbl.bvmknum = nan(n_tgr_trial, 1);
 tmp_hold_tbl.urevent = nan(n_tgr_trial, 1);
 tmp_hold_tbl.triggerID = nan(n_tgr_trial, 1);
 tmp_hold_tbl.triggerState = repmat({'NA'}, n_tgr_trial, 1);
-tmp_hold_tbl = [tmp_hold_tbl, tmp_trial_tbl];
+tmp_hold_tbl = [tmp_hold_tbl, tmp_trial_tbl(1:n_tgr_trial, :)];
 
 % combine onset and hold back into the events
 tmp_event = vertcat(tmp_raw_event{:}, tmp_onset_tbl, tmp_hold_tbl);

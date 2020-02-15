@@ -105,6 +105,8 @@ for All_sub_i = All_selected_sub
     originEEG = EEG;
     EEG = insertEvent2EEG_v1(EEG, behavior_results_dir, behavior_filename, behavior_BIDS_dir);
     
+    behavior = load(fullfile(behavior_results_dir, behavior_filename));
+    
     EEG.setname = [sub_id, '_channel_loc_lift_onset'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
@@ -169,50 +171,7 @@ for All_sub_i = All_selected_sub
     EEG = pop_select(EEG, 'nochannel', {'initialReference'});
     % putback EOG channel
     EEG = putback_nonEEG(EEG, originalEEG);
-    % remove boundary
-    EEG.event = EEG.event(~cellfun(@isempty, {EEG.event.urevent}));
-    % put back deleted event for 's9' or 's17'; '33' or 's65' or 's129'
-    missing_event = find(diff([EEG.event.urevent]) ~= 1);
-    for i = 1:length(missing_event)
-        switch EEG.event(missing_event(i)).type
-            case 's129' % missing 's9'
-                % find next 's17'
-                tmp_next = missing_event(i) + find(strcmp({EEG.event(missing_event(i):end).type}, 's17'), 1);
-                tmp_missing = EEG.event(tmp_next);
-                tmp_missing.latency = EEG.event(tmp_next).latency - 3 * EEG.srate; % 3 second earlier than 's17'
-                tmp_missing.bvmknum = missing_event(i) + 1;
-                tmp_missing.type = 's9';
-                tmp_missing.urevent = missing_event(i) + 1;
-            case 'hold' % missing 's65'
-                tmp_next = missing_event(i) + find(strcmp({EEG.event(missing_event(i):end).type}, 's129'), 1);
-                tmp_missing = EEG.event(tmp_next);
-                tmp_missing.latency = EEG.event(tmp_next).latency - 3 * EEG.srate; % 3 second earlier than 's129'
-                tmp_missing.bvmknum = missing_event(i) + 1;
-                tmp_missing.type = 's65';
-                tmp_missing.urevent = missing_event(i) + 1;
-            case 's9' % missing 's17'
-                tmp_next = missing_event(i);
-                tmp_missing = EEG.event(tmp_next);
-                tmp_missing.latency = EEG.event(tmp_next).latency + 3 * EEG.srate; % 3 second later than 's9'
-                tmp_missing.bvmknum = missing_event(i) + 1;
-                tmp_missing.type = 's17';
-                tmp_missing.urevent = missing_event(i) + 1;
-            case 's65' % missing 's129'
-                tmp_next = missing_event(i);
-                tmp_missing = EEG.event(tmp_next);
-                tmp_missing.latency = EEG.event(tmp_next).latency + 3 * EEG.srate; % 3 second later than 's9'
-                tmp_missing.bvmknum = missing_event(i) + 1;
-                tmp_missing.type = 's129';
-                tmp_missing.urevent = missing_event(i) + 1;
-            case {'s17', 'onset', 's33'}
-                disp('missing event!!!!!!')
-            otherwise
-        end
-        EEG.event = [EEG.event, tmp_missing];
-    end
-    tmp_event = struct2table(EEG.event);
-	sorted_event = sortrows(tmp_event, 'latency');
-	EEG.event = table2struct(sorted_event);
+
     % save dataset
     EEG.setname = [sub_id, '_rereference'];
     EEG = eeg_checkset( EEG );
@@ -241,144 +200,33 @@ for All_sub_i = All_selected_sub
     end
     %}
     
-    %% Section 6: Epoch around onset
-    %{
+    %% Section 4: Epoch around onset
     % Step 1:
-    file_list = dir(fullfile(behavior_BIDS_dir, '*.csv'));
-%     trial_no = length(file_list);
-    trial_no = 95;
     originalEEG_clean = EEG;
-    % clean up trials without onset event
-    EEG = checkEvent(EEG, 6);
-    EEG = eeg_checkset( EEG );
     
     % should re-run epoch before ICA
     % epoch with a window -1500 to 2000 ms around the key event
-% %     ind_win = [-1.5, 2.5];
+% % %     ind_win = [-1.5, 2.5];
     % epoch with a window -8000 to 4000 ms around the key event to include
     % the left/right cue
-    ind_win = [-8, 4];
+% % %     ind_win = [-8, 4];
+    % epoch with a window -3000 to 6000 ms around the key event to include
+    ind_win = [-3, 6];
 
-    tmp_ready = find(strcmp({EEG.event.type}, 's9'));
-    tmp_start = tmp_ready';
-    use_leftright = false(trial_no, 1);
-    if length(tmp_ready) < trial_no
-        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' less than ', num2str(trial_no)]);
-        tmp_leftright = find(strcmp({EEG.event.type}, 's17'));
-        if length(tmp_leftright) < trial_no
-            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' less than ', num2str(trial_no)]);
-        elseif length(tmp_leftright) > trial_no
-            disp(['The number of left/right cues is ', num2str(length(tmp_leftright)),' more than ', num2str(trial_no)]);
-        else
-            tmp_e = [strcmp({EEG.event.type}, 's9')', strcmp({EEG.event.type}, 's17')'];
-            tmp_count = 1;
-            tmp_start = nan(length(tmp_leftright), 1);
-            for i = 1:length(tmp_leftright)
-                if tmp_leftright(i) <= 5
-                    if tmp_ready(tmp_count) <= 5
-                        tmp_start(i) = tmp_ready(tmp_count);
-                        tmp_count = tmp_count + 1;
-                    end
-                    continue;
-                end
-                tmp_train = tmp_e(tmp_leftright(i) - (1:5), 1);
-                if any(tmp_train)
-                    tmp_start(i) = tmp_ready(tmp_count);
-                    tmp_count = tmp_count + 1;
-                else
-                    use_leftright(i) = true;
-                    tmp_start(i) = tmp_leftright(i);
-                end
-            end
-        end
-    elseif length(tmp_ready) > trial_no
-        disp(['The number of ready cues is ', num2str(length(tmp_ready)),' more than ', num2str(trial_no)]);
-        
-    end
-    
-    tmp_finish = find(strcmp({EEG.event.type}, 's129'));
-    tmp_end = tmp_finish';
-    use_relax = false(trial_no, 1);
-    if length(tmp_finish) < trial_no
-        disp(['The number of finish cues is ', num2str(length(tmp_finish)),' less than ', num2str(trial_no)]);
-        tmp_relax = find(strcmp({EEG.event.type}, 's65'));
-        if length(tmp_relax) < trial_no
-            disp(['The number of relax cues is ', num2str(length(tmp_relax)),' less than ', num2str(trial_no)]);
-        elseif length(tmp_relax) > trial_no
-            disp(['The number of relax cues is ', num2str(length(tmp_relax)),' more than ', num2str(trial_no)]);
-        else
-            tmp_e = [strcmp({EEG.event.type}, 's65')', strcmp({EEG.event.type}, 's129')'];
-            tmp_count = 1;
-            tmp_end = nan(length(tmp_relax), 1);
-            for i = 1:length(tmp_relax)
-                if tmp_relax(i) <= 5
-                    if tmp_finish(tmp_count) <= 5
-                        tmp_end(i) = tmp_finish(tmp_count);
-                        tmp_count = tmp_count + 1;
-                    end
-                    continue;
-                end
-                tmp_train = tmp_e(tmp_relax(i) - (1:5), 1);
-                if any(tmp_train)
-                    tmp_end(i) = tmp_finish(tmp_count);
-                    tmp_count = tmp_count + 1;
-                else
-                    use_relax(i) = true;
-                    tmp_end(i) = tmp_relax(i);
-                end
-            end
-        end
-    elseif length(tmp_finish) > trial_no
-        disp(['The number of finish cues is ', num2str(length(tmp_finish)),' more than ', num2str(trial_no)]);
-    end
-    
-    tmp_ind_event = [tmp_start'; tmp_end'];
-    ind_event = nan(length(tmp_ind_event), 4);
-    for i = 1:length(tmp_ind_event)
-        tmp_event_series = tmp_ind_event(1, i):tmp_ind_event(2, i);
-        tmp_epoch_events = {EEG.event(tmp_event_series).type};
-        if length(tmp_event_series) >= (4 + 2) % 's9' can be estimated from 's17' {'s17', 's33', 's65', '129'}: EEG triggers + {'onset', 'hold'}: behavior markers
-            if use_leftright(i)
-                tmp_ready_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's17')) ).latency]' - (3000 * EEG.srate / 1000);
-            else
-                tmp_ready_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's9')) ).latency]';
-            end
-            if use_relax(i)
-                tmp_finish_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's65')) ).latency]' + (3000 * EEG.srate / 1000);
-            else
-                tmp_finish_latency = [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 's129')) ).latency]';
-            end
-            if ~any(strcmp(tmp_epoch_events, 'onset'))
-                continue;
-            end
-            ind_event(i, :) = round([ tmp_ready_latency, ...  % 's9' or 's17'
-                                      [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 'onset')) ).latency]', ...  % 'onset'
-                                      [EEG.event( tmp_event_series(strcmp(tmp_epoch_events, 'hold')) ).latency]', ...  % 'hold'
-                                      tmp_finish_latency ]); % 's129'
-        end
-    end
-    
-    %{
-    % find the tightest window for epoching
-    ind_b4afonset = ceil([max(ind_event(:, 1) - ind_event(:, 2)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 2)) / EEG.srate] * 100) / 100;
-    ind_b4afhold = ceil([max(ind_event(:, 1) - ind_event(:, 3)) / EEG.srate, min(ind_event(:, end) - ind_event(:, 3)) / EEG.srate] * 100) / 100;
-    ind_win = [max([ind_b4afonset(1), ind_b4afhold(1)]), min([ind_b4afonset(2), ind_b4afhold(2)])];
-    %}
     EEG = pop_epoch( EEG, All_timelocking_type, ind_win, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
     EEG = eeg_checkset( EEG );
     EEG.etc.epoch_latency = ind_win;
+    EEG.setname = [sub_id, '_epoched'];
     EEG = eeg_checkset( EEG );
-    %}
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
     
     
     
     
     
-    
-    
-    %% Section 7: ICA
+    %% Section 5: ICA
     % need to download the MARA, SASICA, and ICLabel extension in EEGLAB
-    %{
     % Step 1: Use runica() function
     % keep original EEG
     EEG = eeg_checkset( EEG ); % to work around the issue in
@@ -388,7 +236,7 @@ for All_sub_i = All_selected_sub
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
     EEG = pop_runica(EEG, 'chanind', [], 'extended', 1, 'interupt', 'on');
     % putback EOG channel
-    EEG = putback_nonEEG(EEG, originalEEG_epoched);
+    EEG = putback_nonEEG_v1(EEG, originalEEG_epoched);
     
     EEG.setname = [sub_id, '_ICA'];
     EEG = eeg_checkset( EEG );
