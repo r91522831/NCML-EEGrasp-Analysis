@@ -110,28 +110,35 @@ for All_sub_i = All_selected_sub
     EEG.setname = [sub_id, '_channel_loc_lift_onset'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
         
     %% Section 2: Filtering and downsample
     % Step 1: Lowpass filtering at 128 Hz to remove high freq noise
+    sub_id = EEG.filename(1:6);
     EEG = pop_eegfiltnew(EEG, 'hicutoff', 128);
     
-    EEG.setname = [sub_id, '_lowpass512Hz'];
+    EEG.setname = [sub_id, '_lowpass128Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     % Step 2: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
     
-    EEG.setname = [sub_id, '_resampled256Hz'];
+    EEG.setname = [sub_id, '_lp128resampled256Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    % keep the EEG b4 ICA
+    originEEG = EEG;
     
     
-    
-    % Step 3: Highpass at 1 Hz to remove slow drift for better ICA
-    EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
-    
+    % Step 3: Bandpass at 1 to 15 Hz to remove slow drift for better ICA
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 1, 'hicutoff', 15);
     %ICA
+    % select only EEG channels
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    % cudaica can only run on Nvidia graphics chips
+    EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'cudaica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
     
     %copy the ICA result back to the original EEG
     
