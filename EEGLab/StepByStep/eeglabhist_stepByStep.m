@@ -143,6 +143,7 @@ for All_sub_i = All_selected_sub
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
     % Interpolate channels.
     EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
+    EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
     % putback EOG channel
     EEG = putback_nonEEG_v1(EEG, originalEEG, EEG.etc.clean_sample_mask);
     
@@ -157,7 +158,9 @@ for All_sub_i = All_selected_sub
     
     % Step 2: Use cleanline plugin to remove 50 or 60 Hz line noise
     
-    %{
+    % *********************************************************************
+    % re-reference to average reference should be after all artifact removal, i.e. after ICA rejection
+    %{ 
     % Step 3: Apply average reference after adding initial reference channel
     % base on Makoto Miyakoshi's suggestions (https://sccn.ucsd.edu/wiki/Makoto's_preprocessing_pipeline)
     % select only EEG channels
