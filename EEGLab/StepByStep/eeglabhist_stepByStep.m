@@ -113,7 +113,7 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir);
         
     %% Section 2: Filtering and downsample
-    % Step 1: Lowpass filtering at 512 Hz to remove high freq noise
+    % Step 1: Lowpass filtering at 128 Hz to remove high freq noise
     EEG = pop_eegfiltnew(EEG, 'hicutoff', 128);
     
     EEG.setname = [sub_id, '_lowpass512Hz'];
@@ -125,6 +125,9 @@ for All_sub_i = All_selected_sub
     EEG.setname = [sub_id, '_resampled256Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    
+    
+    
     % Step 3: Highpass at 1 Hz to remove slow drift for better ICA
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
     
@@ -244,10 +247,6 @@ for All_sub_i = All_selected_sub
     
     %% Section 5: ICA
     % need to download the MARA, SASICA, and ICLabel extension in EEGLAB
-<<<<<<< HEAD
-    
-=======
->>>>>>> 9921ad8b5e51366fc03f95338a1ad8bc208ff11b
     % Step 1: Use runica() function
     % keep original EEG
     EEG = eeg_checkset( EEG ); % to work around the issue in
@@ -255,7 +254,7 @@ for All_sub_i = All_selected_sub
     disp(['data size', size(EEG.data)])
     % select only EEG channels
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
-    EEG = pop_runica(EEG, 'chanind', [], 'extended', 1, 'interupt', 'on');
+    EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'cudaica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
     % putback EOG channel
     EEG = putback_nonEEG_v1(EEG, originalEEG_epoched);
     
