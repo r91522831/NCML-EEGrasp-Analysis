@@ -1,6 +1,7 @@
 close all; clear; clc;
 All_path = uigetdir;
-All_filelist = dir(fullfile(All_path, '*_timefreq_ersp.mat'));
+All_filelist = dir(fullfile(All_path, '*_timefreq.mat'));
+% % % All_filelist = dir(fullfile(All_path, '*_timefreq_ersp.mat'));
 
 %% 
 disp([num2cell((1:length(All_filelist))'), {All_filelist.name}']);
@@ -323,7 +324,7 @@ for i_electrode = selected_electrodes
     legend([All_power_roll(:, 1)])
     mtit([EEG.chanlocs(i_electrode).labels, ' mean power of moving window ~50 ms vs peark roll corr r time trajectory'])
     savefig(fullfile(All_path, ['corr_traj_', EEG.chanlocs(i_electrode).labels, '_', num2str(length(All_selected_sub)), 'sub']))
-    saveas(h, fullfile(All_path, ['corr_traj_', EEG.chanlocs(i_electrode).labels, '_', num2str(length(All_selected_sub)), 'sub']))
+    saveas(h, fullfile(All_path, ['corr_traj_', EEG.chanlocs(i_electrode).labels, '_', num2str(length(All_selected_sub)), 'sub']), 'png')
 end
 %% topography for the corrlation
 
