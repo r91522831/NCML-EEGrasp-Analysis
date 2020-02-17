@@ -112,7 +112,7 @@ for All_sub_i = All_selected_sub
         
     %% Section 2: Filtering and downsample
     % Step 1: Lowpass filtering at 512 Hz to remove high freq noise
-    EEG = pop_eegfiltnew(EEG, 'hicutoff', 512);
+    EEG = pop_eegfiltnew(EEG, 'hicutoff', 128);
     
     EEG.setname = [sub_id, '_lowpass512Hz'];
     EEG = eeg_checkset( EEG );
@@ -125,6 +125,20 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     % Step 3: Highpass at 1 Hz to remove slow drift for better ICA
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1);
+    
+    %ICA
+    
+    %copy the ICA result back to the original EEG
+    
+    %remove the eye blink and eye movement channel
+    
+    
+    
+    
+    
+    
+    
+    
     
     EEG.setname = [sub_id, '_lp512Hz_resample256Hz_hp1Hz'];
     EEG = eeg_checkset( EEG );
@@ -378,7 +392,7 @@ for All_sub_i = All_selected_sub
     
     %% Section 7: ICA
     % need to download the MARA, SASICA, and ICLabel extension in EEGLAB
-    %{
+    
     % Step 1: Use runica() function
     % keep original EEG
     EEG = eeg_checkset( EEG ); % to work around the issue in
