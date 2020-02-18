@@ -36,7 +36,7 @@ name_var_event = tmp_event.Properties.VariableNames;
 % go through file list and create a table
 %!!!!!!!!! condType: IL, TR, PT; cond: IL, TR, PT1, PT2, PT3; condID: ; condTypeID: ; trialID: ; handleSide: L, R;
 n_beh_trial = length(trial_list);
-name_var_beh = {'cond', 'condID', 'condType', 'condTypeID', 'trialID', 'handleSide'};
+name_var_beh = {'cond', 'condID', 'condCount', 'condType', 'condTypeID', 'condTypeCount', 'trialID', 'handleSide'};
 n_var_beh = length(name_var_beh);
 tmp_trial_tbl = cell2table( cell(n_trial_nominal, n_var_beh), 'VariableNames', name_var_beh);
 % use trial_list, i.e. trial ID, to create the correct trial info
@@ -50,20 +50,28 @@ for i = 1:n_beh_trial
     if ~strcmp(tmp_cond_type, 'PT')
         tmp_cond = tmp_trial_name(11:12);
         if strcmp(tmp_cond_type, 'IL')
-            tmp_cond_id = tmp_trial_name(17:18);
+            tmp_cond_id = 1;
+            tmp_cond_count = tmp_trial_name(17:18);
         else
-            tmp_cond_id = num2str(floor(str2double(tmp_trial_name(13:14)) / 2), '%02d');
+            tmp_cond_id = 2;
+            tmp_cond_count = num2str(floor(str2double(tmp_trial_name(13:14)) / 2), '%02d');
         end
         tmp_cond_type_id = tmp_cond_id;
+        tmp_cond_type_count = tmp_cond_count;
     else
         tmp_cond = tmp_trial_name([11:12, 18]);
-        tmp_cond_id = num2str(floor(str2double(tmp_trial_name(13:14)) / 2), '%02d');
-        tmp_cond_type_id = num2str((floor(str2double(tmp_trial_name(13:14)) / 2) - 1)  * 3 + str2double(tmp_trial_name(16:18)), '%02d');
+        tmp_cond_id = 2 + str2double(tmp_trial_name(18));
+        tmp_cond_count = num2str(floor(str2double(tmp_trial_name(13:14)) / 2), '%02d');
+        tmp_cond_type_id = 3;
+        tmp_cond_type_count = num2str((floor(str2double(tmp_trial_name(13:14)) / 2) - 1)  * 3 + str2double(tmp_trial_name(16:18)), '%02d');
     end
     tmp_trial_tbl{tmp_trial_id, 'condType'} = cellstr(tmp_cond_type);
     tmp_trial_tbl{tmp_trial_id, 'cond'} = cellstr(tmp_cond);
-    tmp_trial_tbl{tmp_trial_id, 'condID'} = cellstr(tmp_cond_id);
-    tmp_trial_tbl{tmp_trial_id, 'condTypeID'} = cellstr(tmp_cond_type_id);
+    tmp_trial_tbl{tmp_trial_id, 'condCount'} = cellstr(tmp_cond_count);
+    tmp_trial_tbl{tmp_trial_id, 'condTypeCount'} = cellstr(tmp_cond_type_count);
+    tmp_trial_tbl{tmp_trial_id, 'condID'} = num2cell(tmp_cond_id);
+    tmp_trial_tbl{tmp_trial_id, 'condTypeID'} =  num2cell(tmp_cond_type_id);
+    
 end
 
 % fill in tmp_event with corresponding trial info
