@@ -31,12 +31,12 @@ for electrode_i = 1:length({EEG.chanlocs.labels})
 end
 
 %% plot power amplitude
-
+close all
 sub_id = EEG.filename(1:6);
 % electrode_id = find(strcmpi({EEG.chanlocs.labels}, 'CP4'));
 cond = {'IL', 'TR', 'PT1'};
 smooth = 2;
-baselinedb = [-250, -50]; % time to lift onset in ms
+baselinedb = [-250, -50]; % baseline window for power amplitude plots, time to lift onset in ms
 
 freqband = {[4, 8, 0.01], [13, 20, 0.01], [20, 30, 0.01]};
 fb_name = {'theta', 'low_beta', 'high_beta'};
