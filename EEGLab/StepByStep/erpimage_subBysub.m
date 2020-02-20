@@ -36,8 +36,9 @@ sub_id = EEG.filename(1:6);
 % electrode_id = find(strcmpi({EEG.chanlocs.labels}, 'CP4'));
 cond = {'IL', 'TR', 'PT1'};
 smooth = 2;
-baselinedb = [-250, -50]; % baseline window for power amplitude plots, time to lift onset in ms
+baselinedb = nan; % [-250, -50]; % baseline window for power amplitude plots, time to lift onset in ms
 
+% theta band: 4 to 8 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz
 freqband = {[4, 8, 0.01], [13, 20, 0.01], [20, 30, 0.01]};
 fb_name = {'theta', 'low_beta', 'high_beta'};
 fb_title = {'\theta', 'low\beta', 'high\beta'};
@@ -82,47 +83,7 @@ for fb_i = 1:numel(freqband)
         saveas(f_final, fullfile(figdir, [figname, '.png']))
         close(f_final)
     end
-end  
-         
-         
-%% for different frequency bands
-% % %     tf = load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/003 StartOver/linear/RAW/sub-XX_timefreq.mat');
-tf = load(fullfile(All_path, All_filelist(All_i).name));
-
-tf_ersp = tf.tf_ersp;
-timerstamps = tf.tf_times';
-freqz = tf.tf_freqs';
-electrodes = tf.tf_ersp.Properties.RowNames;
-nb_epoch = size(tf.tf_ersp{1, 1}{:}, 3);
-
-ntime = length(timerstamps);
-nfreq = length(freqz);
-nelectrode = length(electrodes);
-
-% % % rg_time = find(timerstamps >= 400 & timerstamps < 600); % 400 to 600 ms after lift onset
-
-% theta band: 4 to 8 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz
-rg_freq = {find(freqz > 4 & freqz <= 8), find(freqz > 13 & freqz <= 20), find(freqz > 20 & freqz <= 30) };
-rg_freq_name = {'\theta', 'low\beta', 'high\beta'};
-nfreqband = length(rg_freq);
-
-power_mean_fb = cell(1, nfreqband);
-for i = 1:nelectrode
-    for fb = 1:nfreqband
-        power_mean_fb{1, fb}(i, :, :) = mean(tf_ersp{i, 1}{:}(rg_freq{fb}, :, :), 1);
-    end
-    
-% % %     for t = 1:ntime
-% % %         for ep = 1:nb_epoch
-% % %             [~, power_theta{i, 1}(t, ep)] = robustcov(tf_ersp{i, 1}{:}(rg_freq{1}, t, ep));
-% % %         end
-% % %     end
 end
-
-% plot theta
-originEEG = EEG;
-EEG.data = power_mean_fb{:, 1};
-EEG.times = timerstamps;
 
 
 

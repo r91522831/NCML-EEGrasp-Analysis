@@ -116,8 +116,10 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     % Step 2: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
+    % Step 3: Highpass at 0.5 Hz to remove slow drift
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 0.5);
     
-    EEG.setname = [sub_id, '_lp128resampled256Hz'];
+    EEG.setname = [sub_id, '_lp128resampled256_hphalfHz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
