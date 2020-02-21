@@ -36,6 +36,8 @@ sub_id = EEG.filename(1:6);
 % electrode_id = find(strcmpi({EEG.chanlocs.labels}, 'CP4'));
 cond = {'IL', 'TR', 'PT1'};
 smooth = 2;
+
+% try to find [-250, -50] befroe touch onset
 baselinedb = nan; % [-250, -50]; % baseline window for power amplitude plots, time to lift onset in ms
 
 % theta band: 4 to 8 Hz; low beta: 13 ~ 19 Hz; high beta: 20 ~ 30 Hz

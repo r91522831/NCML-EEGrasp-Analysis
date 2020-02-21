@@ -109,8 +109,8 @@ if n_beh_trial ~= n_tgr_trial
     disp('trial number and trigger number mismatched!!')
 end
 
-% for onset time
-tmp_onset = behavior.info_onset_time .* EEG.srate; % info_onset_time is in second, convert onset into frame number for EEG 2048 Hz sampling rate
+% for lift onset time
+tmp_onset = behavior.info_onset_time(:, 1) .* EEG.srate; % info_onset_time is in second, convert onset into frame number for EEG 2048 Hz sampling rate
 tmp_behavior = nan(n_tgr_trial, 1);
 for i = 1:n_beh_trial
     % trials might be removed
@@ -129,6 +129,26 @@ tmp_onset_tbl.triggerID = nan(n_tgr_trial, 1);
 tmp_onset_tbl.triggerState = repmat({'NA'}, n_tgr_trial, 1);
 tmp_onset_tbl = [tmp_onset_tbl, tmp_trial_tbl(1:n_tgr_trial, :)];
 
+% for touch onset time
+tmp_tch = behavior.info_onset_time(:, 2) .* EEG.srate; % info_onset_time is in second, convert onset into frame number for EEG 2048 Hz sampling rate
+tmp_behavior = nan(n_tgr_trial, 1);
+for i = 1:n_beh_trial
+    % trials might be removed
+    tmp_behavior(trial_list(i), 1) = tmp_tch(i);
+end
+
+tmp_tch_tbl = cell2table( cell(n_tgr_trial, n_var_event), 'VariableNames', name_var_event);
+tmp_tch_tbl.latency = tmp_behavior + tmp_ready; % add 's9'(ready) time to the event time
+tmp_tch_tbl.type = repmat({'touch'}, n_tgr_trial, 1);
+tmp_tch_tbl.code = repmat({'Behavior'}, n_tgr_trial, 1);
+tmp_tch_tbl.duration = nan(n_tgr_trial, 1);
+tmp_tch_tbl.channel = nan(n_tgr_trial, 1);
+tmp_tch_tbl.bvmknum = nan(n_tgr_trial, 1);
+tmp_tch_tbl.urevent = nan(n_tgr_trial, 1);
+tmp_tch_tbl.triggerID = nan(n_tgr_trial, 1);
+tmp_tch_tbl.triggerState = repmat({'NA'}, n_tgr_trial, 1);
+tmp_tch_tbl = [tmp_tch_tbl, tmp_trial_tbl(1:n_tgr_trial, :)];
+
 % for hold time
 % middle point between hold and relax cues
 tmp_hold = mean([tmp_event{strcmp(tmp_event.triggerState, 'relax'), 'latency'}, tmp_event{strcmp(tmp_event.triggerState, 'hold'), 'latency'}], 2);
@@ -145,7 +165,7 @@ tmp_hold_tbl.triggerState = repmat({'NA'}, n_tgr_trial, 1);
 tmp_hold_tbl = [tmp_hold_tbl, tmp_trial_tbl(1:n_tgr_trial, :)];
 
 % combine onset and hold back into the events
-tmp_event = vertcat(tmp_raw_event{:}, tmp_onset_tbl, tmp_hold_tbl);
+tmp_event = vertcat(tmp_raw_event{:}, tmp_onset_tbl, tmp_hold_tbl, tmp_tch_tbl);
 [event_with_onset, ~] = sortrows(tmp_event, 'latency');
 
 % % % for i = 1:length(event_with_onset)

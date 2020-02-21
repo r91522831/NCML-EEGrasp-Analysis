@@ -199,7 +199,7 @@ for All_sub_i = All_selected_sub
     % the left/right cue
 % % %     ind_win = [-8, 4];
     % epoch with a window -3000 to 6000 ms around the key event to include
-    ind_win = [-3, 6];
+    ind_win = [-4, 6];
     tmp_type = {EEG.event.type};
     tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
     tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));

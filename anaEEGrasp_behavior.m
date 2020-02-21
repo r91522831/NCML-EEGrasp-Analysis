@@ -37,8 +37,8 @@ for All_i = All_selected_sub
 
     %%
     angTilt2R = cell(size(file_list));
-    ind_lft_onset = nan(length(file_list), 6);
-    info_onset_time = nan(length(file_list), 1);
+    ind_lft_onset = nan(length(file_list), 7);
+    info_onset_time = nan(length(file_list), 2);
 
     obj_height = cell(length(file_list), 3);
     obj_weight = nan(length(file_list), 1);
@@ -178,7 +178,7 @@ for All_i = All_selected_sub
         end
 
 
-        %% choosen onset
+        %% choosen lift onset
         tmp_ind_onset = 3; % 3 mm
         tmp_fy_equal_obj_w = 6;
         if abs(ind_lft_onset(i, tmp_ind_onset) - ind_lft_onset(i, tmp_fy_equal_obj_w)) < 20 % 20 is a value from all good trials, i.e. 80 ms (4 ms/frame at 250 Hz)
@@ -188,6 +188,17 @@ for All_i = All_selected_sub
         end 
         info_onset_time(i, 1) = 0.001 * info_time_trigger{i, 1}(tmp_ind_lft_onset); % in seconds
 
+        %% find touch onset
+        for t = tmp_ind_lft_onset:-1:1
+            if abs( diff([finger_Th{i, 1}{t, 'fz'}, finger_V{i, 1}{t, 'fz'}]) ) < 1 % in Newton
+                tmp_ind_tch_onset = t;
+                break;
+            end
+        end
+        ind_lft_onset(i, 7) = tmp_ind_tch_onset;
+        info_onset_time(i, 2) = 0.001 * info_time_trigger{i, 1}(tmp_ind_tch_onset); % in seconds
+        
+        
         %% find peak roll after lift onset
         roll_win = 250; % in ms
         ind_roll_win = floor(roll_win ./ (dt * 1000));
@@ -223,7 +234,7 @@ for All_i = All_selected_sub
     end
 
     %%
-    ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w'});
+    ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w', 'touch'});
 
     save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
 
