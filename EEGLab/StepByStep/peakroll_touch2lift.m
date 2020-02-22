@@ -77,7 +77,8 @@ for All_i = All_selected_sub
     tmp_filename = fullfile(tmp_path, [subID, '_vol']);
     save(tmp_filename, 'vol_t2l', 'vol_l2w');
 end
-
+chanlocs = EEG.chanlocs;
+save(fullfile(tmp_path, 'chanlocs'), 'chanlocs')
 
 %%
 %{

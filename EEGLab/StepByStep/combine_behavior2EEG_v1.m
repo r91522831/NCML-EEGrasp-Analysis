@@ -27,8 +27,8 @@ for sub_i = selected_sub%1:length(eeg_dataset_list)
     end
     
     %% load behavior info for all trials of one subject
-    sub_id = tmp_dataset_list(1).name(1:6);
-    beh_sub_id = ['S0', tmp_dataset_list(1).name(5:6)];
+    sub_id = eeg_dataset_list(sub_i).name(1:6);
+    beh_sub_id = ['S0', sub_id(5:6)];
     % load lift onset
     lft_onset = load(fullfile(behavior_folder, [beh_sub_id, '_info_onset_time.mat']));
     tmp = fieldnames(lft_onset);
