@@ -161,10 +161,14 @@ for All_sub_i = All_selected_sub
     EEG = iclabel(EEG, 'default');
     tmp_id_eyem_class = strcmp(EEG.etc.ic_classification.ICLabel.classes, 'Eye');
     tmp_eyem = EEG.etc.ic_classification.ICLabel.classifications(:, tmp_id_eyem_class);
+    %{
     % choose the two largest eye components to reject
     [~, tmp_id_eyem(1)] = max(tmp_eyem);
     tmp_eyem(tmp_id_eyem(1)) = -Inf;
     [~, tmp_id_eyem(2)] = max(tmp_eyem);
+    %}
+    % remove all eye element with 90% confidence
+    tmp_id_eyem = (tmp_eyem > 0.90);
     
     EEG = pop_subcomp( EEG, tmp_id_eyem, 0);
     EEG = eeg_checkset( EEG );
