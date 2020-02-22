@@ -45,7 +45,7 @@ for All_sub_i = All_selected_sub
     % output_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/001 Process/Sxxx/';
 % % %     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '001 Process', [sub_id, '_', All_timelocking_type{:}]);
 % % %     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '002 ProcessAgain', [sub_id, '_', All_timelocking_type{:}]);
-    output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '003 StartOver', [sub_id, '_', All_timelocking_type{:}]);
+    output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '004 RemoveEye90', [sub_id, '_', All_timelocking_type{:}]);
     if ~isfolder(output_dir)
         mkdir(output_dir)
     end
@@ -170,7 +170,7 @@ for All_sub_i = All_selected_sub
     % remove all eye element with 90% confidence
     tmp_id_eyem = (tmp_eyem > 0.90);
     
-    EEG = pop_subcomp( EEG, tmp_id_eyem, 0);
+    EEG = pop_subcomp( EEG, find(tmp_id_eyem), 0);
     EEG = eeg_checkset( EEG );
     EEG.nbic = size(EEG.icaact, 1);
     % Step 7: Remove HEOG channel
