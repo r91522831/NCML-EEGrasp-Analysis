@@ -66,7 +66,8 @@ for All_i = All_selected_sub
     
     figure(All_f_reg)
     hold on
-    x = robustcov(abs(EEG.behavior.obj_roll_peak.peakRoll));
+%     x = robustcov(abs(EEG.behavior.obj_roll_peak.peakRoll));
+    x = var(abs(EEG.behavior.obj_roll_peak.peakRoll));
     [~, y] = robustcov(sig_l2w - sig_t2l);
     plot(x, y, 'o')
     text(x, y, sub_id, 'FontSize', 18)

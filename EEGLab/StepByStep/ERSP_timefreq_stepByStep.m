@@ -82,13 +82,17 @@ for All_i = selected_sub% 1:length(All_dirlist)
     %}
     
     % find baseline [-250, -50] before touch
+    
     baseline_b4_touch = cell(nb_epoch, 1);
     tmp_baseline = [-250, -50]; % in ms
     for i = 1:nb_epoch
+        baseline_b4_touch{i} = nan; % no base line
+        %{
         if isempty(find(contains([EEG.epoch(i).eventtype], 'touch'), 1))
             disp([num2str(subID), ' missing touch event in trial ', num2str(i)]);
         end
         baseline_b4_touch{i} = round((EEG.epoch(i).eventlatency{contains([EEG.epoch(i).eventtype], 'touch')}) * EEG.srate / 1000) + tmp_baseline; % in millisaconds
+        %}
     end
     baseline_win = baseline_b4_touch;
     
