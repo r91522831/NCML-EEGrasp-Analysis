@@ -81,7 +81,17 @@ for All_i = selected_sub% 1:length(All_dirlist)
     end
     %}
     
-    baseline_win = [-250, -50]; %in ms
+    % find baseline [-250, -50] before touch
+    baseline_b4_touch = cell(nb_epoch, 1);
+    tmp_baseline = [-250, -50]; % in ms
+    for i = 1:nb_epoch
+        if isempty(find(contains([EEG.epoch(i).eventtype], 'touch'), 1))
+            disp([num2str(subID), ' missing touch event in trial ', num2str(i)]);
+        end
+        baseline_b4_touch{i} = round((EEG.epoch(i).eventlatency{contains([EEG.epoch(i).eventtype], 'touch')}) * EEG.srate / 1000) + tmp_baseline; % in millisaconds
+    end
+    baseline_win = baseline_b4_touch;
+    
     
     ticker = 1;
     h = waitbar(0, 'time frequency analysis.');
@@ -97,7 +107,7 @@ for All_i = selected_sub% 1:length(All_dirlist)
                    ' newtimef(tfEEG.data(electrodes{i}, :, j), size(tfEEG.data, 2), [tfEEG.times(1), tfEEG.times(end)], tfEEG.srate, [3, 0.5], ', ...
                                                       ' ''freqs'', [2, 40], ''timesout'', 800, ', ...
                                                       ' ''topovec'', 15, ''elocs'', EEG.chanlocs, ''chaninfo'', EEG.chaninfo, ''caption'', electrodes_name{i}, ', ...
-                                                      ' ''baseline'', baseline_win, ''basenorm'', ''on'', ''trialbase'', ''full'', ''padratio'', 1, ''winsize'', 512, ', ...
+                                                      ' ''baseline'', baseline_win{j}, ''basenorm'', ''on'', ''trialbase'', ''full'', ''padratio'', 1, ''winsize'', 512, ', ...
                                                       ' ''plotitc'' , ''off'', ''plotphase'', ''off'', ''plotersp'', ''off''); ']);
 
                                                   

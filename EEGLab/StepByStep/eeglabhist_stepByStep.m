@@ -134,8 +134,8 @@ for All_sub_i = All_selected_sub
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
     % Step 4: run ICA
     % cudaica can only run on Nvidia graphics chips
-    EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'cudaica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
-% % %     EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'runica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
+% % %     EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'cudaica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
+    EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'runica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
     % Step 5: copy the ICA result back to the original EEG
     originEEG.icawinv = EEG.icawinv;
     originEEG.icasphere = EEG.icasphere;
