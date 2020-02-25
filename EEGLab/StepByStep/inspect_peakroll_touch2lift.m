@@ -58,12 +58,12 @@ for All_i = All_selected_sub
     colorbar('FontSize', 20);
     
     subplot(All_n_sub, 3, 3 * (All_plot_i - 1) + 3, 'FontSize', 20)
-    topoplot( (sig_l2w - sig_t2l), All_chanlocs.chanlocs, 'maplimits', [-20, 20]);%0.2 * [-clim, clim]);
+    topoplot( (sig_l2w - sig_t2l), All_chanlocs.chanlocs);%, 'maplimits', [-20, 20]);%0.2 * [-clim, clim]);
     if All_plot_i == 1, title('difference'); end
     colorbar('FontSize', 20);
     
     
-    
+    %{
     figure(All_f_reg)
     hold on
 %     x = robustcov(abs(EEG.behavior.obj_roll_peak.peakRoll));
@@ -75,7 +75,11 @@ for All_i = All_selected_sub
     xlabel('variance of peak roll')
     ylabel('mean variance difference')
     set(gca, 'FontSize', 18)
-    
+    %}
     
     All_plot_i = All_plot_i + 1;
 end
+
+suptitle('\theta')
+% % % suptitle('low\beta')
+% % % suptitle('high\beta')
