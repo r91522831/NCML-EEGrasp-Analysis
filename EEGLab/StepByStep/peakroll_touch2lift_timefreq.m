@@ -34,36 +34,39 @@ for All_i = All_selected_sub
     % get data
     nepoch = size(EEG.data, 3);
     sub_id = EEG.setname(1:6);
-    %%    
-    vol_t2l = nan(nepoch, 63);
-    vol_l2w = nan(nepoch, 63);
-    for electrode_i = 1:63
-        for ep_i = 1:nepoch
-            tmp_time_stamp = tf.tf_times;
-% % %             tmp_time_stamp = EEG.times;
-            freq_id = (tf.tf_freqs > 4 & tf.tf_freqs <= 8);
+    %%
+    rg_freq_id = {(tf.tf_freqs > 4 & tf.tf_freqs <= 8), (tf.tf_freqs > 13 & tf.tf_freqs <= 20), (tf.tf_freqs > 20 & tf.tf_freqs <= 30)};
+    path_freq = {'tf_theta', 'tf_lowbeta', 'tf_highbeta'};
+    nfreq = length(rg_freq_id);
+    for f_i = 1:nfreq
+        vol_t2l = nan(nepoch, 63);
+        vol_l2w = nan(nepoch, 63);
+        for electrode_i = 1:63
+            for ep_i = 1:nepoch
+                tmp_time_stamp = tf.tf_times;
+                % % %             tmp_time_stamp = EEG.times;
+                freq_id = rg_freq_id{f_i};
+                
+                tmp_touch_onset = contains(EEG.epoch(ep_i).eventtype, 'touch');
+                [ ~, tmp_touch_id ] = min( abs( tmp_time_stamp - EEG.epoch(ep_i).eventlatency{tmp_touch_onset} ) );
+                
+                tmp_lft_onset = contains(EEG.epoch(ep_i).eventtype, 'onset');
+                [ ~, tmp_lft_id ] = min( abs( tmp_time_stamp - EEG.epoch(ep_i).eventlatency{tmp_lft_onset} ) );
+                
+                contact2lft_time_id = tmp_touch_id:tmp_lft_id;
+                tmp_element = tf.tf_ersp{electrode_i, 1}{1, 1}(freq_id, contact2lft_time_id, ep_i);
+                [~, vol_t2l(ep_i, electrode_i)] = robustcov(tmp_element(:));
+                
+                
+                [ ~, tmp_win_id ] = min( abs( tmp_time_stamp - 200 ) );
+                lft2win_time_id = tmp_lft_id:tmp_win_id;
+                tmp_element = tf.tf_ersp{electrode_i, 1}{1, 1}(freq_id, lft2win_time_id, ep_i);
+                [~, vol_l2w(ep_i, electrode_i)] = robustcov(tmp_element(:));
+            end
             
-
-            tmp_touch_onset = contains(EEG.epoch(ep_i).eventtype, 'touch');
-            [ ~, tmp_touch_id ] = min( abs( tmp_time_stamp - EEG.epoch(ep_i).eventlatency{tmp_touch_onset} ) );
+            electrode_label = EEG.chanlocs(electrode_i).labels;
             
-            tmp_lft_onset = contains(EEG.epoch(ep_i).eventtype, 'onset');
-            [ ~, tmp_lft_id ] = min( abs( tmp_time_stamp - EEG.epoch(ep_i).eventlatency{tmp_lft_onset} ) );
-            
-            contact2lft_time_id = tmp_touch_id:tmp_lft_id;
-            tmp_element = tf.tf_ersp{electrode_i, 1}{1, 1}(freq_id, contact2lft_time_id, ep_i);
-            [~, vol_t2l(ep_i, electrode_i)] = robustcov(tmp_element(:));
-
-            
-            [ ~, tmp_win_id ] = min( abs( tmp_time_stamp - 200 ) );
-            lft2win_time_id = tmp_lft_id:tmp_win_id;
-            tmp_element = tf.tf_ersp{electrode_i, 1}{1, 1}(freq_id, lft2win_time_id, ep_i);
-            [~, vol_l2w(ep_i, electrode_i)] = robustcov(tmp_element(:));
-        end
-        
-        electrode_label = EEG.chanlocs(electrode_i).labels;
-        
-        %{
+            %{
     %%
     f = figure;
     subplot 121
@@ -83,18 +86,21 @@ for All_i = All_selected_sub
     savefig(f, fullfile(figdir, figname))
     saveas(f, fullfile(figdir, [figname, '.png']))
     close(f)
-        %}
-    end
+            %}
+        end
+        
+        tmp_path = fullfile(All_data, path_freq{f_i});
+        if ~exist(tmp_path, 'dir')
+            mkdir(tmp_path);
+        end
+        tmp_filename = fullfile(tmp_path, [subID, '_', path_freq{f_i}]);
+        save(tmp_filename, 'vol_t2l', 'vol_l2w');
     
-    tmp_path = fullfile(All_data, 'tf');
-    if ~exist(tmp_path, 'dir')
-        mkdir(tmp_path);
+        chanlocs = EEG.chanlocs;
+        save(fullfile(tmp_path, 'chanlocs'), 'chanlocs')
     end
-    tmp_filename = fullfile(tmp_path, [subID, '_vol']);
-    save(tmp_filename, 'vol_t2l', 'vol_l2w');
 end
-chanlocs = EEG.chanlocs;
-save(fullfile(tmp_path, 'chanlocs'), 'chanlocs')
+
 
 %%
 %{
