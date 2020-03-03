@@ -96,7 +96,7 @@ for All_i = All_selected_sub
             end
 
             obj_Rcenter_v(time_id, :) = (coord_obj{i}{time_id, 1}{:, {'RCenter'}}' - tmp_obj_Rcenter_b4go);
-            obj_Lcenter_v(time_id, :) = (coord_obj{i}{time_id, 1}{:, {'LCenter'}}' - tmp_obj_Rcenter_b4go);
+            obj_Lcenter_v(time_id, :) = (coord_obj{i}{time_id, 1}{:, {'LCenter'}}' - tmp_obj_Lcenter_b4go);
             obj_center_v(time_id, :) = mean([obj_Rcenter_v(time_id, :); obj_Lcenter_v(time_id, :)], 1);
 
             obj_Rcenter_d(time_id, :) = sqrt(sum((obj_Rcenter_v(time_id, :)).^2));

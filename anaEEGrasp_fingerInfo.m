@@ -55,7 +55,7 @@ for All_i = All_selected_sub
     %%
     for i = 1:length(file_list)
         % get which side of the handle on the object is grasped
-        obj_side = file_list(i).name(end-4);
+        obj_side = file_list(i).name(20);
         % get time stamp
         tmp_tstamp = input{i}{:, {'time_ms'}};
         info_time_trigger{i, 1} = tmp_tstamp;
