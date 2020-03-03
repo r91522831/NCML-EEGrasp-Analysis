@@ -206,6 +206,8 @@ for All_i = All_selected_sub
         tmp_roll = angTilt2R{i, 1}(ind_lft_onset(i, tmp_ind_onset) + tmp_ind, 1);
         peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, tmp_ind_lft_onset + tmp_ind];
 
+        %% mx at lift onset
+        %{
         %% find peak mx around lift onset
         % this might need to be rewrite
         pmx_win = 50; % in ms
@@ -213,7 +215,9 @@ for All_i = All_selected_sub
         [~, tmp_ind] = max( abs(resultantF{i, 1}{(tmp_ind_lft_onset - ind_pmx_win):tmp_ind_lft_onset, 'mx'}) );
         tmp_ind = (tmp_ind_lft_onset - ind_pmx_win) + tmp_ind;
         peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind, 'mx'}, tmp_ind];
-
+        %}
+        peak_mx{i, {'peakMx', 'index'}} = [resultantF{i, 1}{tmp_ind_lft_onset, 'mx'}, tmp_ind_lft_onset];
+        
 
         %% mx at lift onset
         mx_onset(i) = resultantF{i, 1}{tmp_ind_lft_onset, 'mx'};
