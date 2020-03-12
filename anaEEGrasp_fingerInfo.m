@@ -228,7 +228,7 @@ for All_i = All_selected_sub
         %%
         disp(i);
     end
-
-    save(fullfile(All_path, [sub_id, '_fingerInfo.mat']), 'file_list', 'data', 'var_PS', 'var_PS_cond', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic', '-v7');
+%%
+    save(fullfile(All_path, [sub_id, '_fingerInfo.mat']), 'file_list', 'data', 'var_PS', 'var_PS_cond', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic', '-v7.3');
     disp(['Finish processing ', sub_id, '!']);
 end
