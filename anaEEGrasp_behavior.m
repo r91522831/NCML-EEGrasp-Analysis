@@ -196,7 +196,7 @@ for All_i = All_selected_sub
             end
         end
         ind_lft_onset(i, 7) = tmp_ind_tch_onset;
-        info_onset_time{i, {'tch_ind', 'tch_time'}} = [tmp_ind_lft_onset, 0.001 * info_time_trigger{i, 1}(tmp_ind_tch_onset)]; % in seconds
+        info_onset_time{i, {'tch_ind', 'tch_time'}} = [tmp_ind_tch_onset, 0.001 * info_time_trigger{i, 1}(tmp_ind_tch_onset)]; % in seconds
         
         %% find peak roll after lift onset
         roll_win = 250; % in ms
