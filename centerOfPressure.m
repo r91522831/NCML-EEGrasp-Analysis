@@ -3,10 +3,10 @@ function [cop] = centerOfPressure(fgr, z_offset, force_resolution)
 %   Detailed explanation goes here
 
 cop_z = z_offset * ones(height(fgr), 1);
-% COPy = (fy * COPz - mx) / fz
-cop_y = ((fgr.fy .* cop_z) - fgr.mx) ./ fgr.fz;
-% COPx = (my + fx * COPz) / fz
-cop_x = (fgr.my + (fgr.fx .* cop_z)) ./ fgr.fz;
+% COPy = (fy * COPz + mx) / fz
+cop_y = ((fgr.fy .* cop_z) + fgr.mx) ./ fgr.fz;
+% COPx = (my - fx * COPz) / fz
+cop_x = (fgr.my - (fgr.fx .* cop_z)) ./ fgr.fz;
 
 % remove cop estimation before contact
 cop_y(abs(fgr.fz) < force_resolution) = 0;
