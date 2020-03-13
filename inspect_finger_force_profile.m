@@ -79,12 +79,12 @@ ep_ind = [strcmpi(data(:, 2), 'IL'), strcmpi(data(:, 2), 'TR'), strcmpi(data(:, 
 tmp_lft_win_time = repmat(lft_win_time, length(data), 1);
 tt = {'IL', 'TR', 'PT'};
 
-ep_ind = ep_ind(1:18, :);
+% % % ep_ind = ep_ind(1:18, :);
 
-figure('DefaultAxesFontSize', 18)
+figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
 for cond = 1:3
     nep = sum(ep_ind(:, cond));
-    carray = flip([logspace(0, 1, nep), logspace(0, 1, nep)])./10;
+    carray = flip([logspace(0, 1, nep), logspace(0, 1, nep)])./10; % the darker the earlier line
     
     subplot(2, 3, cond)
     p = polarplot(f_ang_th(ep_ind(:, cond), :)', f_mag_th(ep_ind(:, cond), :)', f_ang_vf(ep_ind(:, cond), :)', f_mag_vf(ep_ind(:, cond), :)', '--');
@@ -103,11 +103,18 @@ for cond = 1:3
 % % %     vline(tch_time, ':k')
     xlim([-1, 2])
     vline(0, '--r', 'lift')
+    ylabel('{\Delta}COPy_{TH-VF} (mm)');
 end
 mtit(sub_id)
 
 %%
-ep_plot = 1:6; % 19:24; % 7:12; %1:6; % 7:12; % 13:18;
+ep_plot = 1:6;
+% % % ep_plot = 7:12;
+% % % ep_plot = 13:18;
+% % % ep_plot = 19:24;
+% % % ep_plot = 25:30;
+% % % ep_plot = 31:36;
+% % % ep_plot = 37:42;
 nep = length(ep_plot);
 figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
 id_plot = 1;
@@ -137,12 +144,16 @@ for ep = ep_plot
     ylim([-30, 30])
     xlim([-1, 2])
     vline([0, tch_time(ep, 1)], {'--r', '--k'}, {'lift', 'touch'})
-    ylabel('time (s)')
+    if id_plot == 1
+        ylabel('{\Delta}COPy_{TH-VF} (mm)');
+    end
+    xlabel('time (s)')
     id_plot = id_plot + 1;
 end
 suptitle(sub_id)
 
 %%
+%{
 ep_plot = 1:30; % 19:24; % 7:12; %1:6; % 7:12; % 13:18;
 nep = length(ep_plot);
 figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
@@ -164,3 +175,4 @@ for ep = ep_plot
     end
 end
 suptitle(sub_id)
+%}

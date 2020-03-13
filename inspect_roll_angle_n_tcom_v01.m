@@ -96,7 +96,8 @@ for ep = 1:length(tmp_block)
     plot([info_trial{tmp_block{ep, 1}, 1}], [info_trial{tmp_block{ep, 1}, 7}], linespec);
 end
 xlim([0, n_trial + 1])
-ylim([-45, 45])
+ylim([-40, 40])
+hline(0)
 hold off
 ylabel('{\Delta}COPy_{TH-VF} (mm)');
 
@@ -114,7 +115,7 @@ for ep = 1:length(tmp_block)
     plot([info_trial{tmp_block{ep, 1}, 1}], [info_trial{tmp_block{ep, 1}, 9}], linespec);
 end
 xlim([0, n_trial + 1])
-% % % ylim([-45, 45])
+hline(0)
 hold off
 ylabel('{\Delta}Fy_{TH-VF} (N)');
 
