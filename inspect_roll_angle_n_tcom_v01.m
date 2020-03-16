@@ -77,6 +77,17 @@ for ep = 1:length(tmp_block)
 end
 xlim([0, n_trial + 1])
 ylim([-600, 600])
+
+%{
+% for 1st pilot
+ylim([-700, 700])
+session = [32.5, 64.5, 96.5, 128.5];
+text([16, 48, 80, 112, 144], [700, 700, 700, 700, 700], {'0g', '300g', '0g', '150g', '0g'}, 'FontSize', 18);
+plot([32.5, 64.5, 64.5, 96.5, 96.5, 128.5, 128.5, 160], [564, 564, 395, 395, 497, 497, 395, 395], 'r--')
+plot([32.5, 64.5, 64.5, 96.5, 96.5, 128.5, 128.5, 160], -1 * [564, 564, 395, 395, 497, 497, 395, 395], 'r--')
+vline(session, 'k--');
+%}
+
 hline([-395, 395], 'r--')
 hold off
 ylabel('Tcom (Nmm)');
@@ -98,6 +109,10 @@ end
 xlim([0, n_trial + 1])
 ylim([-40, 40])
 hline(0)
+
+% for 1st pilot
+% % % vline(session, 'k--');
+
 hold off
 ylabel('{\Delta}COPy_{TH-VF} (mm)');
 
@@ -116,6 +131,10 @@ for ep = 1:length(tmp_block)
 end
 xlim([0, n_trial + 1])
 hline(0)
+
+% for 1st pilot
+% % % vline(session, 'k--');
+
 hold off
 ylabel('{\Delta}Fy_{TH-VF} (N)');
 
@@ -134,6 +153,9 @@ for ep = 1:length(tmp_block)
 end
 xlim([0, n_trial + 1])
 ylim([0, 18])
+
+% for 1st pilot
+% % % vline(session, 'k--');
 
 ylabel('peak roll ({\circ})');
 xlabel('trial ID');

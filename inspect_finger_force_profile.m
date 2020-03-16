@@ -34,6 +34,8 @@ for All_i = All_selected_sub
         f_mag_vf = sqrt(beh.finger_V{ep, 1}.fy .^2 + beh.finger_V{ep, 1}.fz .^2); % F_mag_VF
         f_ang_vf = atan2(beh.finger_V{ep, 1}.fy, beh.finger_V{ep, 1}.fz); % F_ang_VF
         
+        f_ang_vf(f_ang_vf < 0) = f_ang_vf(f_ang_vf < 0) + 2 * pi; % prevent jumping of angle close to 180 degree
+
         d_copy_thvf = beh.finger_Th{ep, 1}.COPy - beh.finger_V{ep, 1}.COPy; % delta COPy TH - VF
         
         info_trial{ep, 5} = [f_mag_th, f_ang_th, f_mag_vf, f_ang_vf, d_copy_thvf];
@@ -84,12 +86,15 @@ tt = {'IL', 'TR', 'PT'};
 figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
 for cond = 1:3
     nep = sum(ep_ind(:, cond));
-    carray = flip([logspace(0, 1, nep), logspace(0, 1, nep)])./10; % the darker the earlier line
+% % %     carray_THVF = [logspace(0, 0.9, nep), logspace(0, 0.9, nep)]./10; % 0 is black line, 1 is white line, the darker the earlier line
+% % %     carray = logspace(0, 0.9, nep)./10; % the darker the earlier line
+    carray_THVF = [linspace(0, 0.9, nep), linspace(0, 0.9, nep)]; % the darker the earlier line
+    carray = linspace(0, 0.9, nep); % the darker the earlier line
     
     subplot(2, 3, cond)
     p = polarplot(f_ang_th(ep_ind(:, cond), :)', f_mag_th(ep_ind(:, cond), :)', f_ang_vf(ep_ind(:, cond), :)', f_mag_vf(ep_ind(:, cond), :)', '--');
     for i = 1:length(p)
-        p(i).Color = [carray(i), carray(i), carray(i)];
+        p(i).Color = [carray_THVF(i), carray_THVF(i), carray_THVF(i)];
     end
     title(tt{cond})
     set(gca, 'FontSize', 18)
@@ -108,13 +113,17 @@ end
 mtit(sub_id)
 
 %%
-ep_plot = 1:6;
+% % % ep_plot = 1:6;
 % % % ep_plot = 7:12;
 % % % ep_plot = 13:18;
 % % % ep_plot = 19:24;
 % % % ep_plot = 25:30;
 % % % ep_plot = 31:36;
 % % % ep_plot = 37:42;
+% % % ep_plot = 43:48;
+ep_plot = 49:54;
+% % % ep_plot = 55:60;
+% % % ep_plot = 61:66;
 nep = length(ep_plot);
 figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
 id_plot = 1;
@@ -131,12 +140,12 @@ for ep = ep_plot
     
     subplot(3, nep, nep + id_plot )
     plot(lft_win_time, rad2deg(f_ang_th(ep, :)), lft_win_time, rad2deg(f_ang_vf(ep, :)))
-    ylim([-180, 180])
+    ylim([-90, 270])
     xlim([-1, 2])
     vline([0, tch_time(ep, 1)], {'--r', '--k'}, {'lift', 'touch'})
     if id_plot == 1
         ylabel('angle ({\circ})')
-        legend({'TH', 'VF'})
+        legend({'TH', 'VF'}, 'location', 'best')
     end
     
     subplot(3, nep, 2 * nep + id_plot)
