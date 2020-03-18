@@ -38,7 +38,8 @@ for All_i = All_selected_sub
     %%
     angTilt2R = cell(size(file_list));
     ind_lft_onset = nan(length(file_list), 7);
-    info_onset_time = table(nan(size(file_list)), nan(size(file_list)), nan(size(file_list)), nan(size(file_list)) , 'VariableNames', {'lft_ind', 'lft_time', 'tch_ind', 'tch_time'}); % nan(length(file_list), 4);
+    info_onset_time = table( nan(size(file_list)), nan(size(file_list)), nan(size(file_list)), nan(size(file_list)), nan(size(file_list)), nan(size(file_list)), ...
+                             'VariableNames', {'lft_ind', 'lft_time', 'tch_ind', 'tch_time', 'pRoll_ind', 'pRoll_time'}) ;
 
     obj_height = cell(length(file_list), 3);
     obj_weight = nan(length(file_list), 1);
@@ -202,9 +203,11 @@ for All_i = All_selected_sub
         roll_win = 250; % in ms
         ind_roll_win = floor(roll_win ./ (dt * 1000));
         [~, tmp_ind] = max( abs(angTilt2R{i, 1}(tmp_ind_lft_onset:(tmp_ind_lft_onset + ind_roll_win), 1)) );
-        tmp_roll = angTilt2R{i, 1}(ind_lft_onset(i, tmp_ind_onset) + tmp_ind, 1);
+        
+        tmp_roll = angTilt2R{i, 1}(tmp_ind_lft_onset + tmp_ind, 1);
         peak_roll{i, {'peakRoll', 'index'}} = [tmp_roll, tmp_ind_lft_onset + tmp_ind];
-
+        info_onset_time{i, {'pRoll_ind', 'pRoll_time'}} = [tmp_ind_lft_onset + tmp_ind, 0.001 * info_time_trigger{i, 1}(tmp_ind_lft_onset + tmp_ind)]; % in seconds
+        
         %% mx at lift onset
         %{
         %% find peak mx around lift onset

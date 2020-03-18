@@ -37,8 +37,13 @@ for All_i = All_selected_sub
         f_ang_vf(f_ang_vf < 0) = f_ang_vf(f_ang_vf < 0) + 2 * pi; % prevent jumping of angle close to 180 degree
 
         d_copy_thvf = beh.finger_Th{ep, 1}.COPy - beh.finger_V{ep, 1}.COPy; % delta COPy TH - VF
+        d_fy_thvf = beh.finger_Th{ep, 1}.fy - beh.finger_V{ep, 1}.fy;
+        f_n_th = beh.finger_Th{ep, 1}.fz;
+        f_n_vf = beh.finger_V{ep, 1}.fz;
+        f_y_th = beh.finger_Th{ep, 1}.fy;
+        f_y_vf = beh.finger_V{ep, 1}.fy;
         
-        info_trial{ep, 5} = [f_mag_th, f_ang_th, f_mag_vf, f_ang_vf, d_copy_thvf];
+        info_trial{ep, 5} = [f_mag_th, f_ang_th, f_mag_vf, f_ang_vf, d_copy_thvf, d_fy_thvf, f_n_th, f_n_vf, f_y_th, f_y_vf];
         info_trial{ep, 6} = beh.info_onset_time(ep, :);
     end
     
@@ -62,6 +67,7 @@ tmp_win = round(-1000/dt):round(2000/dt);
 tch_time = nan(length(data), 1);
 f_mag_th = nan(length(data), length(tmp_win));
 f_mag_vf = f_mag_th; f_ang_th = f_mag_th; f_ang_vf = f_mag_th; d_copy_thvf = f_mag_th;
+d_fy_thvf = f_mag_th; f_n_th = f_mag_th; f_n_vf = f_mag_th; f_y_th = f_mag_th; f_y_vf = f_mag_th;
 for ep = 1:length(data)
     lft_ind = data{ep, 6}{1, 'lft_ind'};
     lft_time = data{ep, 6}{1, 'lft_time'};
@@ -74,6 +80,11 @@ for ep = 1:length(data)
     f_ang_th(ep, :) = data{ep, 5}(lft_win, 2)';
     f_ang_vf(ep, :) = data{ep, 5}(lft_win, 4)';
     d_copy_thvf(ep, :) = data{ep, 5}(lft_win, 5)';
+    d_fy_thvf(ep, :) = data{ep, 5}(lft_win, 6)';
+    f_n_th(ep, :) = data{ep, 5}(lft_win, 7)';
+    f_n_vf(ep, :) = data{ep, 5}(lft_win, 8)';
+    f_y_th(ep, :) = data{ep, 5}(lft_win, 9)';
+    f_y_vf(ep, :) = data{ep, 5}(lft_win, 10)';
 end
 
 %%
@@ -185,3 +196,501 @@ for ep = ep_plot
 end
 suptitle(sub_id)
 %}
+
+%% time profile for Fn, dFy, dCOPy
+ep_plot = 1:6;
+% % % ep_plot = 7:12;
+% % % ep_plot = 13:18;
+% % % ep_plot = 19:24;
+% % % ep_plot = 25:30;
+% % % ep_plot = 31:36;
+% % % ep_plot = 37:42;
+% % % ep_plot = 43:48;
+% % % ep_plot = 49:54;
+% % % ep_plot = 55:60;
+% % % ep_plot = 61:66;
+nep = length(ep_plot);
+figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
+id_plot = 1;
+for ep = ep_plot
+    subplot(3, nep, id_plot)
+    plot(lft_win_time, f_n_th(ep, :), lft_win_time, -f_n_vf(ep, :))
+    ylim([-1, 45])
+    xlim([-1, 2])
+    vline([0, tch_time(ep, 1)], {'--r', '--k'}, {'lift', 'touch'})
+    if id_plot == 1
+        ylabel('Fn (N)')
+        legend({'TH', 'VF'}, 'location', 'best')
+    end
+    title(['t', num2str(data{ep, 1}), ' cond ', data{ep, 2}, ' ', num2str(data{ep, 4})])
+    
+    subplot(3, nep, nep + id_plot )
+    plot(lft_win_time, d_fy_thvf(ep, :))
+    ylim([-1, 15])
+    xlim([-1, 2])
+    vline([0, tch_time(ep, 1)], {'--r', '--k'}, {'lift', 'touch'})
+    if id_plot == 1
+        ylabel('{\Delta}Fy_{TH-VF} (N)');
+    end
+    
+    subplot(3, nep, 2 * nep + id_plot)
+    plot(lft_win_time, d_copy_thvf(ep, :));
+    ylim([-20, 20])
+    xlim([-1, 2])
+    vline([0, tch_time(ep, 1)], {'--r', '--k'}, {'lift', 'touch'})
+    if id_plot == 1
+        ylabel('{\Delta}COPy_{TH-VF} (mm)');
+    end
+    xlabel('time (s)')
+    id_plot = id_plot + 1;
+end
+suptitle(sub_id)
+
+%% for ploting dFy vs dCOPy and Fn vs dCOPy at lift onset
+sub = 1;
+info_trial = All_info_trial{sub, 2};
+n_trial = length(info_trial);
+% get block index
+[~, ~, tmp_block_id] = unique({info_trial{:, 2}});
+tmp_jump = diff(tmp_block_id);
+tmp_b = 1;
+b = 1;
+for ep = 1:n_trial - 1
+    if abs(tmp_jump(ep)) > 0
+        tmp_block{b, 1} = tmp_b:ep;
+        tmp_b = ep + 1;
+        b = b + 1;
+    end
+end
+[~, lft_onset] = min(abs(lft_win_time));
+
+figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
+ep_plot = 1:length(tmp_block); %5:length(tmp_block);
+subplot(3, 3, 1)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), d_fy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), d_fy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), d_fy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), linespec)
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end          
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, d_fy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}
+end
+% % % legend('IL', 'TR', 'PT');
+% sub-04: 18, 15, 12; sub-02: 13, 10, 7; sub-01: 18, 13, 8
+text(-20, 18, 'IL', 'Color', 'r', 'FontSize', 18);
+text(-20, 15, 'TR', 'Color', 'b', 'FontSize', 18);
+text(-20, 12, 'PT', 'Color', 'k', 'FontSize', 18);
+
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('{\Delta}Fy_{TH-VF} (N)');
+vline(0, '--k')
+hline(0, '--k')
+hold off
+
+subplot(3, 3, 2)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_n_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_n_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_n_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset), linespec)
+    
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, f_n_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('Fn_{TH} (N)');
+vline(0, '--k')
+hold off
+
+subplot(3, 3, 3)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_n_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_n_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('Fn_{VF} (N)');
+vline(0, '--k')
+hold off
+
+subplot(3, 3, 5)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_mag_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_mag_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_mag_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset), linespec)
+    
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, f_mag_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('F_{TH} (N)');
+vline(0, '--k')
+hold off
+
+subplot(3, 3, 4)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), rad2deg(f_ang_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset)), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), rad2deg(f_ang_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset)), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), rad2deg(f_ang_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset)), linespec)
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, rad2deg(f_ang_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset)), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('angle_{TH} ({\circ})');
+vline(0, '--k')
+% % % hline(0, '--k')
+hold off
+
+subplot(3, 3, 8)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_mag_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_mag_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_mag_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), linespec)
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, f_mag_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}    
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('F_{VF} (N)');
+vline(0, '--k')
+hold off
+
+subplot(3, 3, 7)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), rad2deg(f_ang_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset)), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), rad2deg(f_ang_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset)), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+%{    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), rad2deg(f_ang_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset)), linespec)
+    if (ep < 4) || (ep > length(tmp_block) - 3)
+        for i = 1:length(tmp_block{ep, 1})
+            if i == 1
+                tc = 'r';
+            elseif i == length(tmp_block{ep, 1})
+                tc = 'b';
+            else
+                tc = 'k';
+            end
+            text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset) + 0.3, rad2deg(f_ang_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset)), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tc, 'FontSize', 18)
+        end
+    end
+%}
+end
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('angle_{VF} ({\circ})');
+vline(0, '--k')
+% % % hline(0, '--k')
+hold off
+
+subplot(3, 3, 6)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_y_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_y_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+end
+ylim([-10, 15])
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('Fy_{TH} (N)');
+vline(0, '--k')
+hold off
+
+subplot(3, 3, 9)
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    plot(d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), f_y_vf([info_trial{tmp_block{ep, 1}, 1}], lft_onset), 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 6;
+        else
+            fw = 'normal';
+            fs = 3; %length(tmp_block{ep, 1}) - i;
+        end
+
+        text(d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), f_y_vf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset), num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+end
+ylim([-10, 15])
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('Fy_{VF} (N)');
+vline(0, '--k')
+hold off
+
+suptitle(All_info_trial{sub, 1})
