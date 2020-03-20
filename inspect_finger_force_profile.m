@@ -26,7 +26,7 @@ for All_i = All_selected_sub
     for ep = 1:length(beh.file_list)
         info_trial{ep, 1} = str2double(beh.file_list(ep).name(7:9)); % trial id
         info_trial{ep, 2} = beh.file_list(ep).name(11:12); % condition: IL, TR, PT, TR
-        info_trial{ep, 3} = str2double(beh.file_list(ep).name(23:25)); % added weight in gram
+% % %         info_trial{ep, 3} = str2double(beh.file_list(ep).name(23:25)); % added weight in gram
         info_trial{ep, 4} = str2double(beh.file_list(ep).name(16:18)); % trial number in block
         
         f_mag_th = sqrt(beh.finger_Th{ep, 1}.fy .^2 + beh.finger_Th{ep, 1}.fz .^2); % F_mag_TH
@@ -87,7 +87,91 @@ for ep = 1:length(data)
     f_y_vf(ep, :) = data{ep, 5}(lft_win, 10)';
 end
 
-%%
+%% plot 3D plot: Fn, dFy, dCOPy
+sub = 1;
+info_trial = All_info_trial{sub, 2};
+n_trial = length(info_trial);
+% get block index
+[~, ~, tmp_block_id] = unique({info_trial{:, 2}});
+tmp_jump = diff(tmp_block_id);
+tmp_b = 1;
+b = 1;
+for ep = 1:n_trial - 1
+    if abs(tmp_jump(ep)) > 0
+        tmp_block{b, 1} = tmp_b:ep;
+        tmp_b = ep + 1;
+        b = b + 1;
+    end
+end
+[~, lft_onset] = min(abs(lft_win_time));
+
+figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
+ep_plot = 1:length(tmp_block); %5:length(tmp_block);
+hold on
+for ep = ep_plot
+    switch info_trial{tmp_block{ep, 1}(1, 1), 2}
+        case 'IL'
+            linespec = 'ro';
+            tcc = 'r';
+        case 'TR'
+            linespec = 'bx';
+            tcc = 'b';
+        case 'PT'
+            linespec = 'k^';
+            tcc = 'k';
+    end
+    
+    x = d_copy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset);
+    y = d_fy_thvf([info_trial{tmp_block{ep, 1}, 1}], lft_onset);
+    z = f_n_th([info_trial{tmp_block{ep, 1}, 1}], lft_onset);
+    
+    plot3(x, y, z, 'LineStyle', 'none', 'Marker', 'none')
+    for i = 1:length(tmp_block{ep, 1})
+        if (i == 1)
+            fw = 'bold';
+            fs = 12;
+        elseif (i == length(tmp_block{ep, 1}))
+            fw = 'bold';
+            fs = 5;
+        else
+            fw = 'normal';
+            fs = 5; %length(tmp_block{ep, 1}) - i;
+        end
+        x_t = d_copy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset);
+        y_t = d_fy_thvf([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset);
+        z_t = f_n_th([info_trial{tmp_block{ep, 1}(i), 1}], lft_onset);
+        text(x_t, y_t, z_t, num2str([data{tmp_block{ep, 1}(i), 1}]), 'Color', tcc, 'FontWeight', fw, 'FontSize', fs)
+    end
+end
+% % % % % % legend('IL', 'TR', 'PT');
+% % % % sub-04: 18, 15, 12; sub-02: 13, 10, 7; sub-01: 18, 13, 8
+text(-20, 18, 35, 'IL', 'Color', 'r', 'FontSize', 18);
+text(-20, 15, 35, 'TR', 'Color', 'b', 'FontSize', 18);
+text(-20, 12, 35, 'PT', 'Color', 'k', 'FontSize', 18);
+grid on
+set(gca, 'View', [70, 35])
+axis equal
+xlabel('{\Delta}COPy_{TH-VF} (mm)');
+ylabel('{\Delta}Fy_{TH-VF} (N)');
+zlabel('Fn_{TH} (N)');
+% % % vline(0, '--k')
+% % % hline(0, '--k')
+hold off
+
+title(All_info_trial{sub, 1})
+
+
+
+
+
+
+
+
+
+
+
+%% plot force in polar coordinate
+%{
 ep_ind = [strcmpi(data(:, 2), 'IL'), strcmpi(data(:, 2), 'TR'), strcmpi(data(:, 2), 'PT')];
 tmp_lft_win_time = repmat(lft_win_time, length(data), 1);
 tt = {'IL', 'TR', 'PT'};
@@ -122,8 +206,10 @@ for cond = 1:3
     ylabel('{\Delta}COPy_{TH-VF} (mm)');
 end
 mtit(sub_id)
+%}
 
-%%
+%% plot time profile I
+%{
 % % % ep_plot = 1:6;
 % % % ep_plot = 7:12;
 % % % ep_plot = 13:18;
@@ -171,8 +257,9 @@ for ep = ep_plot
     id_plot = id_plot + 1;
 end
 suptitle(sub_id)
+%}
 
-%%
+%% plot time profile II
 %{
 ep_plot = 1:30; % 19:24; % 7:12; %1:6; % 7:12; % 13:18;
 nep = length(ep_plot);
@@ -198,6 +285,7 @@ suptitle(sub_id)
 %}
 
 %% time profile for Fn, dFy, dCOPy
+%{
 ep_plot = 1:6;
 % % % ep_plot = 7:12;
 % % % ep_plot = 13:18;
@@ -245,8 +333,10 @@ for ep = ep_plot
     id_plot = id_plot + 1;
 end
 suptitle(sub_id)
+%}
 
 %% for ploting dFy vs dCOPy and Fn vs dCOPy at lift onset
+%{
 sub = 1;
 info_trial = All_info_trial{sub, 2};
 n_trial = length(info_trial);
@@ -694,3 +784,4 @@ vline(0, '--k')
 hold off
 
 suptitle(All_info_trial{sub, 1})
+%}
