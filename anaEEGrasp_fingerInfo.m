@@ -2,26 +2,26 @@ close all; clearvars; clc
 
 %% load aligned data
 All_path = uigetdir;
-All_filelist = dir(fullfile(All_path, '*_aligned_data.mat'));
+All_filelist = dir(fullfile(All_path, 'sub*'));
 
 disp([num2cell((1:length(All_filelist))'), {All_filelist.name}']);
 All_selected_sub = input('Which subject(s) to process? ');
+
 if isempty(All_selected_sub)
     All_selected_sub = 1:length(All_filelist);
 end
-
-% [filename, pathname, ~] = uigetfile;
-% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/preliminary results/SXXX_aligned_data.mat')
 
 All_cutoff = 5; % lowpass cutoff freq for behavior, in Hz
 
 %%
 for All_i = All_selected_sub
+    %%
     clearvars -except All_*; close all;
-    sub_id = All_filelist(All_i).name(1:4);
-    disp(['Start processing ', sub_id, ' ...']);
+    sub_id = All_filelist(All_i).name(end-1:end);
+    disp(['Start processing sub-', sub_id, ' ...']);
     
-    load(fullfile(All_path, All_filelist(All_i).name));
+    % load('/Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-XX/beh/mat/SXXX_aligned_data.mat')
+    beh = load(fullfile(All_path, All_filelist(All_i).name, 'beh', 'mat', ['S0', sub_id, '_aligned_data.mat']));
     % file_list is included in the SXXX_aligned_data.mat file.
     % file_list contains all behavior files name with wrong directory.
 
@@ -30,27 +30,25 @@ for All_i = All_selected_sub
     kinetic_channels = {'fx', 'fy', 'fz', 'mx', 'my', 'mz'};
 
     %% 
-    resultantF = cell(size(file_list));
-    finger_Th = cell(size(file_list));
-    finger_V = cell(size(file_list));
-    info_time_trigger = cell(length(file_list), 2);
-    missing_info = cell(length(file_list), 1);
-    coord_obj = cell(size(file_list));
-    fgr_on_obj = cell(size(file_list));
-    fgr_on_obj_kinetic = cell(size(file_list));
-
-    %% lowpass filtered
-    % % % dt = 4/1000; % unit: second
-    % % % for i = 1:length(mx)
-    % % %     mx_filtered{i} = filtmat_class( dt, cutoff_plot, mx{i} );
-    % % %     obj_height_filtered{i} = filtmat_class( dt, cutoff_plot, obj_height{i} );
-    % % % end
-
-
     %--------------------------------------------------------------------------
     % assign filtered or raw data to analyze
-    input = data;
-    input_surface = data_aligned2surface;
+    input = beh.data;
+    input_surface = beh.data_aligned2surface;
+    file_list = beh.file_list;
+    var_ATI = beh.var_ATI;
+    var_PS = beh.var_PS;
+    var_PS_cond = beh.var_PS_cond;
+    
+    ntrial = length(beh.file_list);
+    %--------------------------------------------------------------------------
+    resultantF = cell(ntrial, 1);
+    finger_Th = cell(ntrial, 1);
+    finger_V = cell(ntrial, 1);
+    info_time_trigger = cell(ntrial, 2);
+    missing_info = cell(ntrial, 1);
+    coord_obj = cell(ntrial, 1);
+    fgr_on_obj = cell(ntrial, 1);
+    fgr_on_obj_kinetic = cell(ntrial, 1);
 
     %%
     for i = 1:length(file_list)
@@ -229,6 +227,9 @@ for All_i = All_selected_sub
         disp(i);
     end
 %%
-    save(fullfile(All_path, [sub_id, '_fingerInfo.mat']), 'file_list', 'data', 'var_PS', 'var_PS_cond', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic', '-v7.3');
-    disp(['Finish processing ', sub_id, '!']);
+    savefilename = fullfile(All_path, All_filelist(All_i).name, 'beh', 'mat', ['S0', sub_id, '_fingerInfo.mat']);
+    save(savefilename, 'file_list', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic', '-v7');
+    % use '-v7' the file is smaller; use '-v7.3' if the file is larger than 2 GB
+% % %     save(savefilename, 'file_list', 'info_time_trigger', 'missing_info', 'coord_obj', 'fgr_on_obj', 'finger_Th', 'finger_V', 'resultantF', 'fgr_on_obj_kinetic', '-v7.3');
+    disp(['Finish processing sub-', sub_id, '!']);
 end

@@ -141,6 +141,10 @@ end
 
 [path, ~, ~] = fileparts(sub_dir);
 subID = file_list(1).name(1:4);
-save(fullfile(path, [subID, '_aligned_data.mat']), 'data', 'data_aligned2surface', 'file_list', 'sub_dir', 'var_ATI', 'var_PS', 'var_PS_cond');
+if ~exist(fullfile(path, 'mat'), 'dir')
+    mkdir(fullfile(path, 'mat'));
+end
+savefilename = fullfile(path, 'mat', [subID, '_aligned_data.mat']);
+save(savefilename, 'data', 'data_aligned2surface', 'file_list', 'sub_dir', 'var_ATI', 'var_PS', 'var_PS_cond');
 clear tmp* i j
 disp("Data alignment completed!")

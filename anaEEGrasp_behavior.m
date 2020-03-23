@@ -1,15 +1,11 @@
 close all; clearvars; clc
 
 %% load aligned data
-
 All_path = uigetdir;
-All_filelist = dir(fullfile(All_path, '*_fingerInfo.mat'));
+All_filelist = dir(fullfile(All_path, 'sub*'));
 
 disp([num2cell((1:length(All_filelist))'), {All_filelist.name}']);
 All_selected_sub = input('Which subject(s) to process? ');
-
-% [filename, pathname, ~] = uigetfile;
-% load('/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/matlab data/sandbox/SXXX_fingerInfo.mat')
 
 if isempty(All_selected_sub)
     All_selected_sub = 1:length(All_filelist);
@@ -19,12 +15,12 @@ All_cutoff = 5; % unit: Hz
 
 for All_i = All_selected_sub
     clearvars -except All_*; close all;
-    sub_id = All_filelist(All_i).name(1:4);
-    disp(['Start processing ', sub_id, ' ...']);
+    sub_id = All_filelist(All_i).name(end-1:end);
+    disp(['Start processing sub-', sub_id, ' ...']);
     
-    load(fullfile(All_path, All_filelist(All_i).name));
-%     load(fullfile(pathname, filename));
-
+    % load('/Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-XX/beh/mat/SXXX_fingerInfo.mat')
+    load(fullfile(All_path, All_filelist(All_i).name, 'beh', 'mat', ['S0', sub_id, '_fingerInfo.mat']));
+    
     % % % coord_table_origin = [0, 0, 0];
     % % % coord_table_x = [1, 0, 0];
     % % % coord_table_y = [0, 1, 0];
@@ -50,10 +46,11 @@ for All_i = All_selected_sub
     y_onset = nan(length(file_list), 1);
 
     %%
-    input = data;
     for i = 1:length(file_list)
         tmp_audio = info_time_trigger{i, 2};
         dt = 0.001 * diff(info_time_trigger{i, 1}(1:2, 1)); % in second
+        nframe = length(info_time_trigger{i, 1});
+        
         %% Get object coordinate before reaching initiation
         % object coordinate before audio go cue and should keep the same until object lift onset*
         ind_b4go = (tmp_audio == 1);
@@ -81,13 +78,13 @@ for All_i = All_selected_sub
     % % %     tmp_angTilt_b4go = asind( abs(dot(coord_table_y, coord_obj_b4go{:, 'z_axis'})) / (sqrt(sum(coord_table_y.^2)) * sqrt(sum(coord_obj_b4go{:, 'z_axis'} .^2))) );
 
         %% frame by frame
-        obj_Rcenter_v = zeros(height(input{i}), 3);
-        obj_Lcenter_v = zeros(height(input{i}), 3);
-        obj_center_v = zeros(height(input{i}), 3);
-        obj_Rcenter_d = zeros(height(input{i}), 1);
-        obj_Lcenter_d = zeros(height(input{i}), 1);
-        obj_center_d = zeros(height(input{i}), 1);
-        for time_id = 1:height(input{i})
+        obj_Rcenter_v = zeros(nframe, 3);
+        obj_Lcenter_v = zeros(nframe, 3);
+        obj_center_v = zeros(nframe, 3);
+        obj_Rcenter_d = zeros(nframe, 1);
+        obj_Lcenter_d = zeros(nframe, 1);
+        obj_center_d = zeros(nframe, 1);
+        for time_id = 1:nframe
             % compute object height
             if time_id > length(coord_obj{i})
                 continue;
@@ -147,7 +144,6 @@ for All_i = All_selected_sub
                         break;
                     end
                 end
-% % %                 ind_lft_onset(i, 3) = j; % without checking the velocity
                 break;
             end
         end
@@ -228,12 +224,7 @@ for All_i = All_selected_sub
 
         %% compute finger tip coordinate without missing frames
 
-
         %% compute the finger average coordinate within the holding phase
-
-
-
-
 
         %%
         disp(i);
@@ -241,13 +232,12 @@ for All_i = All_selected_sub
 
     %%
     ind_lft_onset = array2table(ind_lft_onset, 'VariableNames', {'h10_mm', 'h5_mm', 'h3_mm', 'h2_mm', 'h1_mm', 'fy_obj_w', 'touch'});
-
-    save(fullfile(All_path, [sub_id, '_temp_result.mat']), 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
-
-    %%
-    % remember to put the onset infor corresponding to the correct trial number
-    % in the file_list!!!!!!!!!!!!!!
-    save(fullfile(All_path, [sub_id, '_info_onset_time.mat']), 'info_onset_time');
     
-    disp(['Finish processing ', sub_id, '!']);
+    savefilename = fullfile(All_path, All_filelist(All_i).name, 'beh', 'mat', ['S0', sub_id, '_temp_result.mat']);
+    save(savefilename, 'resultantF', 'finger_Th', 'finger_V', 'angTilt2R', 'ind_lft_onset', 'info_onset_time', 'file_list', 'obj_height', 'obj_weight', 'peak_roll', 'peak_mx', 'info_time_trigger', 'mx_onset', 'fy_onset', 'y_onset');
+
+    savefilename = fullfile(All_path, All_filelist(All_i).name, 'beh', 'mat', ['S0', sub_id, '_info_onset_time.mat']);
+    save(savefilename, 'info_onset_time');
+    
+    disp(['Finish processing sub-', sub_id, '!']);
 end
