@@ -22,6 +22,12 @@ for sub_i = selected_sub%1:length(eeg_dataset_list)
     
     if sub_i == selected_sub(1)
         %% Create G and H for CSD; only need to run one time for the whole project (across subjects and trials)
+        % use CSD Toolbox
+        % ===========
+        % © 2003-2010 by Jürgen Kayser
+        % Version 1.1 (July 21, 2010)
+        % http://psychophysiology.cpmc.columbia.edu/Software/CSDtoolbox/
+        
         % load eeg dataset
         EEG = pop_loadset('filename', tmp_dataset_list(1).name, 'filepath', tmp_dataset_folder);
         [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
