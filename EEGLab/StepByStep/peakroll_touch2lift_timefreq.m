@@ -35,8 +35,8 @@ for All_i = All_selected_sub
     nepoch = size(EEG.data, 3);
     sub_id = EEG.setname(1:6);
     %%
-    rg_freq_id = {(tf.tf_freqs > 4 & tf.tf_freqs <= 8), (tf.tf_freqs > 13 & tf.tf_freqs <= 20), (tf.tf_freqs > 20 & tf.tf_freqs <= 30)};
-    path_freq = {'tf_theta', 'tf_lowbeta', 'tf_highbeta'};
+    rg_freq_id = {(tf.tf_freqs > 4 & tf.tf_freqs <= 8), (tf.tf_freqs > 8 & tf.tf_freqs <= 13), (tf.tf_freqs > 13 & tf.tf_freqs <= 20), (tf.tf_freqs > 20 & tf.tf_freqs <= 30)};
+    path_freq = {'tf_theta', 'tf_alpha', 'tf_lowbeta', 'tf_highbeta'};
     nfreq = length(rg_freq_id);
     for f_i = 1:nfreq
         vol_t2l = nan(nepoch, 63);
