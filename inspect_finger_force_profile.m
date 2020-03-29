@@ -57,7 +57,7 @@ for All_i = All_selected_sub
     All_sub_i = All_sub_i + 1;
 end
 
-%% plot force magnitude, force angle, and delta COPy for TH and VF in IL, TR, PT conditions
+%% plot data aligned at lft onset for force magnitude, force angle, and delta COPy for TH and VF in IL, TR, PT conditions
 sub_i = 1;
 sub_id = All_info_trial{sub_i, 1};
 data = All_info_trial{sub_i, 2};
