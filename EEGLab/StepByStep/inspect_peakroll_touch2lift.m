@@ -3,10 +3,10 @@ clear; close all; clc;
 disp('Select the voltage folder in the EEG directory:')
 All_data = uigetdir;
 
-All_freq_tit = {'\theta', 'low\beta', 'high\beta'};
+All_freq_tit = {'\theta', '\alpha', 'low\beta', 'high\beta'};
 All_nfreq = length(All_freq_tit);
-All_path_freq = {'tf_theta', 'tf_lowbeta', 'tf_highbeta'};
-for All_freq_i = 1:All_nfreq
+All_path_freq = {'tf_theta', 'tf_alpha', 'tf_lowbeta', 'tf_highbeta'};
+for All_freq_i = 2%1:All_nfreq
     All_data_list = dir(fullfile(All_data, All_path_freq{All_freq_i}, 'sub-*'));
     All_chanlocs = load(fullfile(All_data, All_path_freq{All_freq_i}, 'chanlocs.mat'));
     All_n_elect = length(All_chanlocs.chanlocs);
