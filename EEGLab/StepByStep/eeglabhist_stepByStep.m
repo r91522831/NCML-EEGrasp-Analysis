@@ -5,8 +5,7 @@ clear; close all; clc;
 % modified 14-Feb-2020 by Yen @ ASU
 % ------------------------------------------------
 
-%% Section 1: Select raw EEG .vhdr file
-% Option of whether the epoch is time-locking at lift onset or at the middle of holding phase
+%% Option of whether the epoch is time-locking at lift onset or at the middle of holding phase
 switch input('Does the epoch time locked at lift onset (no if at holding)?(y/N)', 's')
     case {'y', 'Y'}
         All_timelocking_type = {  'onset'  };
@@ -125,8 +124,8 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
     %% Section 3: remove eye movement artifact
-    % Step 1: run ICA on continuos data to identify the eye blinking and eye movement components
-    % keep the EEG b4 ICA
+    % run ICA on continuos data to identify the eye blinking and eye movement components
+    % Step 1: keep the EEG before ICA
     originEEG = EEG;
     % Step 2: Bandpass at 1 to 15 Hz to remove slow drift for better ICA
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1, 'hicutoff', 15);
@@ -161,12 +160,7 @@ for All_sub_i = All_selected_sub
     EEG = iclabel(EEG, 'default');
     tmp_id_eyem_class = strcmp(EEG.etc.ic_classification.ICLabel.classes, 'Eye');
     tmp_eyem = EEG.etc.ic_classification.ICLabel.classifications(:, tmp_id_eyem_class);
-    %{
-    % choose the two largest eye components to reject
-    [~, tmp_id_eyem(1)] = max(tmp_eyem);
-    tmp_eyem(tmp_id_eyem(1)) = -Inf;
-    [~, tmp_id_eyem(2)] = max(tmp_eyem);
-    %}
+
     % remove all eye element with 90% confidence
     tmp_id_eyem = (tmp_eyem > 0.90);
     
@@ -202,8 +196,10 @@ for All_sub_i = All_selected_sub
     % epoch with a window -8000 to 4000 ms around the key event to include
     % the left/right cue
 % % %     ind_win = [-8, 4];
-    % epoch with a window -3000 to 6000 ms around the key event to include
+    % epoch with a window -4000 to 6000 ms around the key event to include
     ind_win = [-4, 6];
+    
+    ind_win = [-3, 6];
     tmp_type = {EEG.event.type};
     tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
     tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));

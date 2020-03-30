@@ -19,7 +19,7 @@ for All_i = All_selected_sub% 1:length(All_dirlist)
     subID = All_filelist(All_i).name(1:6);
     filepath_eeg = dir(fullfile(fileparts(fileparts(All_path)), [subID, '*']));
     filename_eeg = dir(fullfile(filepath_eeg.folder, filepath_eeg.name, '*eeg_csd.set'));
-    % load eeg data set
+    % load eeg data set for channel info
     [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
     EEG = pop_loadset('filename', filename_eeg.name, 'filepath', filename_eeg.folder);
     [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
