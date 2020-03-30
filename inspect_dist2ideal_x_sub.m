@@ -14,7 +14,6 @@ for sub_i = 1:nsub
     sub_id = summary.All_info_trial.subID{sub_i, 1};
     data = summary.All_info_trial.data{sub_i, 1};
     dt = summary.All_info_trial.dt(sub_i, 1); % in ms
-    nep = height(data);
     
     % rotate the odd subs start from L to the other side for averaging
     if mod(str2double(sub_id((end-1):end)), 2)
@@ -50,7 +49,7 @@ ntrial = height(data);
 tmp_jump = diff(tmp_block_id);
 tmp_b = 1;
 b = 1;
-for ep = 1:nep - 1
+for ep = 1:ntrial - 1
     if abs(tmp_jump(ep)) > 0
         tmp_block{b, 1} = tmp_b:ep;
         tmp_b = ep + 1;
@@ -107,5 +106,86 @@ xlim([0, 96])
 title([summary.All_info_trial.subID{select_sub}])
 
 
+
+
+%% plot for individual subs
+sub_i = 4;
+subID = summary.All_info_trial.subID{sub_i, 1}; 
+data = summary.All_info_trial.data{sub_i, 1}; % find the complete experiment protocol, IL: 19, 1TR3PT: 19
+
+clear tmp_mcom_err Mideal tmp_block
+if mod(str2double(subID((end-1):end)), 2)
+    tmp_mcom = -data.Mcom;
+else
+    tmp_mcom = data.Mcom;
+end
+for i = 1:height(data)
+    switch data.context{i, 1}
+        case {'IL', 'PT'}
+            Mideal(i, 1) = 395;
+        case 'TR'
+            Mideal(i, 1) = -395;
+    end
+end
+tmp_mcom_err = tmp_mcom - Mideal;
+
+ntrial = height(data);
+
+[~, ~, tmp_block_id] = unique(data.context);
+tmp_jump = diff(tmp_block_id);
+tmp_b = 1;
+b = 1;
+for ep = 1:ntrial - 1
+    if abs(tmp_jump(ep)) > 0
+        tmp_block{b, 1} = tmp_b:ep;
+        tmp_b = ep + 1;
+        b = b + 1;
+    end
+end
+tmp_block{b, 1} = tmp_b:ntrial;
+
+figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1])
+subplot(2, 1, 1)
+hold on
+nsession = length(tmp_block);
+for i = 1:nsession
+    switch data.context{tmp_block{i, 1}(1), 1}(1) % the first trial in the block
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    plot(tmp_block{i, 1}, tmp_mcom_err(tmp_block{i, 1}, 1), line_spec)
+end
+hold off
+legend({'IL', 'TR', 'PT'}, 'Location', 'northwest')
+ylabel('Mcom (N-mm)')
+% xlabel('trial')
+xticklabels([])
+xlim([0, 96])
+title(subID)
+
+subplot(2, 1, 2)
+hold on
+nsession = length(tmp_block);
+for i = 1:nsession
+    switch data.context{tmp_block{i, 1}(1), 1}(1) % the first trial in the block
+        case 'I'
+            line_spec = '-*r';
+        case 'T'
+            line_spec = '-ob';
+        case 'P'
+            line_spec = '-xk';
+        otherwise
+    end
+    plot(tmp_block{i, 1}, data.dist2ideal(tmp_block{i, 1}, 1), line_spec)
+end
+hold off
+ylabel('dist to ideal surface')
+xlabel('trial')
+xlim([0, 96])
 
 

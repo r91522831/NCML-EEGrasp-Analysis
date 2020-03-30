@@ -1,4 +1,4 @@
-function dist = dist2surface(Mcom, dCOPz, dCOPy, dFy, Fgrip)
+function [dist, xs, ys, zs] = dist2surface(Mcom, dCOPz, dCOPy, dFy, Fgrip)
 b = Mcom;
 a = dCOPz;
 x1 = dCOPy;
@@ -20,5 +20,15 @@ for i = 1:length(k1)
     D(i, 1) = subs(d, [x, y, z], [vpa(k1(i)), vpa(k2(i)), vpa(k3(i))]);
 end
 
-dist = double(min(sqrt(D(arrayfun(@isreal, D)))));
+id_real = arrayfun(@isreal, D);
+D_real = D(id_real);
+x_real = vpa(k1(id_real));
+y_real = vpa(k2(id_real));
+z_real = vpa(k3(id_real));
+
+[min_D_real, id_min] = min(D_real);
+dist = double( sqrt(min_D_real) );
+xs = x_real(id_min);
+ys = y_real(id_min);
+zs = z_real(id_min);
 end

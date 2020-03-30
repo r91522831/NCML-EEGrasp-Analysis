@@ -1,6 +1,6 @@
 
 [dCOPy, dFy] = meshgrid(-50:50, -10:0.2:10);
-hwidth = 29.6 * 2;
+hwidth = -29.6 * 2;
 dCOPz = hwidth; Mcom = 395;
 Fg = (dCOPz * dFy + Mcom) ./ dCOPy;
 figure

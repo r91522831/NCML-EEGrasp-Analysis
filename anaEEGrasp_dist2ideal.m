@@ -19,6 +19,7 @@ for sub_i = 1:nsub
     %% find the distance between the dCOPy, dFy, Fgrip to the ideal surface
     dCOPz = -29.6 * 2; % from VF to TH
     dist = nan(nep, 1);
+    s = nan(nep, 3);
     for ep = 1:nep
         if strcmpi(data.side(ep, 1), 'R')
             Mcom = 395;
@@ -30,10 +31,11 @@ for sub_i = 1:nsub
         dFy = data_lft_onset_aligned{ep, 1}.dFy(lft_onset);
         Fgrip = data_lft_onset_aligned{ep, 1}.GripF(lft_onset);
         
-        dist(ep, 1) = dist2surface(Mcom, dCOPz, dCOPy, dFy, Fgrip);
+        [ dist(ep, 1), s(ep, 1), s(ep, 2), s(ep, 3) ]= dist2surface(Mcom, dCOPz, dCOPy, dFy, Fgrip);
     end
     
     dist = array2table(dist, 'VariableNames', {'dist2ideal'});
-    All_info_trial.data{sub_i, 1} = horzcat(All_info_trial.data{sub_i, 1}, dist);
+    s = array2table(s, 'VariableNames', {'dCOPy_ideal', 'dFy_ideal', 'gripF_ideal'});
+    All_info_trial.data{sub_i, 1} = horzcat(All_info_trial.data{sub_i, 1}, dist, s);
 end
 save(fullfile(summarypath, 'behavior_resultSummary_w_dist2ideal.mat'), 'All_info_trial');
