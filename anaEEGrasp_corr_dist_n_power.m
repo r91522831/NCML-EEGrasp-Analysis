@@ -92,6 +92,7 @@ for All_sub_i = All_selected_sub
     
     All_power_dist{All_sub_i, 1} = subID;
     All_power_dist{All_sub_i, 2} = sub_power_dist;
+    All_power_dist{All_sub_i, 3} = rg_all_time(1:n_mv_win);
 end
 
 save(fullfile(All_path, ['corr_traj_', num2str(length(All_selected_sub)), 'sub.mat']), 'All_power_dist');
