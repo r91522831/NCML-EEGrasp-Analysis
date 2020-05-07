@@ -42,10 +42,14 @@ for All_sub_i = All_selected_sub
     % get sub_id
     [~, sub_id, ~]= fileparts(fileparts(fileparts(raw_dir)));
     % set EEG output path
+    %{
     % output_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/EEG/eeglab/001 Process/Sxxx/';
 % % %     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '001 Process', [sub_id, '_', All_timelocking_type{:}]);
 % % %     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '002 ProcessAgain', [sub_id, '_', All_timelocking_type{:}]);
     output_dir = fullfile(All_root_dir, 'NCML-EEGrasp', 'EEG', 'eeglab', '005 Step', [sub_id, '_', All_timelocking_type{:}]);
+    %}
+    % output_dir: /Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/eeg/set/
+    output_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'eeg', 'set');
     if ~isfolder(output_dir)
         mkdir(output_dir)
     end
@@ -84,12 +88,15 @@ for All_sub_i = All_selected_sub
     end
     % channel location provided by ANTNeuro
     EEG = pop_chanedit(EEG, 'load', {fullfile(All_data, 'wg64xyz.xyz'), 'filetype', 'xyz'}, 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
-    EEG = pop_chanedit(EEG, 'lookup', '/Users/yenhsunw/Dropbox (Personal)/Programming/Matlab/myLibrary/eeglab2019_1/plugins/dipfit/standard_BESA/standard-10-5-cap385.elp');
+    EEG = pop_chanedit(EEG, 'lookup', fullfile(fileparts(All_root_dir), 'Dropbox (Personal)/Programming/Matlab/myLibrary/eeglab2019_1/plugins/dipfit/standard_BESA/standard-10-5-cap385.elp'));
     
     % Step 5: Experiment info
     % insert behavior (lift onset) events
     % Step 1: Insert behavior events and Get experiment conditions
     sub_id = EEG.filename(1:6);
+    
+    %{
+    % old file locations
     % get behavior raw file directory, behavior_BIDS_dir: /Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-XX/beh/csv
     behavior_BIDS_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'beh', 'csv');
     % get behavior output path, behavior_dir: '/Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/';
@@ -99,7 +106,15 @@ for All_sub_i = All_selected_sub
     behavior_results_dir = fullfile(behavior_dir, 'results');
     % behavior_filename: /Users/yenhsunw/Dropbox (ASU)/NCML-EEGrasp/behavior/results/S0XX_info_onset_time.mat
     behavior_filename = ['S0', sub_id(end-1:end), '_info_onset_time.mat'];
-    EEG = insertEvent2EEG_v1(EEG, behavior_results_dir, behavior_filename, behavior_BIDS_dir);
+    EEG = insertEvent2EEG_v1(EEG, behavior_results_dir, behavior_filename, fullfile(behavior_BIDS_dir, 'csv'));
+    %}
+    
+    % get behavior raw file directory, behavior_BIDS_dir: /Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-XX/beh/
+    behavior_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'beh');
+    % behavior_filename: /Users/yenhsunw/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-XX/beh/mat/S0XX_info_onset_time.mat
+    behavior_filename = ['S0', sub_id(end-1:end), '_info_onset_time.mat'];
+    EEG = insertEvent2EEG_v2(EEG, fullfile(behavior_dir, 'mat'), behavior_filename, fullfile(behavior_dir, 'csv'));
+    
     % combine trial condition to event type
     for i = 1:length(EEG.event), EEG.event(i).type = [EEG.event(i).cond, '_', EEG.event(i).type]; end
     
@@ -108,9 +123,7 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     %% Section 2: Filtering and downsample
-    
     % Step 0: clean line noise
-    % 
     EEG = pop_cleanline(EEG, 'bandwidth', 2, 'chanlist', 1:EEG.nbchan, 'computepower', 0, 'linefreqs', [60, 120, 180, 240, 300],...
                              'normSpectrum', 0, 'p', 0.01, 'pad', 2, 'plotfigures', 0, 'scanforlines', 1, 'sigtype', 'Channels', 'tau', 100,...
                              'verb', 1, 'winsize', 4, 'winstep', 4);
@@ -121,7 +134,6 @@ for All_sub_i = All_selected_sub
     
     EEG.setname = [sub_id, '_lowpass128Hz'];
     EEG = eeg_checkset( EEG );
-    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     % Step 2: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
     % Step 3: Highpass at 0.5 Hz to remove slow drift
@@ -132,7 +144,61 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 3: remove eye movement artifact
+    %% Section 3: Clean data
+    % Step 1: Reject bad data use ASR
+    if any(strcmpi({EEG.chanlocs.type}, 'EOG'))
+        % Remove HEOG channel
+        EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    end
+    % Keep original EEG
+    originalEEG = EEG;
+%     EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
+    EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
+% % %     vis_artifacts(EEG, originalEEG)
+    
+    %%
+    % Interpolate channels.
+    EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
+
+    EEG.setname = [sub_id, '_ASRclean'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    
+    
+    
+    
+    
+    %% Section 4: Epoch around onset
+    % Step 1:
+    % epoch with a window -1500 to 2000 ms around the key event
+% % %     ind_win = [-1.5, 2.5];
+    % epoch with a window -8000 to 4000 ms around the key event to include
+    % the left/right cue
+% % %     ind_win = [-8, 4];
+    % epoch with a window -4000 to 6000 ms around the key event to include
+% % %     ind_win = [-4, 6];
+
+    ind_win = [-3, 3];
+    tmp_type = {EEG.event.type};
+    tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
+    tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
+    EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [sub_id, '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
+    EEG.etc.epoch_latency = ind_win;
+    clear tmp*
+    
+    EEG.setname = [sub_id, '_epoched'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+
+    
+    
+    
+    
+    %% Section 5: ICA ICA!!!!
+    % remove eye movement artifact
     % run ICA on continuos data to identify the eye blinking and eye movement components
     % Step 1: keep the EEG before ICA
     originEEG = EEG;
@@ -176,50 +242,35 @@ for All_sub_i = All_selected_sub
     EEG = pop_subcomp( EEG, find(tmp_id_eyem), 0);
     EEG = eeg_checkset( EEG );
     EEG.nbic = size(EEG.icaact, 1);
+    %{
     % Step 7: Remove HEOG channel
     EEG = pop_select(EEG, 'channel', {EEG.chanlocs(strcmp({EEG.chanlocs.type}, 'EEG')).labels});
+    %}    
     
     EEG.setname = [sub_id, '_eyeartifact_removed'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 4: Clean data
-    % Step 1: Reject bad data use ASR
-    % Keep original EEG
-    originalEEG = EEG;
-%     EEG = clean_rawdata(EEG, 5, [0.25 0.75], 0.8, 4, 5, 0.5);
-    EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
-    % Interpolate channels.
-    EEG = pop_interp(EEG, originalEEG.chanlocs, 'spherical');
-
-    EEG.setname = [sub_id, '_ASRclean'];
-    EEG = eeg_checkset( EEG );
-    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 5: Epoch around onset
-    % Step 1:
-    % epoch with a window -1500 to 2000 ms around the key event
-% % %     ind_win = [-1.5, 2.5];
-    % epoch with a window -8000 to 4000 ms around the key event to include
-    % the left/right cue
-% % %     ind_win = [-8, 4];
-    % epoch with a window -4000 to 6000 ms around the key event to include
-% % %     ind_win = [-4, 6];
     
-    ind_win = [-3, 6];
-    tmp_type = {EEG.event.type};
-    tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
-    tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
-    EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [sub_id, '_epochs'], 'epochinfo', 'yes');
-    EEG.etc.epoch_latency = ind_win;
-    clear tmp*
     
-    EEG.setname = [sub_id, '_epoched'];
-    EEG = eeg_checkset( EEG );
-    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    
+    EEG = pop_iclabel(EEG,'default');
+ 
+ 
+    COREG=[0.83215, -15.6287, 2.4114, 0.081214, 0.00093739, -1.5732, 1.1742, 1.0601, 1.1485];
+    EEG = pop_dipfit_settings( EEG, 'hdmfile', '/R/MATLABPATH/eeglab2019_1/plugins/dipfit/standard_BEM/standard_vol.mat',...
+                                    'coordformat', 'MNI', 'mrifile', '/R/MATLABPATH/eeglab2019_1/plugins/dipfit/standard_BEM/standard_mri.mat',...
+                                    'chanfile', '/R/MATLABPATH/eeglab2019_1/plugins/dipfit/standard_BEM/elec/standard_1005.elc',...
+                                    'coord_transform', COREG, 'chansel', 1:(EEG.nbchan-1) );
+    residual_thres = 40;
+    EEG = pop_multifit(EEG, 1:(EEG.nbchan-1), 'threshold', residual_thres, 'plotopt', {'normlen', 'on'});
+    pop_dipplot( EEG, 1:(EEG.nbchan-1), 'mri', '/R/MATLABPATH/eeglab2019_1/plugins/dipfit/standard_BEM/standard_mri.mat', 'normlen', 'on');
+ 
+    
+    
     
     
     
