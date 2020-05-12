@@ -18,13 +18,20 @@ function handlesICA = printTrialMapsAxes(EEG, myxlim, dataType, freq, myLayout, 
 h = figure;% clf
 set(h, 'Position', [0, 100, 1964, 1555] * .8, 'tag', 'prettyFigure')
 
-xlim = dsearchn(EEG.times', myxlim');
+if ~isempty(freq)
+    xlim = dsearchn(EEG.icatf.tf_times', myxlim');
+    X = EEG.icatf.tf_times(xlim(1):xlim(2));
+else
+    xlim = dsearchn(EEG.times', myxlim');
+    X = EEG.times(xlim(1):xlim(2));
+end
+
 %if strcmpi(dataType,'ICA')
 %else
 data = EEG.data(:, xlim(1):xlim(2), :);
 DATA = EEG.data(:, xlim(1):xlim(2), :);
 %end
-X = EEG.times(xlim(1):xlim(2));
+
 %X = EEG.times;
 %absMax = max(max(max(data(1:EEG.nbchan, :, :)))) + 1;
 %absMin = min(min(min(data(1:EEG.nbchan, :, :)))) - 1;
@@ -69,11 +76,7 @@ if strcmpi(dataType,'ICA')
                                             padding / 2 + (nrow - irow) / (nrow + pad2), ...
                                             .95 / (ncol * 2 + pad2) * (1 - padding), ...
                                             .95 / (nrow + pad2) * imscProp * (1 - padding) ]);
-                
-                data = EEG.icaact(:, xlim(1):xlim(2), :);
-                
-                erpY = max(abs(mean(squeeze(data(idx, :, :)), 2)));
-                if nargin == 4
+                if ~isempty(freq)
                     %{
                     [wt, f] = cwt(reshape(data(idx, :, :), 1, []), EEG.srate);
                     freqidx = dsearchn(f, freq');
@@ -84,13 +87,22 @@ if strcmpi(dataType,'ICA')
                     newData=10*log10( bsxfun(@rdivide, data(:,:), mean(data(baseidx(1):baseidx(2),:),1)));
                     %}
                     freqidx = dsearchn(EEG.icatf.tf_freqs', freq');
-                    baseidx = dsearchn(EEG.icatf.tf_times',[-400, 0]');
-                    newData = EEG.icatf.tf_ersp{idx}(freqidx(1):freqidx(2), :, :);
+                    data = EEG.icatf.tf_ersp{idx}(freqidx(1):freqidx(2), :, :);
+                    
+                    baseidx = dsearchn(EEG.icatf.tf_times', [-400, 0]');
+                    basedata = mean(data(:, baseidx(1):baseidx(2), :), 2); % baseline for each frequency
+                    
+                    newData = squeeze(mean(data - basedata, 1)); % average freq band after baseline division for each frequency in \muV^2/Hz
+                    erpY = sqrt(10.^( max(abs(mean(mean(newData, 1), 2)))./10 )); % convert the value back to \muV/Hz
+                    
                     dRange = mean(prctile(abs(newData),95)); % dRange=10;
                     imagesc(X, 1:EEG.trials, newData')
                     set(handlesICA(idx,1),'clim',[-dRange dRange])
                     %title(num2str(dRange))
                 else
+                    data = EEG.icaact(:, xlim(1):xlim(2), :);
+                    erpY = max(abs(mean(squeeze(data(idx, :, :)), 2)));
+                
                     dRange = mean(prctile(abs(data(idx, :, :)), 95));
                     imagesc(X, 1:EEG.trials, squeeze(data(idx, :, :))')
                     set(handlesICA(idx,1),'clim',[-dRange dRange])
@@ -110,7 +122,11 @@ if strcmpi(dataType,'ICA')
                     .95/(nrow+pad2) * (1-imscProp) * (1-padding)
                     ]');
                 
-                plot(X, mean(squeeze(data(idx, :, :)),2));
+                if ~isempty(freq)
+                    plot(X, sqrt( 10.^( mean(newData, 2)./10 ) ) );
+                else
+                    plot(X, mean(squeeze(data(idx, :, :)), 2));
+                end
                 set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
                 set(handlesICA(idx,2),'ylim',[-erpY  erpY])
                 title(num2str(erpY), 'FontSize', 2 * erpY)
@@ -134,6 +150,8 @@ if strcmpi(dataType,'ICA')
                 %       if mod(idx,3) == 0, plotIdx=plotIdx+6; end
                 
                 %       [idx plotIdx plotIdx+ncols plotIdx+1+pFix plotIdx+1+ncols+pFix]
+                
+                
             end
         end
     end
