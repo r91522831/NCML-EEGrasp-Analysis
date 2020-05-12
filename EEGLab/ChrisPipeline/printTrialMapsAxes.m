@@ -1,6 +1,6 @@
-function handlesICA=printTrialMapsAxes(EEG,myxlim,dataType,freq,myLayout,comp)
+function handlesICA = printTrialMapsAxes(EEG, myxlim, dataType, freq, myLayout, comp)
 % Example usage
-% prettyERPs(ERP,[1 2],3,{[0 200 0],[0 0 255]})
+% prettyERPs(ERP, [1 2], 3, {[0 200 0], [0 0 255]})
 % Use the data in ERP to plot bins 1 and 2
 % The standard error of the difference is 3.
 % Plot Bin 1 in green   {[0 200 0],
@@ -15,125 +15,128 @@ function handlesICA=printTrialMapsAxes(EEG,myxlim,dataType,freq,myLayout,comp)
 %if ~isempty(c), close(c), end
 %c = findobj('tag','prettyFigureTopo');
 %if ~isempty(c), close(c), end
-h=figure;% clf
-set(h,'Position', [0 100 1964 1555]*.8,'tag','prettyFigure')
+h = figure;% clf
+set(h, 'Position', [0, 100, 1964, 1555] * .8, 'tag', 'prettyFigure')
 
-xlim = dsearchn(EEG.times',myxlim');
+xlim = dsearchn(EEG.times', myxlim');
 %if strcmpi(dataType,'ICA')
 %else
-data=EEG.data(:,xlim(1):xlim(2),:);
-DATA=EEG.data(:,xlim(1):xlim(2),:);
+data = EEG.data(:, xlim(1):xlim(2), :);
+DATA = EEG.data(:, xlim(1):xlim(2), :);
 %end
 X = EEG.times(xlim(1):xlim(2));
-%absMax = max(max(max(data(1:EEG.nbchan,:,:))))+1;
-%absMin = min(min(min(data(1:EEG.nbchan,:,:))))-1;
+%X = EEG.times;
+%absMax = max(max(max(data(1:EEG.nbchan, :, :)))) + 1;
+%absMin = min(min(min(data(1:EEG.nbchan, :, :)))) - 1;
 if numel(EEG.chanlocs) < 40
     figureSize = 3 / numel(EEG.chanlocs);
-    positionScale=.8;
-    EEG.chanlocs=EEG.chanlocs(1:30);
+    positionScale = .8;
+    EEG.chanlocs = EEG.chanlocs(1:30);
 else
     figureSize = 7 / numel(EEG.chanlocs);
-    positionScale=.65;
+    positionScale = .65;
 end
-
 %figureSize = 4.2 / numel(EEG.chanlocs);
-figureSize=figureSize*.9;
-positionScaleX=.70;
-positionScaleY=.80;
+figureSize = figureSize * .9;
+positionScaleX = .70;
+positionScaleY = .80;
 imscProp = .83;
-padding=.04;
-pad2=.1;
-%X=EEG.times;
-nComps=size(data,1);
-if strcmpi(dataType,'ICA'), nComps = size(EEG.icawinv,2); end
+padding = .04;
+pad2 = .1;
+%
+nComps = size(data, 1);
+if strcmpi(dataType, 'ICA'), nComps = size(EEG.icawinv, 2); end
 if nComps > 80, nComps=80; end
-ncols=floor(nComps/5); if mod(ncols,2)==1,ncols=ncols+1; end
-nrows=2*(floor(2*nComps/ncols)+1);
+ncols = floor(nComps / 5);
+if mod(ncols,2) == 1, ncols = ncols + 1; end
+nrows = 2 * (floor(2 * nComps/ncols) + 1);
 %ncols=ncols*2;
-nrow=myLayout(1);
-ncol=myLayout(2);
+nrow = myLayout(1);
+ncol = myLayout(2);
 if strcmpi(dataType,'ICA')
     plotIdx = -1; pFix=0;
     %for idx=1:nComps
-idx=comp-1;        
-for irow = 1:nrow % most likely 5 rows per page
-    for icol = 1:ncol
-        if idx < nComps
-        idx=idx+1;
-
-        handlesICA(idx,1)=axes('position',...
-            [padding/2+(icol-1)/(ncol+pad2)
-            padding/2+(nrow-irow)/(nrow+pad2)
-            .95/(ncol*2+pad2) * (1-padding) 
-            .95/(nrow+pad2) * imscProp * (1-padding)
-            ]');
-        
-        
-        compproj = EEG.icawinv(:, idx)*eeg_getdatact(EEG, 'component', idx, 'reshape', '2d');
-        compproj = reshape(compproj, size(compproj,1), EEG.pnts, EEG.trials);
-        data=compproj(:,xlim(1):xlim(2),:);
-        erpY=max(abs(mean(squeeze(data(idx,:,:)),2)));
-        if nargin == 4
-            [wt,f]=cwt(reshape(data(idx,:,:),1,[]),EEG.srate);
-            freqidx=dsearchn(f,freq');
-            data=reshape(mean(wt(freqidx(2):freqidx(1),:)),EEG.srate*4-1,[]);
-            data=abs(data);
-            baseidx= dsearchn(EEG.times',[-400 0]');
-%            blc = mean(data(blcidx(1):blcidx(2),:));
-            newData=10*log10( bsxfun(@rdivide, data(:,:), mean(data(baseidx(1):baseidx(2),:),1)));
-            dRange = mean(prctile(abs(newData),95)); dRange=10;
-            imagesc(X,newData')
-            set(handlesICA(idx,1),'clim',[-dRange dRange])
-            %title(num2str(dRange))
-        else
-            dRange = mean(prctile(abs(data(idx,:,:)),95));
-            imagesc(X,1:size(data,2),squeeze(data(idx,:,:))')
-            set(handlesICA(idx,1),'clim',[-dRange dRange])
-            if erpY > 1 
-                colormap summer
-            else
-                colormap default
-            end                
-            %title(num2str(dRange))
-        end
-        %        set(gca,'XTickLabel',X)
-        axis off
-        handlesICA(idx,2)=axes('position',...
-            [padding/2+(icol-1)/(ncol+pad2)
-             padding/2+(nrow-irow)/(nrow+pad2)+.95/(nrow+pad2) * imscProp * (1-padding)
-            .95/(ncol*2+pad2) * (1-padding)
-            .95/(nrow+pad2) * (1-imscProp) * (1-padding)
-            ]');
-        
-        plot(X,mean(squeeze(data(idx,:,:)),2));
-        set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
-        set(handlesICA(idx,2),'ylim',[-erpY  erpY])
-        title(num2str(erpY),'FontSize',2*erpY)
-%        ylim([-3 3])
-        axis off
-%        colorbar
-        %plotIdx = plotIdx + 1;
-%        subplot(nrows,ncols,[plotIdx+1+pFix plotIdx+1+ncols+pFix])
-        handlesICA(idx,3)=axes('position',...
-            [padding/2+(icol-1)/(ncol+pad2) + 1/(2*ncol)
-            padding/2+(nrow-irow)/(nrow+pad2)
-            .95/(ncol*2+pad2) * (1-padding*5)
-            .95/(nrow+pad2) * (1-padding)
-            ]');
-        topoplot(EEG.icawinv(:,idx),EEG.chanlocs(EEG.icachansind));
-        title(num2str(idx))
-        try
-        kkkkk=find(EEG.etc.ic_classification.ICLabel.classifications(idx,:)==max(EEG.etc.ic_classification.ICLabel.classifications(idx,:)));
-        title([num2str(idx) ' ' EEG.etc.ic_classification.ICLabel.classes{kkkkk} ' ' num2str(100*EEG.etc.ic_classification.ICLabel.classifications(idx,kkkkk),'%2.1f') ])
-        end
-        axis off
-
- %       if mod(idx,3) == 0, plotIdx=plotIdx+6; end
-        
- %       [idx plotIdx plotIdx+ncols plotIdx+1+pFix plotIdx+1+ncols+pFix]
+    idx=comp-1;
+    for irow = 1:nrow % most likely 5 rows per page
+        for icol = 1:ncol
+            if idx < nComps
+                idx=idx+1;
+                
+                % ICA activity stacked trial by trial from top to bottom (trial 1 to trial end)
+                % [left bottom width height]
+                handlesICA(idx, 1) = axes('position', ...
+                                          [ padding / 2 + (icol - 1) / (ncol + pad2), ...
+                                            padding / 2 + (nrow - irow) / (nrow + pad2), ...
+                                            .95 / (ncol * 2 + pad2) * (1 - padding), ...
+                                            .95 / (nrow + pad2) * imscProp * (1 - padding) ]);
+                
+                data = EEG.icaact(:, xlim(1):xlim(2), :);
+                
+                erpY = max(abs(mean(squeeze(data(idx, :, :)), 2)));
+                if nargin == 4
+                    %{
+                    [wt, f] = cwt(reshape(data(idx, :, :), 1, []), EEG.srate);
+                    freqidx = dsearchn(f, freq');
+                    data = reshape(mean(wt(freqidx(2):freqidx(1), :)), EEG.srate * 4 - 1, []);
+                    data = abs(data);
+                    baseidx = dsearchn(EEG.times',[-400 0]');
+                    %            blc = mean(data(blcidx(1):blcidx(2),:));
+                    newData=10*log10( bsxfun(@rdivide, data(:,:), mean(data(baseidx(1):baseidx(2),:),1)));
+                    %}
+                    freqidx = dsearchn(EEG.icatf.tf_freqs', freq');
+                    baseidx = dsearchn(EEG.icatf.tf_times',[-400, 0]');
+                    newData = EEG.icatf.tf_ersp{idx}(freqidx(1):freqidx(2), :, :);
+                    dRange = mean(prctile(abs(newData),95)); % dRange=10;
+                    imagesc(X, 1:EEG.trials, newData')
+                    set(handlesICA(idx,1),'clim',[-dRange dRange])
+                    %title(num2str(dRange))
+                else
+                    dRange = mean(prctile(abs(data(idx, :, :)), 95));
+                    imagesc(X, 1:EEG.trials, squeeze(data(idx, :, :))')
+                    set(handlesICA(idx,1),'clim',[-dRange dRange])
+                    if erpY > 1
+                        colormap summer
+                    else
+                        colormap default
+                    end
+                    %title(num2str(dRange))
+                end
+                %        set(gca,'XTickLabel',X)
+                axis off
+                handlesICA(idx,2)=axes('position',...
+                    [padding/2+(icol-1)/(ncol+pad2)
+                    padding/2+(nrow-irow)/(nrow+pad2)+.95/(nrow+pad2) * imscProp * (1-padding)
+                    .95/(ncol*2+pad2) * (1-padding)
+                    .95/(nrow+pad2) * (1-imscProp) * (1-padding)
+                    ]');
+                
+                plot(X, mean(squeeze(data(idx, :, :)),2));
+                set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
+                set(handlesICA(idx,2),'ylim',[-erpY  erpY])
+                title(num2str(erpY), 'FontSize', 2 * erpY)
+                %        ylim([-3 3])
+                axis off
+                %        colorbar
+                %plotIdx = plotIdx + 1;
+                %        subplot(nrows,ncols,[plotIdx+1+pFix plotIdx+1+ncols+pFix])
+                handlesICA(idx,3)=axes('position',...
+                    [padding/2+(icol-1)/(ncol+pad2) + 1/(2*ncol)
+                    padding/2+(nrow-irow)/(nrow+pad2)
+                    .95/(ncol*2+pad2) * (1-padding*5)
+                    .95/(nrow+pad2) * (1-padding)
+                    ]');
+                topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
+                [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
+                tt = [ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ];
+                title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])
+                axis off
+                
+                %       if mod(idx,3) == 0, plotIdx=plotIdx+6; end
+                
+                %       [idx plotIdx plotIdx+ncols plotIdx+1+pFix plotIdx+1+ncols+pFix]
+            end
         end
     end
-end
 elseif strcmpi(dataType,'data')
     dRange = mean(prctile(prctile(abs(data),95),95)); dRange=10;
     for idx=1:numel(EEG.chanlocs)
@@ -144,7 +147,7 @@ elseif strcmpi(dataType,'data')
         end
         xp=sin(deg2rad(EEG.chanlocs(idx).theta))*EEG.chanlocs(idx).radius*positionScaleX+.5-figureSize/2;
         yp=cos(deg2rad(EEG.chanlocs(idx).theta))*EEG.chanlocs(idx).radius*positionScaleY+.5-figureSize/2+.05;
-
+        
         if strcmpi({EEG.chanlocs(idx).labels},'PO5')
             xp=xp-.04;
         elseif strcmpi({EEG.chanlocs(idx).labels},'PO6')
@@ -183,10 +186,10 @@ elseif strcmpi(dataType,'data')
             freqidx=dsearchn(f,freq');
             data=reshape(mean(wt(freqidx(2):freqidx(1),:)),EEG.srate*4-1,[]); % 4 = 4 seconds, -1 = 1 sample point
             data=abs(data);
-        
+            
             baseidx= dsearchn(EEG.times',[-400 0]');
-%            blc = mean(data(blcidx(1):blcidx(2),:));
-
+            %            blc = mean(data(blcidx(1):blcidx(2),:));
+            
             newData=10*log10( bsxfun(@rdivide, data(:,:), mean(data(baseidx(1):baseidx(2),:),1)));
             dRange = mean(prctile(abs(newData(idx,:)),95)); dRange=10;
             
@@ -196,17 +199,17 @@ elseif strcmpi(dataType,'data')
             set(gca,'clim',[-dRange dRange])
             %title(num2str(dRange))
             axis off
-
+            
             
         else
             imagesc(X,squeeze(data(idx,:,:))')
             set(gca,'clim',[-dRange dRange])
-        %        set(gca,'XTickLabel',X)
-            if FC == 'r', set(handlesICA(idx),'LineWidth',2,'Color',FC); 
+            %        set(gca,'XTickLabel',X)
+            if FC == 'r', set(handlesICA(idx),'LineWidth',2,'Color',FC);
             else, axis off
             end
-        title(EEG.chanlocs(idx).labels,'Color',FC)
-           %axis off
+            title(EEG.chanlocs(idx).labels,'Color',FC)
+            %axis off
         end
         
         
@@ -214,7 +217,7 @@ elseif strcmpi(dataType,'data')
         
         %    end
         
-                handlesICA(idx)=axes('position',...
+        handlesICA(idx)=axes('position',...
             [ xp
             yp-.02
             figureSize
@@ -223,26 +226,26 @@ elseif strcmpi(dataType,'data')
         hold off
         mdRange = max(abs(mean(squeeze(data(idx,:,:)),2)));
         mdRange=6;
-plot(mean(squeeze(data(idx,:,:)),2),'k-'), axis([xlim' -mdRange mdRange])
+        plot(mean(squeeze(data(idx,:,:)),2),'k-'), axis([xlim' -mdRange mdRange])
         
-axis off
-
+        axis off
+        
         
         
         
     end
-         axes('position',...
-             [.95-figureSize/2
-              .95-figureSize/2
-             figureSize
-             figureSize
-             ]');
-         hold off
-        colorbar
-         set(gca,'clim',[-dRange dRange])
-         %        set(gca,'XTickLabel',X)
-         axis off
-
+    axes('position',...
+        [.95-figureSize/2
+        .95-figureSize/2
+        figureSize
+        figureSize
+        ]');
+    hold off
+    colorbar
+    set(gca,'clim',[-dRange dRange])
+    %        set(gca,'XTickLabel',X)
+    axis off
+    
 end
 
 end

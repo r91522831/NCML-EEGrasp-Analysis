@@ -1,7 +1,8 @@
 function compareICA2(EEG, c1, c2, t1, t2)
 % compareICA2({EEG, EEG}, 16, 33, [50, 80], [62, 92])
 % c1: IC 1, c2: IC 2
-% t1: 
+% t1: window for IC 1
+% t2: window for IC 2
 c1d = 1; c2d = 1;
 if c1 < 0
     c1 = abs(c1);
@@ -12,10 +13,10 @@ if c2 < 0
     c2d = -1;
 end
 
-time_win = [-3000, 3000];
+time_win = [-500, 500]; % -500 ms to 500 ms
 
 if numel(EEG) == 1
-    figure
+    figure('units', 'normalized', 'outerposition', [0, 0, 1, 1]);
     %{
     % Does this section remove the EOG channel due to running ICA without removing EOG channel?
     kkkk = size(EEG.data);
@@ -31,11 +32,11 @@ if numel(EEG) == 1
     % FF.icaact=reshape(FF.icaact,kkkk);
     %}
     
-    xlim = dsearchn(EEG.times', time_win'); % -100 ms to 400 ms?
+    xlim = dsearchn(EEG.times', time_win');
     subplot(2, 5, 1)
     topoplot(c1d * EEG.icawinv(:, c1), EEG.chanlocs(EEG.icachansind));
     % kkkkk is the labeled class
-    kkkkk = find( EEG.etc.ic_classification.ICLabel.classifications(c1, :) == max(EEG.etc.ic_classification.ICLabel.classifications(c1, :)) );
+    [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(c1, :) );
     title( {EEG.dipfit.model(c1).areadk, EEG.setname, [num2str(c1), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(c1, kkkkk), '%2.1f')]} )
     
     subplot(2, 5, 2)
@@ -48,7 +49,7 @@ if numel(EEG) == 1
     
     subplot(2, 5, 6)
     topoplot(c2d * EEG.icawinv(:, c2), EEG.chanlocs(EEG.icachansind));
-    kkkkk = find( EEG.etc.ic_classification.ICLabel.classifications(c2,:) == max(EEG.etc.ic_classification.ICLabel.classifications(c2,:)) );
+    [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(c2,:) );
     title( {EEG.dipfit.model(c2).areadk, EEG.setname, [num2str(c2), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(c2,kkkkk), '%2.1f')]}, 'Color', 'Red')
     
     
@@ -64,17 +65,16 @@ if numel(EEG) == 1
     hold on
     plot(EEG.times(xlim(1):xlim(2)), c2d * mean(EEG.icaact(c2, xlim(1):xlim(2), :), 3), 'r')
     title('Activation')
-    vline([t1(1), t1(2)], {'k--', 'k--'})
-    vline([t2(1), t2(2)], {'r--', 'r--'})
+    vline([t1(1), t1(2)], {'k--', 'k--'}, {num2str(t1(1)), []})
+    vline([t2(1), t2(2)], {'r--', 'r--'}, {num2str(t2(1)), []})
     %alpha(h2,.2)
     set(gca, 'xlim', time_win)
     
     subplot(2, 5, 9)
-    %{
     plot(EEG.times(xlim(1):xlim(2)), c1d * normalize(mean(EEG.icaact(c1, xlim(1):xlim(2), :), 3)),'k')
     hold on
     plot(EEG.times(xlim(1):xlim(2)), c2d * normalize(mean(EEG.icaact(c2, xlim(1):xlim(2), :), 3)),'r')
-    %}
+
     title('NORMALIZED Activation')
     vline([t1(1), t1(2)], {'k--', 'k--'})
     vline([t2(1), t2(2)], {'r--', 'r--'})
@@ -151,24 +151,18 @@ else
     %gg=EEG2.dipfit.model(c2).diffmap.*EEG2.data;
     %plot(EEG2.times(xlim(1):xlim(2)),mean(c2d*squeeze(gg(c2,xlim(1):xlim(2),:)),2),'r:','LineWidth',1)
     title('Activation')
-%     plot([t1(1) t1(1)],[ -.5 1],'k--')
-%     plot([t1(2) t1(2)],[ -.5 1],'k--')
-%     plot([t2(1) t2(1)],[ -.5 1],'r--')
-%     plot([t2(2) t2(2)],[ -.5 1],'r--')
+%     vline([t1(1), t1(2)], {'k--', 'k--'})
+%     vline([t2(1), t2(2)], {'r--', 'r--'})
     %alpha(h2,.2)
     set(gca,'xlim',time_win)
     
     subplot(2,7,11)
-    %{
     plot(EEG1.times(xlim(1):xlim(2)),c1d*normalize(mean(EEG1.icaact(c1,xlim(1):xlim(2),:),3)),'k')
     hold on
     plot(EEG2.times(xlim(1):xlim(2)),c2d*normalize(mean(EEG2.icaact(c2,xlim(1):xlim(2),:),3)),'r')
-    %}
-    title(['NORMALIZED Activation'])
-    plot([t1(1) t1(1)],[ -2 4],'k--')
-    plot([t1(2) t1(2)],[ -2 4],'k--')
-    plot([t2(1) t2(1)],[ -2 4],'r--')
-    plot([t2(2) t2(2)],[ -2 4],'r--')
+    title('NORMALIZED Activation')
+    vline([t1(1), t1(2)], {'k--', 'k--'})
+    vline([t2(1), t2(2)], {'r--', 'r--'})
     set(gca,'xlim',time_win)
     
     nnn=dsearchn(EEG1.times',t1');
@@ -221,6 +215,4 @@ imagesc(EEG1.times(xlim(1):xlim(2)),1:size(EEG1.data,3),c1d*squeeze(EEG1.icaact(
     imagesc(EEG2.times(xlim(1):xlim(2)),1:size(EEG2.data,3),c2d*squeeze(gg(c2,xlim(1):xlim(2),:))')
     dRange = 3*median(median(abs(squeeze(gg(c2,xlim(1):xlim(2),:))')));
     set(hh,'clim',[-dRange dRange])
-    
-    
 end

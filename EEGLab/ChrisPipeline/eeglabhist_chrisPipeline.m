@@ -205,15 +205,75 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
+    %% Section 7: Time-freq decomposition
+    tmpEEG = EEG;
+    switch input('time-freq analysis on voltage (V) or IC activity (I)?(v/I)', 's')
+        case {'v', 'V'}
+            icatf = false;
+            disp('time-freq on voltage ...')
+        otherwise
+            icatf = true;
+            tmpEEG.data = EEG.icaact;
+            disp('time-freq on IC activation ...')
+    end
+    % No interpolation of channels -> electrodes number equals to ICs number
+    electrodes_name = {EEG.chanlocs.labels};
+    nelect = length(EEG.chanlocs);
+    electrodes = num2cell(1:nelect);
+    
+    % time frequency analysis for each channel and each epoch
+    tf_tlim = [tmpEEG.times(1), tmpEEG.times(end)]; % in ms
+    tf_ntimesout = 200 * floor(diff(tf_tlim)/4000); % estimating number of time bins to output for time-freq analysis
+    tf_ersp = cell(length(electrodes), 1);
+    % The progress bar
+    ticker = 0;
+    h = waitbar(0, 'time frequency analysis.');
+    total_iter = nelect;
+    for i = 1:length(electrodes)        
+        % time freq analysis without any baseline normalization or subtraction
+        [tf_ersp{i, 1}, tmp_freqs, tmp_times] = timefreq( squeeze(tmpEEG.data(i, :, :)), tmpEEG.srate, ...
+                                                                                         'cycles', [3, 0.5], ...
+                                                                                         'tlimits', tf_tlim, 'ntimesout', tf_ntimesout, ...
+                                                                                         'freqs', [2, 40], 'padratio', 1, ...
+                                                                                         'verbose', 'off');
+                                                                                     
+% % %         [tf_ersp{i, 1}, ~, ~, tmp_times, tmp_freqs, ~, ~, ~] = ...
+% % %             newtimef(squeeze(tmpEEG.data(i, :, :)), size(tmpEEG.data, 2), [tmpEEG.times(1), tmpEEG.times(end)], tmpEEG.srate, [3, 0.5], ...
+% % %                                                     'freqs', [2, 40], 'timesout', tf_ntimesout, ...
+% % %                                                     'baseline', NaN, 'padratio', 1, ...
+% % %                                                     'plotitc' , 'off', 'plotphase', 'off', 'plotersp', 'off', ...
+% % %                                                     'verbose', 'off');
+                                                                                     
+                                                                                     
+        ticker = ticker + 1;
+        progress_precent = 100 * ticker / total_iter;
+        waitbar(ticker / total_iter, h, sprintf('time frequency analysis. %2.2f %%', progress_precent));
+    end
+    close(h);
+    
+    if icatf, EEG.icatf.tf_times = tmp_times; EEG.icatf.tf_freqs = tmp_freqs; EEG.icatf.tf_ersp = tf_ersp;
+    else,     EEG.datatf.tf_times = tmp_times; EEG.datatf.tf_freqs = tmp_freqs; EEG.datatf.tf_ersp = tf_ersp; end
+    
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_timefreq'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
     
     
-    %% Secion 7: downsample
-    % Step 2: Downsample to 256 Hz to reduce computational demand
+    
+    
+    
+    
+    
+    %% Secion 8: downsample
+    %{
+    % Step 1: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
-% % %     % Interpolate channels.
+    % Interpolate channels.
 % % %     EEG = pop_interp(EEG, originalEEG_b4rmBadChannel.chanlocs, 'spherical');
-    
+    %}
  
    
  
