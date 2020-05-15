@@ -49,14 +49,14 @@ printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [10, 6], 1);
 disp('finished!')
 
 %%
-% theta band: 4 to 8 Hz; alpha: 8.1 ~ 13 Hz; low beta: 13.1 ~ 20 Hz; high beta: 20.1 ~ 30 Hz
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [4, 8], [10, 6], 1);
+% theta band: 4 to 8 Hz; alpha: 9 ~ 13 Hz; low beta: 14 ~ 20 Hz; high beta: 21 ~ 30 Hz
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [4, 8], [10, 6], 1, [-600, -200]);
 suptitle('\theta 4-8 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [8.1, 13], [10, 6], 1);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [9, 13], [1, 1], 1, [-400, 0]);
 suptitle('\alpha 8-13 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [13.1, 20], [10, 6], 1);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [14, 20], [10, 6], 1, [-600, -200]);
 suptitle('low\beta 13-20 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [20.1, 30], [10, 6], 1);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [21, 30], [10, 6], 1, [-600, -200]);
 suptitle('high\beta 20-30 Hz')
 
 

@@ -1,4 +1,4 @@
-function handlesICA = printTrialMapsAxes(EEG, myxlim, dataType, freq, myLayout, comp)
+function handlesICA = printTrialMapsAxes(EEG, myxlim, dataType, freq, myLayout, comp, basewin)
 % Example usage
 % prettyERPs(ERP, [1 2], 3, {[0 200 0], [0 0 255]})
 % Use the data in ERP to plot bins 1 and 2
@@ -89,11 +89,12 @@ if strcmpi(dataType,'ICA')
                     freqidx = dsearchn(EEG.icatf.tf_freqs', freq');
                     data = EEG.icatf.tf_ersp{idx}(freqidx(1):freqidx(2), :, :);
                     
-                    baseidx = dsearchn(EEG.icatf.tf_times', [-400, 0]');
+                    baseidx = dsearchn(EEG.icatf.tf_times', basewin');
                     basedata = mean(data(:, baseidx(1):baseidx(2), :), 2); % baseline for each frequency
                     
                     newData = squeeze(mean(data - basedata, 1)); % average freq band after baseline division for each frequency in \muV^2/Hz
-                    erpY = sqrt(10.^( max(abs(mean(mean(newData, 1), 2)))./10 )); % convert the value back to \muV/Hz
+%                     erpY = sqrt(10.^(squeeze max(abs(mean(mean(newData, 1), 2)))./10 )); % convert the value back to \muV/Hz
+                    erpY = max(abs(mean(newData, 2))); % convert the value back to \muV/Hz
                     
                     dRange = mean(prctile(abs(newData),95)); % dRange=10;
                     imagesc(X, 1:EEG.trials, newData')
@@ -123,11 +124,12 @@ if strcmpi(dataType,'ICA')
                     ]');
                 
                 if ~isempty(freq)
-                    plot(X, sqrt( 10.^( mean(newData, 2)./10 ) ) );
+                    plot(X, mean(newData, 2) );
+                    set(handlesICA(idx,2),'xlim',[X(1) X(end)])
                 else
                     plot(X, mean(squeeze(data(idx, :, :)), 2));
+                    set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
                 end
-                set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
                 set(handlesICA(idx,2),'ylim',[-erpY  erpY])
                 title(num2str(erpY), 'FontSize', 2 * erpY)
                 %        ylim([-3 3])

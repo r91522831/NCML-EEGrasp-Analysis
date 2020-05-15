@@ -64,7 +64,7 @@ for All_sub_i = All_selected_sub
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = pop_newset(ALLEEG, EEG, 0, 'setname', [sub_id, '_raw'], 'gui', 'off');
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', output_dir, 'version', '7.3' );
-    % Step 2: Load channel locations
+    %% Step 2: Load channel locations
     ANTNeuro_montage = { 'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', ...
                          'FC5', 'FC1', 'FC2', 'FC6', ...
                          'M1', 'T7', 'C3', 'Cz', 'C4', 'T8', 'M2', ...
@@ -88,6 +88,7 @@ for All_sub_i = All_selected_sub
     end
     % standard channel location
     EEG = pop_chanedit(EEG, 'lookup', fullfile(All_path_eeglab_dipfit, 'standard_BESA', 'standard-10-5-cap385.elp'));
+    EEG.urchanlocs = EEG.chanlocs; % preserve the original locations of the original data channels
     % Step 3: Experiment info
     % Insert behavior events (lift onset, etc.) and Get experiment conditions
     sub_id = EEG.filename(1:6);
@@ -130,7 +131,6 @@ for All_sub_i = All_selected_sub
     originalEEG_b4rmBadChannel = EEG;
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
 % % %     vis_artifacts(EEG, originalEEG)
-
 
     EEG.setname = [sub_id, '_ASRclean'];
     EEG = eeg_checkset( EEG );
