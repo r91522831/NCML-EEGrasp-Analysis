@@ -87,7 +87,7 @@ for All_sub_i = All_selected_sub
         EEG = pop_chanedit(EEG, 'changefield', {64, 'labels', 'HEOG'});
     end
     % standard channel location
-    EEG = pop_chanedit(EEG, 'lookup', fullfile(All_path_eeglab_dipfit, 'standard_BESA', 'standard-10-5-cap385.elp'));
+    EEG = pop_chanedit(EEG, 'lookup', fullfile(All_path_eeglab_dipfit, 'standard_BESA', 'standard-10-5-cap385.elp'), 'settype', {'1:63', 'EEG'}, 'settype',{'64', 'EOG'});
     EEG.urchanlocs = EEG.chanlocs; % preserve the original locations of the original data channels
     % Step 3: Experiment info
     % Insert behavior events (lift onset, etc.) and Get experiment conditions
@@ -205,7 +205,7 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 7: Time-freq decomposition
+    %% Section 7a: Time-freq decomposition
     tmpEEG = EEG;
     switch input('time-freq analysis on voltage (V) or IC activity (I)?(v/I)', 's')
         case {'v', 'V'}
@@ -261,20 +261,78 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
+
     
-    
-    
-    
-    
-    
-    
-    %% Secion 8: downsample
-    %{
+    %% Secion 7b: downsample
     % Step 1: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
+    
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_downsample256Hz'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    %%
+    % Step 2: remove eye artifacts 
+    eyeIdx  = find( EEG.etc.ic_classification.ICLabel.classifications(:, strcmpi(EEG.etc.ic_classification.ICLabel.classes, 'Eye')) >= 0.9 ); % > 90% eye == eye ICs.
+    % Perform IC rejection.
+    EEG = pop_subcomp(EEG, eyeIdx, 0, 0); % reject eye ICs
+    % Post-process to update ICLabel data structure.
+    EEG.etc.ic_classification.ICLabel.classifications = EEG.etc.ic_classification.ICLabel.classifications(eyeIdx, :);
+    % Post-process to update EEG.icaact.
+    EEG.icaact = [];
+    EEG = eeg_checkset(EEG, 'ica');
+    EEG.setname = [sub_id, '_rmeye'];
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    
+    %%
+    % Step 3: keep only meaningful ICs
+    % modified from Makoto's useful EEGLAB code
+    brainIdx  = find( EEG.etc.ic_classification.ICLabel.classifications(:, 1) >= 0.7 ); % > 70% brain == good ICs.
+ 
+    % Perform IC rejection using residual variance of the IC scalp maps.
+    rvList    = [EEG.dipfit.model.rv];
+    goodRvIdx = find(rvList < 0.4)'; % < 40% residual variance == good ICs.
+ 
+    % Perform IC rejection using inside brain criterion.
+    load(EEG.dipfit.hdmfile); % This returns 'vol'.
+    dipoleXyz = zeros(length(EEG.dipfit.model), 3);
+    for icIdx = 1:length(EEG.dipfit.model)
+        dipoleXyz(icIdx, :) = EEG.dipfit.model(icIdx).posxyz(1, :);
+    end
+    depth = ft_sourcedepth(dipoleXyz, vol);
+    depthThreshold = 1;
+    insideBrainIdx = find(depth <= depthThreshold);
+    
+    % select IC that are meaningful for the UShape object task
+    meaningfulIdx = [];
+ 
+    % Take AND across the three criteria.
+    goodIcIdx = intersect(brainIdx, goodRvIdx);
+    goodIcIdx = intersect(goodIcIdx, insideBrainIdx);
+    goodIcIdx = intersect(goodIcIdx, meaningfulIdx);
+ 
+    % Perform IC rejection.
+    EEG = pop_subcomp(EEG, goodIcIdx, 0, 1);
+ 
+    % Post-process to update ICLabel data structure.
+    EEG.etc.ic_classification.ICLabel.classifications = EEG.etc.ic_classification.ICLabel.classifications(goodIcIdx,:);
+ 
+    % Post-process to update EEG.icaact.
+    EEG.icaact = [];
+    EEG = eeg_checkset(EEG, 'ica');
+    EEG.setname = [sub_id, '_myguess'];
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    %%
+    
     % Interpolate channels.
 % % %     EEG = pop_interp(EEG, originalEEG_b4rmBadChannel.chanlocs, 'spherical');
-    %}
+    
  
    
  
