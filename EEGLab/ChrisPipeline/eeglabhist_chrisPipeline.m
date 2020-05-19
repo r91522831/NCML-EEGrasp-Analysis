@@ -159,7 +159,7 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
 
     %% Section XX: Apply CSD 
-    EEG = applyCSD2EEGset(EEG);
+    EEG = applyCSD2EEGset(EEG); % apply CSD to the EEG.data and keep the original data in EEG.dataRaw
     
     EEG = eeg_checkset( EEG );
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -187,7 +187,8 @@ for All_sub_i = All_selected_sub
     EEG = originEEG;
     
     sub_id = EEG.filename(1:6);
-    EEG.setname = [sub_id, '_ICA'];
+    if isfield(EEG, 'dataRaw'), EEG.setname = [sub_id, '_CSD_ICA'];
+    else, EEG.setname = [sub_id, '_ICA']; end
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
