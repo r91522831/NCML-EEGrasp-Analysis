@@ -18,12 +18,11 @@ MapMontage(M);
 % Generate Transformation Matrices G and H
 [G,H] = GetGH(M);
 %% Apply CSD and save result
+EEG.dataRaw = EEG.data; % keep the original data
 for i = 1:EEG.trials
     % Prepare the Input potentials for each trial
     D = EEG.data(:, :, i); % Channels x samples of one epoch
-    
     % Apply the CSD transform
-    EEG.dataRaw = EEG.data;
     EEG.data(:, :, i) = CSD(D, G, H);
 end
 

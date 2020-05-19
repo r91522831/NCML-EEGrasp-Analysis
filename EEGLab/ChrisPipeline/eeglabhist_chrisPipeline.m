@@ -158,9 +158,11 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
 
+    %% Section XX: Apply CSD 
+    EEG = applyCSD2EEGset(EEG);
     
-    
-    
+    EEG = eeg_checkset( EEG );
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
     %% Section 5: ICA ICA!!!!
     % remove eye movement artifact
