@@ -153,111 +153,20 @@ vline(0, '--k')
 
 subplot(3, 2, 5) % activation
 %}
-i_IC = 26;
+linspec = {'-r', '-r', '-b', '-b', '-k', '-k'};
+idx = 25;
 % hold on
 for i_epb = 1:nepb
-    subplot(6, 1, i_epb)
-    h(i_epb) = shadedErrorBar(t_win_eeg, actBlock(i_IC, :, i_epb), actBlock_std(i_IC, :, i_epb), linspec{i_epb}, 1);
+    subplot(6, 2, i_epb * 2 - 1)
+    h(i_epb) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, i_epb), actBlock_std(idx, :, i_epb), linspec{i_epb}, 1);
 %     axis off
+    vline(0, '--k')
 end
 % hold off
-% vline(0, '--k')
 
-
-%%
-
-
-
-
-
-
-
-for i_contrast = 1:4
-    vol_plot = vol{:, i_contrast};
-    pow_plot = pow{:, i_contrast};
-    
-    fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
-    max_vol = max(abs(vol_plot(:)));
-    for i_win = 1:nslice
-        subplot(2 + nfb, nslice + 1, i_win)
-        topoplot(vol_plot(:, i_win), EEG.chanlocs, 'electrodes', 'off', 'maplimits', [-max_vol, max_vol]);
-        
-        if i_win == 1, text(-1, 0, vol_text{i_contrast}, 'HorizontalAlignment', 'center', 'Rotation', 90, 'FontWeight', 'bold'); end
-        if i_win ~= nslice
-            title(round(t_win_slice{1, i_win}(round(0.5 * length(t_win_slice{1, i_win})))))
-        else
-            title([num2str(round(t_win_slice{1, i_win}(round(0.5 * length(t_win_slice{1, i_win}))))), ' ms'])
-        end
-    end
-    subplot(2 + nfb, nslice + 1, i_win + 1)
-    caxis([-max_vol, max_vol])
-    set(gca, 'visible','off');
-    colorbar;
-    
-    for i_fb = 1:nfb
-        tmp_pow = pow_plot(:, :, i_fb);
-        max_fb = max(abs(tmp_pow(:)));
-        for i_win = 1:nslice
-            subplot(2 + nfb, nslice + 1, i_fb * (nslice + 1) + i_win)
-            topoplot(pow_plot(:, i_win, i_fb), EEG.chanlocs, 'electrodes', 'off', 'maplimits', [-max_fb, max_fb]);
-            
-            if i_win == 1, text(-1, 0, {rg_freq_band{1, i_fb}{1, 1}, pow_text{i_contrast}}, 'HorizontalAlignment', 'center', 'Rotation', 90, 'FontWeight', 'bold'); end
-            if i_fb == 1
-                if i_win ~= nslice
-                    title(round(t_win_slice_tf{1, i_win}(round(0.5 * length(t_win_slice_tf{1, i_win})))))
-                else
-                    title([num2str(round(t_win_slice_tf{1, i_win}(round(0.5 * length(t_win_slice_tf{1, i_win}))))), ' ms'])
-                end
-            end
-        end
-        subplot(2 + nfb, nslice + 1, i_fb * (nslice + 1) + i_win + 1)
-        caxis([-max_fb, max_fb])
-        set(gca, 'visible','off');
-        colorbar;
-    end
-    
-    subplot(2 + nfb, nslice + 1, [(1 + nfb) * (nslice + 1) + 1, (2 + nfb) * (nslice + 1) - 1])
-    yyaxis left
-    hold on
-    h1 = shadedErrorBar(0.001 * t_win_beh, -nanmean(mCom(:, 3:19), 2) * side, nanstd(mCom(:, 3:19), [], 2), '-.b', 1);
-    switch i_contrast
-        case 1
-            h2 = plot(0.001 * t_win_beh, mCom(:, epBlock{i_contrast}) * side, '-.r');
-        case 2
-            h2 = shadedErrorBar(0.001 * t_win_beh, nanmean(mCom(:, epBlock{i_contrast}), 2) * side, nanstd(mCom(:, epBlock{i_contrast}), [], 2), '-.r', 1);
-        case 3
-            h2 = plot(0.001 * t_win_beh, -mCom(:, epBlock{i_contrast}) * side, '-.r');
-        case 4
-            h2 = shadedErrorBar(0.001 * t_win_beh, -nanmean(mCom(:, epBlock{i_contrast}), 2) * side, nanstd(mCom(:, epBlock{i_contrast}), [], 2), '-.r', 1);
-    end
-    ylim([-300, 500])
-    ylabel('Mcom (Nmm)')
-    hold off
-    yyaxis right
-    hold on
-    h3 = shadedErrorBar(0.001 * t_win_beh, -nanmean(pRoll(:, 3:19), 2) * side, nanstd(pRoll(:, 3:19), [], 2), '-b', 1);
-    switch i_contrast
-        case 1
-            h4 = plot(0.001 * t_win_beh, -pRoll(:, epBlock{i_contrast}) * side, '-r');
-        case 2
-            h4 = shadedErrorBar(0.001 * t_win_beh, nanmean(pRoll(:, epBlock{i_contrast}), 2) * side, nanstd(pRoll(:, epBlock{i_contrast}), [], 2), '-r', 1);
-        case 3
-            h4 = plot(0.001 * t_win_beh, pRoll(:, epBlock{i_contrast}) * side, '-r');
-        case 4
-            h4 = shadedErrorBar(0.001 * t_win_beh, -nanmean(pRoll(:, epBlock{i_contrast}), 2) * side, nanstd(pRoll(:, epBlock{i_contrast}), [], 2), '-r', 1);
-    end
-    ylim([-10, 50])
-    vline(0, ':k', 'lft')
-    ylabel('Roll angle ({\circ})')
-    hold off
-    xlabel([subID, ' time (s)'])
-    if mod(i_contrast, 2) ~= 0
-        legend([h1.mainLine, h2, h3.mainLine, h4], {'Mcom_{IL_{3~19}}', beh_text{i_contrast}{1}, 'Roll_{IL_{3~19}}', beh_text{i_contrast}{2}}, 'Location', 'east')
-    else
-        legend([h1.mainLine, h2.mainLine, h3.mainLine, h4.mainLine], {'Mcom_{IL_{3~19}}', beh_text{i_contrast}{1}, 'Roll_{IL_{3~19}}', beh_text{i_contrast}{2}}, 'Location', 'east')
-    end
-    
-    filename = [subID, fig_text{i_contrast}];
-    saveas(fig, fullfile(dir_save, filename), 'fig')
-    saveas(fig, fullfile(dir_save, filename), 'png')
-end
+subplot(6, 2, (1:nepb) * 2)
+topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
+[~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
+tt = {[ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ], ...
+    EEG.dipfit.model(idx).areadk };
+title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])

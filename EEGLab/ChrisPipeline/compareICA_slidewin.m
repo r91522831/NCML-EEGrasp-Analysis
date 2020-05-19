@@ -45,7 +45,13 @@ for c1 = 1:60
 end
 
 %%
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [10, 6], 1);
+%{
+% recompute icaact using ICs extra from CSDed set to original set
+EEG.data = EEG.dataRaw;
+EEG.icaact = [];
+EEG = eeg_checkset( EEG, 'ica' );
+%}
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [1, 1], 25);
 disp('finished!')
 
 %%
