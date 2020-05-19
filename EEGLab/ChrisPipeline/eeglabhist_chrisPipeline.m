@@ -115,7 +115,8 @@ for All_sub_i = All_selected_sub
     % Step 2: Highpass at 0.5 Hz to remove slow drift
     EEG = pop_eegfiltnew(EEG, 'locutoff', 0.5);
     
-    EEG.setname = [EEG.filename(1:6), '_lp128_hphalfHz'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_lp128_hphalfHz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -131,7 +132,8 @@ for All_sub_i = All_selected_sub
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
 % % %     vis_artifacts(EEG, originalEEG)
 
-    EEG.setname = [EEG.filename(1:6), '_ASRclean'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_ASRclean'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -150,7 +152,8 @@ for All_sub_i = All_selected_sub
     EEG.etc.epoch_latency = ind_win;
     clear tmp*
     
-    EEG.setname = [EEG.filename(1:6), '_epoched'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_epoched'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -181,7 +184,8 @@ for All_sub_i = All_selected_sub
     originEEG.setname = [originEEG.filename(1:6), '_reconstructed'];
     EEG = originEEG;
     
-    EEG.setname = [EEG.filename(1:6), '_ICA'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_ICA'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -199,7 +203,8 @@ for All_sub_i = All_selected_sub
     EEG = pop_multifit(EEG, 1:EEG.nbchan, 'threshold', residual_thres, 'plotopt', {'normlen', 'on'});
     pop_dipplot( EEG, 1:EEG.nbchan, 'mri', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_mri.mat'), 'normlen', 'on');
     
-    EEG.setname = [EEG.filename(1:6), '_SouceLocalized'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_SouceLocalized'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -254,7 +259,8 @@ for All_sub_i = All_selected_sub
     if icatf, EEG.icatf.tf_times = tmp_times; EEG.icatf.tf_freqs = tmp_freqs; EEG.icatf.tf_ersp = tf_ersp;
     else,     EEG.datatf.tf_times = tmp_times; EEG.datatf.tf_freqs = tmp_freqs; EEG.datatf.tf_ersp = tf_ersp; end
     
-    EEG.setname = [EEG.filename(1:6), '_timefreq'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_timefreq'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -272,7 +278,9 @@ for All_sub_i = All_selected_sub
     % Post-process to update EEG.icaact.
     EEG.icaact = [];
     EEG = eeg_checkset(EEG, 'ica');
-    EEG.setname = [EEG.filename(1:6), '_rmeye'];
+    
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_rmeye'];
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
@@ -314,7 +322,9 @@ for All_sub_i = All_selected_sub
     % Post-process to update EEG.icaact.
     EEG.icaact = [];
     EEG = eeg_checkset(EEG, 'ica');
-    EEG.setname = [EEG.filename(1:6), '_myguess'];
+    
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_myguess'];
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
@@ -322,7 +332,8 @@ for All_sub_i = All_selected_sub
     % Step 1: Downsample to 256 Hz to reduce computational demand
     EEG = pop_resample( EEG, 256);
     
-    EEG.setname = [EEG.filename(1:6), '_downsample256Hz'];
+    sub_id = EEG.filename(1:6);
+    EEG.setname = [sub_id, '_downsample256Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
