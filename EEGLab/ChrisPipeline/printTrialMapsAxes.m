@@ -92,9 +92,8 @@ if strcmpi(dataType,'ICA')
                     baseidx = dsearchn(EEG.icatf.tf_times', basewin');
                     basedata = mean(data(:, baseidx(1):baseidx(2), :), 2); % baseline for each frequency
                     
-                    newData = squeeze(mean(data - basedata, 1)); % average freq band after baseline division for each frequency in \muV^2/Hz
-%                     erpY = sqrt(10.^(squeeze max(abs(mean(mean(newData, 1), 2)))./10 )); % convert the value back to \muV/Hz
-                    erpY = max(abs(mean(newData, 2))); % convert the value back to \muV/Hz
+                    newData = squeeze(mean(data - basedata, 1)); % average freq band after baseline division for each frequency in '10 * log10( 1^{2}/Hz )'
+                    erpY = max(abs(mean(newData, 2)));
                     
                     dRange = mean(prctile(abs(newData),95)); % dRange=10;
                     imagesc(X, 1:EEG.trials, newData')
@@ -145,7 +144,8 @@ if strcmpi(dataType,'ICA')
                     ]');
                 topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
                 [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
-                tt = [ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ];
+                tt = {[ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ], ...
+                        EEG.dipfit.model(idx).areadk };
                 title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])
                 axis off
                 
