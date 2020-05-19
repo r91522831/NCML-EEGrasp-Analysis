@@ -207,7 +207,8 @@ for All_sub_i = All_selected_sub
     pop_dipplot( EEG, 1:EEG.nbchan, 'mri', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_mri.mat'), 'normlen', 'on');
     
     sub_id = EEG.filename(1:6);
-    EEG.setname = [sub_id, '_SouceLocalized'];
+    if isfield(EEG, 'dataRaw'), EEG.setname = [sub_id, '_CSD_SouceLocalized'];
+    else, EEG.setname = [sub_id, '_SouceLocalized']; end
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
