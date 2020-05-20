@@ -45,21 +45,6 @@ ind_win = dsearchn(EEG.times', [-3000, 3000]');
 t_win_eeg = EEG.times(ind_win(1):ind_win(2))';
 dt_eeg = mean(diff(t_win_eeg));
 ntwin_eeg = length(t_win_eeg);
-%{
-% define the number of topoplot slices
-nslice = 15; % 15 slices: each slice is about 250 ms
-ind_slice = round(linspace(1, n_t_win, nslice + 1)); % find the intervals
-ind_win_slice = cell(1, nslice);
-t_win_slice = cell(1, nslice);
-for i = 1:nslice
-    fst_ind = ind_slice(i);
-    if i ~= nslice, end_ind = ind_slice(i + 1) - 1; 
-    else, end_ind = ind_slice(i + 1);  
-    end
-    ind_win_slice{1, i} = ind_win_eeg(fst_ind:end_ind, 1);
-    t_win_slice{1, i} = t_win_eeg(fst_ind:end_ind, 1);
-end
-%}
 
 % compute EEG IC activation voltage average through IL1, IL2~19, TR1, TR2~19, PT1, or PT2~57
 nIC = size(EEG.icaact, 1);
@@ -77,22 +62,6 @@ ind_win = dsearchn(EEG.icatf.tf_times', [-3000, 3000]');
 t_win_tf = EEG.icatf.tf_times(ind_win(1):ind_win(2))';
 dt_tf = mean(diff(t_win_tf));
 ntwin_tf = length(t_win_tf);
-
-%{
-% define the number of topoplot slices
-nslice_tf = 15; % 15 slices: each slice is about 250 ms
-ind_slice_tf = round(linspace(1, n_t_win_tf, nslice_tf + 1)); % find the intervals
-ind_win_slice_tf = cell(1, nslice_tf);
-t_win_slice_tf = cell(1, nslice_tf);
-for i = 1:nslice_tf
-    fst_ind = ind_slice_tf(i);
-    if i ~= nslice_tf, end_ind = ind_slice_tf(i + 1) - 1; 
-    else, end_ind = ind_slice_tf(i + 1);  
-    end
-    ind_win_slice_tf{1, i} = ind_win_tf(fst_ind:end_ind, 1);
-    t_win_slice_tf{1, i} = t_win_tf(fst_ind:end_ind, 1);
-end
-%}
 
 % compute freq power average through IL1, IL2~19, TR1, TR2~19, PT1, or PT2~57
 freqz = EEG.icatf.tf_freqs;
@@ -131,9 +100,10 @@ else
 end
 %}
 
+%{
 linspec = {'-r', '--r', '-b', '--b', '-k', ':k'};
 fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
-%{
+
 subplot(3, 2, 1) % mCom
 hold on
 for i_epb = 1:nepb
@@ -153,20 +123,29 @@ vline(0, '--k')
 
 subplot(3, 2, 5) % activation
 %}
-linspec = {'-r', '-r', '-b', '-b', '-k', '-k'};
-idx = 25;
-% hold on
-for i_epb = 1:nepb
-    subplot(6, 2, i_epb * 2 - 1)
-    h(i_epb) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, i_epb), actBlock_std(idx, :, i_epb), linspec{i_epb}, 1);
-%     axis off
-    vline(0, '--k')
-end
-% hold off
 
-subplot(6, 2, (1:nepb) * 2)
-topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
-[~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
-tt = {[ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ], ...
-    EEG.dipfit.model(idx).areadk };
-title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])
+selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+linspec = {'-r', '-r', '-b', '-b', '-k', '-k'};
+context = {'IL1', 'IL2-19', 'TR1', 'TR2-19', 'PT', 'PT2-57'};
+for idx = selected
+    fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
+    % hold on
+    dRange = nanmax(abs(actBlock(idx, :, :)), [], 'all');
+    for i_epb = 1:nepb
+        subplot(6, 2, i_epb * 2 - 1)
+        h(i_epb) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, i_epb), actBlock_std(idx, :, i_epb), linspec{i_epb}, 1);
+        %     axis off
+        vline(0, '--k');
+        ylim([-dRange, dRange]);
+        ylabel({context{i_epb}, '\muV'});
+    end
+    % hold off
+    xlabel('time (s)')
+    
+    subplot(6, 2, (1:nepb) * 2)
+    topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
+    [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
+    tt = {[ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ], ...
+        EEG.dipfit.model(idx).areadk };
+    title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])
+end

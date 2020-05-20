@@ -52,26 +52,34 @@ padding = .04;
 pad2 = .1;
 %
 nComps = size(data, 1);
-if strcmpi(dataType, 'ICA'), nComps = size(EEG.icawinv, 2); end
+if strcmpi(dataType, 'ICA')
+% % %     nComps = size(EEG.icawinv, 2);
+    nComps = length(comp);
+end
 if nComps > 80, nComps=80; end
 ncols = floor(nComps / 5);
 if mod(ncols,2) == 1, ncols = ncols + 1; end
 nrows = 2 * (floor(2 * nComps/ncols) + 1);
+
 %ncols=ncols*2;
 nrow = myLayout(1);
 ncol = myLayout(2);
 if strcmpi(dataType,'ICA')
     plotIdx = -1; pFix=0;
     %for idx=1:nComps
-    idx=comp-1;
+% % %     idx = comp-1;
+    fidx = 0;
     for irow = 1:nrow % most likely 5 rows per page
         for icol = 1:ncol
-            if idx < nComps
-                idx=idx+1;
+% % %             if idx < nComps
+% % %                 idx=idx+1;
+            if fidx < nComps
+                fidx = fidx + 1;
+                idx = comp(fidx);
                 
                 % ICA activity stacked trial by trial from top to bottom (trial 1 to trial end)
                 % [left bottom width height]
-                handlesICA(idx, 1) = axes('position', ...
+                handlesICA(fidx, 1) = axes('position', ...
                                           [ padding / 2 + (icol - 1) / (ncol + pad2), ...
                                             padding / 2 + (nrow - irow) / (nrow + pad2), ...
                                             .95 / (ncol * 2 + pad2) * (1 - padding), ...
@@ -90,22 +98,22 @@ if strcmpi(dataType,'ICA')
                     data = EEG.icatf.tf_ersp{idx}(freqidx(1):freqidx(2), :, :);
                     
                     baseidx = dsearchn(EEG.icatf.tf_times', basewin');
-                    basedata = mean(data(:, baseidx(1):baseidx(2), :), 2); % baseline for each frequency
+                    basedata = nanmean(data(:, baseidx(1):baseidx(2), :), 2); % baseline for each frequency
                     
                     newData = squeeze(mean(data - basedata, 1)); % average freq band after baseline division for each frequency in '10 * log10( 1^{2}/Hz )'
-                    erpY = max(abs(mean(newData, 2)));
+                    erpY = nanmax(abs(nanmean(newData, 2)));
                     
-                    dRange = mean(prctile(abs(newData),95)); % dRange=10;
+                    dRange = nanmean(prctile(abs(newData),95)); % dRange=10;
                     imagesc(X, 1:EEG.trials, newData')
-                    set(handlesICA(idx,1),'clim',[-dRange dRange])
+                    set(handlesICA(fidx,1),'clim',[-dRange dRange])
                     %title(num2str(dRange))
                 else
                     data = EEG.icaact(:, xlim(1):xlim(2), :);
-                    erpY = max(abs(mean(squeeze(data(idx, :, :)), 2)));
+                    erpY = nanmax(abs(nanmean(squeeze(data(idx, :, :)), 2)));
                 
-                    dRange = mean(prctile(abs(data(idx, :, :)), 95));
+                    dRange = nanmean(prctile(abs(data(idx, :, :)), 95));
                     imagesc(X, 1:EEG.trials, squeeze(data(idx, :, :))')
-                    set(handlesICA(idx,1),'clim',[-dRange dRange])
+                    set(handlesICA(fidx,1),'clim',[-dRange dRange])
                     if erpY > 1
                         colormap summer
                     else
@@ -115,7 +123,7 @@ if strcmpi(dataType,'ICA')
                 end
                 %        set(gca,'XTickLabel',X)
                 axis off
-                handlesICA(idx,2)=axes('position',...
+                handlesICA(fidx,2)=axes('position',...
                     [padding/2+(icol-1)/(ncol+pad2)
                     padding/2+(nrow-irow)/(nrow+pad2)+.95/(nrow+pad2) * imscProp * (1-padding)
                     .95/(ncol*2+pad2) * (1-padding)
@@ -123,20 +131,20 @@ if strcmpi(dataType,'ICA')
                     ]');
                 
                 if ~isempty(freq)
-                    plot(X, mean(newData, 2) );
-                    set(handlesICA(idx,2),'xlim',[X(1) X(end)])
+                    plot(X, nanmean(newData, 2) );
+                    set(handlesICA(fidx,2),'xlim',[X(1) X(end)])
                 else
-                    plot(X, mean(squeeze(data(idx, :, :)), 2));
-                    set(handlesICA(idx,2),'xlim',[myxlim(1) myxlim(2)])
+                    plot(X, nanmean(squeeze(data(idx, :, :)), 2));
+                    set(handlesICA(fidx,2),'xlim',[myxlim(1) myxlim(2)])
                 end
-                set(handlesICA(idx,2),'ylim',[-erpY  erpY])
+                set(handlesICA(fidx,2),'ylim',[-erpY  erpY])
                 title(num2str(erpY), 'FontSize', 2 * erpY)
                 %        ylim([-3 3])
                 axis off
                 %        colorbar
                 %plotIdx = plotIdx + 1;
                 %        subplot(nrows,ncols,[plotIdx+1+pFix plotIdx+1+ncols+pFix])
-                handlesICA(idx,3)=axes('position',...
+                handlesICA(fidx,3)=axes('position',...
                     [padding/2+(icol-1)/(ncol+pad2) + 1/(2*ncol)
                     padding/2+(nrow-irow)/(nrow+pad2)
                     .95/(ncol*2+pad2) * (1-padding*5)

@@ -51,19 +51,46 @@ EEG.data = EEG.dataRaw;
 EEG.icaact = [];
 EEG = eeg_checkset( EEG, 'ica' );
 %}
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [1, 1], 25);
+%% Sort icaact into context blocks
+epBlock = defineBlocks(EEG);
+nepb = length(epBlock);
+
+EEG.icaact = cat( 3, EEG.icaact(:, :, [epBlock{1, 1:2}]), nan(size(EEG.icaact, 1), size(EEG.icaact, 2), 1), ...
+                     EEG.icaact(:, :, [epBlock{1, 3:4}]), nan(size(EEG.icaact, 1), size(EEG.icaact, 2), 1), ...
+                     EEG.icaact(:, :, [epBlock{1, 5:6}]) );
+
+%%
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [10, 6], 1:60);
 disp('finished!')
+%%
+% [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48]
+selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [4, 4], selected);
+
+%% Sorted the tf_ersp into context blocks
+for idx = 1:length(EEG.icatf.tf_ersp)
+    tmp = EEG.icatf.tf_ersp{idx, 1};
+    sorted = cat( 3, tmp(:, :, [epBlock{1, 1:2}]), nan(size(tmp, 1), size(tmp, 2), 1), ...
+                     tmp(:, :, [epBlock{1, 3:4}]), nan(size(tmp, 1), size(tmp, 2), 1), ...
+                     tmp(:, :, [epBlock{1, 5:6}]) );
+    EEG.icatf.tf_ersp{idx, 1} = sorted;
+end
 
 %%
 % theta band: 4 to 8 Hz; alpha: 9 ~ 13 Hz; low beta: 14 ~ 20 Hz; high beta: 21 ~ 30 Hz
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [4, 8], [10, 6], 1, [-600, -200]);
+selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+% layout = [10, 6];
+layout = [4, 4];
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [4, 8], layout, selected, [-600, -200]);
 suptitle('\theta 4-8 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [9, 13], [10, 6], 1, [-600, 200]);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [9, 13], layout, selected, [-600, 200]);
 suptitle('\alpha 8-13 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [14, 20], [10, 6], 1, [-600, -200]);
-suptitle('low\beta 13-20 Hz')
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [21, 30], [10, 6], 1, [-600, -200]);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [14, 20], layout, selected, [-600, -200]);
+suptitle('low\beta 13-20')
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [21, 30], layout, selected, [-600, -200]);
 suptitle('high\beta 20-30 Hz')
+
+
 
 
 %%
