@@ -160,7 +160,6 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
 
-    %%
     originalEEG = pop_loadset('filename','sub-09_ASRclean.set','filepath', EEG.filepath);
     % epoch
     ind_win = [-0.5, 2]; 
