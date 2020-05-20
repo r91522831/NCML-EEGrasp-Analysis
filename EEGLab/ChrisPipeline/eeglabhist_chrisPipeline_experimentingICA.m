@@ -163,7 +163,7 @@ for All_sub_i = All_selected_sub
 
     originalEEG = pop_loadset('filename','sub-09_ASRclean.set','filepath', EEG.filepath);
     % epoch
-    ind_win = [-0.5, 2]; 
+    ind_win = [-3, 3];
     tmp_type = {originalEEG.event.type};
     tmp_onset_typeid = cell2mat(cellfun(@contains, {originalEEG.event.type}, repmat(All_timelocking_type, size({originalEEG.event.type})), 'UniformOutput', false));
     tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
