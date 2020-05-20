@@ -60,6 +60,8 @@ EEG.icaact = cat( 3, EEG.icaact(:, :, [epBlock{1, 1:2}]), nan(size(EEG.icaact, 1
                      EEG.icaact(:, :, [epBlock{1, 5:6}]) );
 
 %%
+printTrialMapsAxes(EEG, [-500, 2000], 'ICA', [], [7, 6], 1:39);
+%%
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [10, 6], 1:60);
 disp('finished!')
 %%

@@ -136,41 +136,45 @@ for All_sub_i = All_selected_sub
     EEG.setname = [sub_id, '_ASRclean'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);    
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 4: Epoch around onset
-    % Step 1:
-    % epoch with a window -1500 to 2000 ms around the key event
-    % epoch with a window -8000 to 4000 ms around the key event to include the left/right cue
-    % epoch with a window -4000 to 6000 ms around the key event to include touch onset
-    % epoch with a window -3000 to 3000 ms around the key event
-    ind_win = [-3, 3]; 
+    %% clean aggrssively
+    
+    EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 1.5);
+% % %     most = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 3);
+% % %     vis_artifacts(agg, EEG);
+    % epoch
+    ind_win = [-0.5, 2]; 
     tmp_type = {EEG.event.type};
     tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
     tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
     EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [EEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
     EEG.etc.epoch_latency = ind_win;
     clear tmp*
+    % reduce channel to 40 channels
+    EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
     
-    sub_id = EEG.filename(1:6);
-    EEG.setname = [sub_id, '_epoched'];
+    EEG.setname = [sub_id, '_heavilycleaned_shortepoched_reducechannel'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
 
-    %% Section XX: Apply CSD 
-    EEG = applyCSD2EEGset(EEG); % apply CSD to the EEG.data and keep the original data in EEG.dataRaw
-    
-    sub_id = EEG.setname(1:6);
-    EEG.setname = [sub_id, '_eeg_csd'];
-    EEG = eeg_checkset( EEG );
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
-    
-    %% Section 5: ICA ICA!!!!
+    %%
+    originalEEG = pop_loadset('filename','sub-09_ASRclean.set','filepath', EEG.filepath);
+    % epoch
+    ind_win = [-0.5, 2]; 
+    tmp_type = {originalEEG.event.type};
+    tmp_onset_typeid = cell2mat(cellfun(@contains, {originalEEG.event.type}, repmat(All_timelocking_type, size({originalEEG.event.type})), 'UniformOutput', false));
+    tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
+    originalEEG = pop_epoch( originalEEG, tmp_epoch_type, ind_win, 'newname', [originalEEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
+    originalEEG.etc.epoch_latency = ind_win;
+    clear tmp*
+    % reduce channel to 40 channels
+    originalEEG = pop_select( originalEEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
+   
+    % Section 5: ICA ICA!!!!
     % remove eye movement artifact
     % run ICA on continuos data to identify the eye blinking and eye movement components
-    % Step 1: keep the EEG before ICA
-    originEEG = EEG;
     % Step 2: Highpass at 3 to remove slow drift for better ICA
     EEG = pop_eegfiltnew(EEG, 'locutoff', 3);
     % Step 3: select only EEG channels
@@ -193,7 +197,7 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 6: check each IC
+    % Section 6: check each IC
     % Step 1: label each IC
     EEG = iclabel(EEG, 'default');
     % Step 2: source localization

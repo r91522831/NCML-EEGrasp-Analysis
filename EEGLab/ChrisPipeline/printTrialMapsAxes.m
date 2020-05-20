@@ -38,7 +38,7 @@ DATA = EEG.data(:, xlim(1):xlim(2), :);
 if numel(EEG.chanlocs) < 40
     figureSize = 3 / numel(EEG.chanlocs);
     positionScale = .8;
-    EEG.chanlocs = EEG.chanlocs(1:30);
+% % %     EEG.chanlocs = EEG.chanlocs(1:30);
 else
     figureSize = 7 / numel(EEG.chanlocs);
     positionScale = .65;
