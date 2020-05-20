@@ -110,13 +110,13 @@ for All_sub_i = All_selected_sub
     EEG = pop_cleanline(EEG, 'bandwidth', 2, 'chanlist', 1:EEG.nbchan, 'computepower', 0, 'linefreqs', [60, 120, 180, 240, 300],...
                              'normSpectrum', 0, 'p', 0.01, 'pad', 2, 'plotfigures', 0, 'scanforlines', 1, 'sigtype', 'Channels', 'tau', 100,...
                              'verb', 1, 'winsize', 4, 'winstep', 4);
-    % Step 1: Lowpass filtering at 128 Hz to remove high freq noise
-    EEG = pop_eegfiltnew(EEG, 'hicutoff', 128);
-    % Step 2: Highpass at 0.5 Hz to remove slow drift
-    EEG = pop_eegfiltnew(EEG, 'locutoff', 0.5);
+    % Step 1: bandpass filtering at 0.5 to 128 Hz to remove slow drift and high freq noise
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 0.5, 'hicutoff', 128);
+    % Step 2: Downsample to 256 Hz to reduce computational demand
+    EEG = pop_resample( EEG, 256);
     
     sub_id = EEG.filename(1:6);
-    EEG.setname = [sub_id, '_lp128_hphalfHz'];
+    EEG.setname = [sub_id, '_lp128_hphalfHz_down256Hz'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
@@ -130,13 +130,47 @@ for All_sub_i = All_selected_sub
     % Keep original EEG
     originalEEG_b4rmBadChannel = EEG;
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
-% % %     vis_artifacts(EEG, originalEEG)
+    vis_artifacts(EEG, originalEEG_b4rmBadChannel);
 
     sub_id = EEG.filename(1:6);
     EEG.setname = [sub_id, '_ASRclean'];
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    
+    %% clean aggrssively
+    
+    EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 1.5);
+% % %     most = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 3);
+% % %     vis_artifacts(agg, EEG);
+    %% epoch
+    ind_win = [-0.5, 2]; 
+    tmp_type = {EEG.event.type};
+    tmp_onset_typeid = cell2mat(cellfun(@contains, {EEG.event.type}, repmat(All_timelocking_type, size({EEG.event.type})), 'UniformOutput', false));
+    tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
+    EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [EEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
+    EEG.etc.epoch_latency = ind_win;
+    clear tmp*
+
+    %% reduce channel to 40 channels
+    EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
+    
+    EEG.setname = [sub_id, '_heavilycleaned_shortepoched_reducechannel'];
+    EEG = eeg_checkset( EEG );
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
+    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+
+
+
+    
+    
+    
+    
+    
+    
+%     originalEEG = pop_loadset('filename','sub-09_ASRclean.set','filepath', EEG.filepath);
+    
+    
     
     %% Section 4: Epoch around onset
     % Step 1:
@@ -161,6 +195,8 @@ for All_sub_i = All_selected_sub
     %% Section XX: Apply CSD 
     EEG = applyCSD2EEGset(EEG); % apply CSD to the EEG.data and keep the original data in EEG.dataRaw
     
+    sub_id = EEG.setname(1:6);
+    EEG.setname = [sub_id, '_eeg_csd'];
     EEG = eeg_checkset( EEG );
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
@@ -333,8 +369,6 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
     %% downsample
-    % Step 1: Downsample to 256 Hz to reduce computational demand
-    EEG = pop_resample( EEG, 256);
     
     sub_id = EEG.filename(1:6);
     EEG.setname = [sub_id, '_downsample256Hz'];
@@ -348,7 +382,7 @@ for All_sub_i = All_selected_sub
     
  
    
- 
+ %}
     
     
     

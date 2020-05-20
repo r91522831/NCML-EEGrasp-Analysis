@@ -26,8 +26,6 @@ for i = 1:EEG.trials
     EEG.data(:, :, i) = CSD(D, G, H);
 end
 
-sub_id = EEG.setname(1:6);
-EEG.setname = [sub_id, '_eeg_csd'];
 EEG = eeg_checkset( EEG );
 newEEG = EEG;
 end
