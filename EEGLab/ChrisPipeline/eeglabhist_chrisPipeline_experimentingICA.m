@@ -150,10 +150,11 @@ for All_sub_i = All_selected_sub
     EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [EEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
     EEG.etc.epoch_latency = ind_win;
     clear tmp*
-    % reduce channel to 39 channels
-% % %     EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
-    % reduce channel to 29 channels
-    EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'Oz'});
+    % reduce channels to 39 channels
+% % %     selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'};
+    % reduce channels to 29 channels
+    selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'Oz'};
+    EEG = pop_select( EEG, 'channel', selected_channel);
     
     EEG.setname = [sub_id, '_heavilycleaned_shortepoched_reducechannel'];
     EEG = eeg_checkset( EEG );
@@ -169,8 +170,8 @@ for All_sub_i = All_selected_sub
     originalEEG = pop_epoch( originalEEG, tmp_epoch_type, ind_win, 'newname', [originalEEG.setname, '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
     originalEEG.etc.epoch_latency = ind_win;
     clear tmp*
-    % reduce channel to 40 channels
-    originalEEG = pop_select( originalEEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
+    % reduce channels
+    originalEEG = pop_select( originalEEG, 'channel', selected_channel);
    
     % Section 5: ICA ICA!!!!
     % remove eye movement artifact
