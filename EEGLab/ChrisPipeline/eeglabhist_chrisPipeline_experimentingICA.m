@@ -139,7 +139,6 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
     %% clean aggrssively
-    
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 1.5);
 % % %     most = clean_artifacts(EEG, 'WindowCriterion', 0.5, 'BurstCriterion', 3);
 % % %     vis_artifacts(agg, EEG);
@@ -151,8 +150,10 @@ for All_sub_i = All_selected_sub
     EEG = pop_epoch( EEG, tmp_epoch_type, ind_win, 'newname', [EEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
     EEG.etc.epoch_latency = ind_win;
     clear tmp*
-    % reduce channel to 40 channels
-    EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
+    % reduce channel to 39 channels
+% % %     EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'});
+    % reduce channel to 29 channels
+    EEG = pop_select( EEG, 'channel',{'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'Oz'});
     
     EEG.setname = [sub_id, '_heavilycleaned_shortepoched_reducechannel'];
     EEG = eeg_checkset( EEG );
@@ -166,7 +167,7 @@ for All_sub_i = All_selected_sub
     tmp_type = {originalEEG.event.type};
     tmp_onset_typeid = cell2mat(cellfun(@contains, {originalEEG.event.type}, repmat(All_timelocking_type, size({originalEEG.event.type})), 'UniformOutput', false));
     tmp_epoch_type = unique(tmp_type(tmp_onset_typeid));
-    originalEEG = pop_epoch( originalEEG, tmp_epoch_type, ind_win, 'newname', [originalEEG.filename(1:6), '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
+    originalEEG = pop_epoch( originalEEG, tmp_epoch_type, ind_win, 'newname', [originalEEG.setname, '_epochs', '_', All_timelocking_type{:}], 'epochinfo', 'yes');
     originalEEG.etc.epoch_latency = ind_win;
     clear tmp*
     % reduce channel to 40 channels
