@@ -184,12 +184,12 @@ for All_sub_i = All_selected_sub
 % % %     EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'cudaica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
     EEG = pop_runica(EEG, 'extended', 1, 'icatype', 'runica', 'chanind', [], 'concatenate', 'off', 'verbose', 'off');
     % Step 5: copy the ICA result back to the original EEG
-    originEEG.icawinv = EEG.icawinv;
-    originEEG.icasphere = EEG.icasphere;
-    originEEG.icaweights = EEG.icaweights;
-    originEEG.icachansind = EEG.icachansind;
-    originEEG.icaact = (EEG.icaweights * EEG.icasphere) * originEEG.data(EEG.icachansind, :);
-    EEG = originEEG;
+    originalEEG.icawinv = EEG.icawinv;
+    originalEEG.icasphere = EEG.icasphere;
+    originalEEG.icaweights = EEG.icaweights;
+    originalEEG.icachansind = EEG.icachansind;
+    originalEEG.icaact = (EEG.icaweights * EEG.icasphere) * originalEEG.data(EEG.icachansind, :);
+    EEG = originalEEG;
     
     if isfield(EEG, 'dataRaw'), EEG.setname = [EEG.setname, '_CSD_ICA'];
     else, EEG.setname = [EEG.setname, '_ICA']; end
