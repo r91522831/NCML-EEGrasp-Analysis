@@ -60,13 +60,17 @@ EEG.icaact = cat( 3, EEG.icaact(:, :, [epBlock{1, 1:2}]), nan(size(EEG.icaact, 1
                      EEG.icaact(:, :, [epBlock{1, 5:6}]) );
 
 %%
-printTrialMapsAxes(EEG, [-500, 2000], 'ICA', [], [7, 6], 1:39);
+printTrialMapsAxes(EEG, [-200, 500], 'ICA', [], [1, 1], 21);
 %%
-printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [10, 6], 1:60);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [7, 6], 1:39);
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [6, 5], 1:29);
+%%
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [9, 7], 1:61);
 disp('finished!')
 %%
 % [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48]
-selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+% % % selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47];
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [4, 4], selected);
 
 %% Sorted the tf_ersp into context blocks
@@ -102,4 +106,26 @@ for i = 1:20%length(big_rr)
     c1 = big_rr{i}(1);
     c2 = big_rr{i}(2);
     compareICA2(EEG, c1, c2, rr_max{c1, c2}(2:3), rr_max{c1, c2}(4:5))
+end
+
+%%
+nselected = length(selected);
+big_rr = [];
+i = 1;
+for c1 = 1:nselected
+    for c2 = 1:nselected
+        if isnan(r{c1, c2}), continue; end
+        
+        if r{c1, c2} > 0.3
+            big_rr{i, 1} = [c1, c2];
+            i = i + 1;
+        end
+    end
+end
+%%
+disp(['Plotting ', num2str(length(big_rr)), ' pair(s) of ICs'])
+for i = 1%:length(big_rr)
+    c1 = selected(big_rr{i}(1));
+    c2 = selected(big_rr{i}(2));
+    compareICA2(EEG, c1, c2)
 end
