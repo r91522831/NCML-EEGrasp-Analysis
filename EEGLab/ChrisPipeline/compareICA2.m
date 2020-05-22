@@ -65,8 +65,8 @@ if numel(EEG) == 1
     hold on
     plot(EEG.times(xlim(1):xlim(2)), c2d * mean(EEG.icaact(c2, xlim(1):xlim(2), :), 3), 'r')
     title('Activation')
-    vline([t1(1), t1(2)], {'k--', 'k--'}, {num2str(t1(1)), []})
-    vline([t2(1), t2(2)], {'r--', 'r--'}, {num2str(t2(1)), []})
+% % %     vline([t1(1), t1(2)], {'k--', 'k--'}, {num2str(t1(1)), []})
+% % %     vline([t2(1), t2(2)], {'r--', 'r--'}, {num2str(t2(1)), []})
     %alpha(h2,.2)
     set(gca, 'xlim', time_win)
     
@@ -76,18 +76,18 @@ if numel(EEG) == 1
     plot(EEG.times(xlim(1):xlim(2)), c2d * normalize(mean(EEG.icaact(c2, xlim(1):xlim(2), :), 3)),'r')
 
     title('NORMALIZED Activation')
-    vline([t1(1), t1(2)], {'k--', 'k--'})
-    vline([t2(1), t2(2)], {'r--', 'r--'})
+% % %     vline([t1(1), t1(2)], {'k--', 'k--'})
+% % %     vline([t2(1), t2(2)], {'r--', 'r--'})
     set(gca, 'xlim', time_win)
     
-    subplot(2, 5, [5, 10])
-    nnn = dsearchn(EEG.times', t1');
-    x1 = squeeze(squeeze( mean(EEG.icaact(c1, nnn(1):nnn(2), :), 2) ));
-    nnn = dsearchn(EEG.times', t2');
-    x2 = squeeze(squeeze( mean(EEG.icaact(c2, nnn(1):nnn(2), :), 2) ));
-    plot(x1, x2, '.')
-    [rr, pp] = corr(x1, x2, 'Type', 'Spearman');
-    title(['r across trials: r=', num2str(rr, '%0.3f'), ' p=', num2str(pp,'%0.3f')])
+% % %     subplot(2, 5, [5, 10])
+% % %     nnn = dsearchn(EEG.times', t1');
+% % %     x1 = squeeze(squeeze( mean(EEG.icaact(c1, nnn(1):nnn(2), :), 2) ));
+% % %     nnn = dsearchn(EEG.times', t2');
+% % %     x2 = squeeze(squeeze( mean(EEG.icaact(c2, nnn(1):nnn(2), :), 2) ));
+% % %     plot(x1, x2, '.')
+% % %     [rr, pp] = corr(x1, x2, 'Type', 'Spearman');
+% % %     title(['r across trials: r=', num2str(rr, '%0.3f'), ' p=', num2str(pp,'%0.3f')])
 else
     figure
     EEG1 = EEG{1};

@@ -113,7 +113,7 @@ for All_sub_i = All_selected_sub
     % Step 1: bandpass filtering at 0.5 to 128 Hz to remove slow drift and high freq noise
     EEG = pop_eegfiltnew(EEG, 'locutoff', 0.5, 'hicutoff', 128);
     % Step 2: Downsample to 256 Hz to reduce computational demand
-    EEG = pop_resample( EEG, 256);
+    EEG = pop_resample( EEG, 256 );
     
     sub_id = EEG.filename(1:6);
     EEG.setname = [sub_id, '_lp128_hphalfHz_down256Hz'];
@@ -130,7 +130,7 @@ for All_sub_i = All_selected_sub
     % Keep original EEG
     originalEEG_b4rmBadChannel = EEG;
     EEG = clean_artifacts(EEG, 'WindowCriterion', 0.5);
-    vis_artifacts(EEG, originalEEG_b4rmBadChannel);
+% % %     vis_artifacts(EEG, originalEEG_b4rmBadChannel);
 
     sub_id = EEG.filename(1:6);
     EEG.setname = [sub_id, '_ASRclean'];
@@ -158,13 +158,16 @@ for All_sub_i = All_selected_sub
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
 
+    
     %% Section XX: Apply CSD 
+    %{
     EEG = applyCSD2EEGset(EEG); % apply CSD to the EEG.data and keep the original data in EEG.dataRaw
     
     sub_id = EEG.setname(1:6);
     EEG.setname = [sub_id, '_eeg_csd'];
     EEG = eeg_checkset( EEG );
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
+    %}
     
     %% Section 5: ICA ICA!!!!
     % remove eye movement artifact
@@ -187,16 +190,20 @@ for All_sub_i = All_selected_sub
     originEEG.icaact = (EEG.icaweights * EEG.icasphere) * originEEG.data(EEG.icachansind, :);
     EEG = originEEG;
     
+    % Step 6: label each IC
+    EEG = iclabel(EEG, 'default');
+    
     if isfield(EEG, 'dataRaw'), EEG.setname = [EEG.setname, '_CSD_ICA'];
     else, EEG.setname = [EEG.setname, '_ICA']; end
     EEG = eeg_checkset( EEG );
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
-    %% Section 6: check each IC
-    % Step 1: label each IC
-    EEG = iclabel(EEG, 'default');
-    % Step 2: source localization
+    %% Section 6: source localization use dipfit
+    % makesure there is only one fieldtrip version in the matlab path
+    % otherwise remove all fieldtrip folder path
+    % add one fieldtrip main folder to path and run ft_defaults
+    % Step 1: source localization
     COREG = [0.83215, -15.6287, 2.4114, 0.081214, 0.00093739, -1.5732, 1.1742, 1.0601, 1.1485];
     EEG = pop_dipfit_settings( EEG, 'hdmfile', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_vol.mat'),...
                                     'coordformat', 'MNI', 'mrifile', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_mri.mat'),...
@@ -214,7 +221,9 @@ for All_sub_i = All_selected_sub
     
     %% Section 7a: Time-freq decomposition
     tmpEEG = EEG;
-    switch input('time-freq analysis on voltage (V) or IC activity (I)?(v/I)', 's')
+% % %     tf_target = input('time-freq analysis on voltage (V) or IC activity (I)?(v/I)', 's');
+    tf_target = 'I';
+    switch tf_target
         case {'v', 'V'}
             icatf = false;
             disp('time-freq on voltage ...')
@@ -269,7 +278,7 @@ for All_sub_i = All_selected_sub
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
     
 
-    
+    %{
     %% Secion 7b: reject ICs
     % Step 1a: remove eye artifacts 
     eyeIdxBool = EEG.etc.ic_classification.ICLabel.classifications(:, strcmpi(EEG.etc.ic_classification.ICLabel.classes, 'Eye')) >= 0.9; % > 90% eye == eye ICs.
@@ -330,17 +339,8 @@ for All_sub_i = All_selected_sub
     EEG.setname = [sub_id, '_myguess'];
     [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
     EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
-    
-    %% downsample
-    
-    sub_id = EEG.filename(1:6);
-    EEG.setname = [sub_id, '_downsample256Hz'];
-    EEG = eeg_checkset( EEG );
-    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', [EEG.setname, '.set'], 'filepath', EEG.filepath);
-    
-    
-    % Interpolate channels.
+        
+    %% Interpolate channels.
 % % %     EEG = pop_interp(EEG, originalEEG_b4rmBadChannel.chanlocs, 'spherical');
     
  
