@@ -1,21 +1,27 @@
 clear; close all; clc;
 
 %% Get behavior data: Mcom and peak Roll
-beh = load('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/beh/mat/S009_temp_result.mat');
+% '/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/beh/mat/S009_temp_result.mat'
+subID = 'sub-09';
+behpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', subID, 'beh/mat');
+behfilename = ['S0', subID((end-1):end), '_temp_result.mat'];
+beh = load(fullfile(behpath, behfilename));
 
 %% Get EEG data: voltage for each channel
 % load EEG csd data. Raw EEG data are in EEG.dataRaw. CSD EEG data are in EEG.data
+eegpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', subID, 'eeg/set');
+% % % eegfilename = [subID, '_epoched_ICA_SouceLocalized.set'];
 % % % eegfilename = 'sub-09_timefreq.set';
-eegfilename = 'sub-09_epoched_ICA_SouceLocalized.set';
-EEG = pop_loadset('filename', eegfilename, 'filepath', '/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/eeg/set/');
+eegfilename = [subID, '_timefreq.set'];
+
+EEG = pop_loadset('filename', eegfilename, 'filepath', eegpath);
 % % % % Get time freq data
 % % % tf = EEG.icatf;
 
 subID = EEG.filename(1:6);
-% block ep into IL1, IL2~19, TR1, TR2~19, PT1, or PT2~57
+% block ep into IL1, IL2~19, TR1, TR2~19, PT1 1, PT1 2~18, PT2 1, PT2 2~18, PT3 1, PT3 2~18
 % epBlock = defineBlocks(EEG);
-tmp_epb = defineBlocksSeperatePT123(EEG);
-epBlock = tmp_epb(1:6);
+epBlock = defineBlocksSeperatePT123(EEG);
 nepb = length(epBlock);
 
 %% behavior computation
@@ -50,7 +56,7 @@ t_win_eeg = EEG.times(ind_win(1):ind_win(2))';
 dt_eeg = mean(diff(t_win_eeg));
 ntwin_eeg = length(t_win_eeg);
 
-% compute EEG IC activation voltage average through IL1, IL2~19, TR1, TR2~19, PT1, or PT1 2~19
+% compute EEG IC activation voltage average through IL1, IL2~19, TR1, TR2~19, PT1 1, PT1 2~18, PT2 1, PT2 2~18, PT3 1, PT3 2~18
 nIC = size(EEG.icaact, 1);
 % nIC x ntwin_eeg x nepb
 actBlock = nan(nIC, ntwin_eeg, nepb);
@@ -61,8 +67,8 @@ for i_epb = 1:nepb
 end
 
 actBlock(:, :, nepb + 1) = mean(EEG.icaact(:, :, :), 3);
-actBlock_std(:, :, nepb + 1) = std(EEG.icaact(:, :, epBlock{1, i_epb}), 0, 3) ./ sqrt(95);
-%{
+actBlock_std(:, :, nepb + 1) = std(EEG.icaact(:, :, :), 0, 3) ./ sqrt(95);
+
 %% tf computation
 % get the time and index for the window from -3000 to 3000 ms
 ind_win = dsearchn(EEG.icatf.tf_times', [-3000, 3000]');
@@ -70,7 +76,7 @@ t_win_tf = EEG.icatf.tf_times(ind_win(1):ind_win(2))';
 dt_tf = mean(diff(t_win_tf));
 ntwin_tf = length(t_win_tf);
 
-% compute freq power average through IL1, IL2~19, TR1, TR2~19, PT1, or PT2~57
+% compute freq power average through IL1, IL2~19, TR1, TR2~19, PT1 1, PT1 2~18, PT2 1, PT2 2~18, PT3 1, PT3 2~18
 freqz = EEG.icatf.tf_freqs;
 rg_freq_band = { {'\theta', '4~8 Hz'}, {'\alpha', '8~13 Hz'}, {'\beta_{low}', '13~20 Hz'}, {'\beta_{high}', '20~30 Hz'}; ...
                  find(freqz >  4 & freqz <=  8), find(freqz >   8 & freqz <= 13), ...
@@ -78,24 +84,28 @@ rg_freq_band = { {'\theta', '4~8 Hz'}, {'\alpha', '8~13 Hz'}, {'\beta_{low}', '1
 nIC = size(EEG.icaact, 1);
 nfb = length(rg_freq_band);
 
-pow = cell(nIC, 1);
+pow = cell(nfb, 1);
 for i_IC = 1:nIC
     for i_fb = 1:nfb
-        pow{i_IC, 1}(i_fb, :, :) = mean(EEG.icatf.tf_ersp{i_IC, 1}(rg_freq_band{2, i_fb}, :, :), 1);
+        pow{i_fb, 1}(i_IC, :, :) = mean(EEG.icatf.tf_ersp{i_IC, 1}(rg_freq_band{2, i_fb}, :, :), 1);
     end
 end
 
-powBlock = cell(nIC, 1);
+powBlock = cell(nfb, 1);
 powBlock_std = powBlock;
 for i_IC = 1:nIC
     for i_fb = 1:nfb
         for i_epb = 1:nepb
-            powBlock{i_IC, 1}(i_fb, :, i_epb) = mean(pow{i_IC, 1}(i_fb, :, epBlock{1, i_epb}), 3);
-            powBlock_std{i_IC, 1}(i_fb, :, i_epb) = std(pow{i_IC, 1}(i_fb, :, epBlock{1, i_epb}), 0, 3);
+            powBlock{i_fb, 1}(i_IC, :, i_epb) = mean(pow{i_fb, 1}(i_IC, :, epBlock{1, i_epb}), 3);
+            powBlock_std{i_fb, 1}(i_IC, :, i_epb) = std(pow{i_fb, 1}(i_IC, :, epBlock{1, i_epb}), 0, 3);
         end
     end
 end
-%}
+
+for i_fb = 1:nfb
+    powBlock{i_fb, 1}(:, :, nepb + 1) = mean(pow{i_fb, 1}(:, :, :), 3);
+    powBlock_std{i_fb, 1}(:, :, nepb + 1) = std(pow{i_fb, 1}(:, :, :), 0, 3) ./ sqrt(95);
+end
 
 %% plot
 % % % dir_save = '/Users/yen-hsunwu/Dropbox (ASU)/NCML-EEGrasp/for Apr10 2020';
@@ -108,6 +118,7 @@ else
 end
 %}
 
+%% behavior plots
 %{
 linspec = {'-r', '--r', '-b', '--b', '-k', ':k'};
 fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
@@ -132,58 +143,44 @@ vline(0, '--k')
 subplot(3, 2, 5) % activation
 %}
 
+
+
+%% 
 % % % selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
 selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47];
-% % % 'LineStyle', 'none', 'Color' 
-linspec = {'-', 'none', '-', 'none', '-', 'none', 'none'};
-lincolor = {'r', 'r', 'b', 'b', 'k', 'k', 'k'};
-context = {'IL1', 'IL2-19', 'TR1', 'TR2-19', 'PT1', 'PT1 2-19'};
-for idx = selected
-    fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
-    % hold on
-    dRange = nanmax(abs(actBlock(idx, :, :)), [], 'all');
-    subplot(3, 2, 1)
-    hold on
-    for i_epb = 1:2:6
-        h(i_epb) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, i_epb), actBlock_std(idx, :, i_epb), {'LineStyle', linspec{i_epb}, 'Color', lincolor{i_epb}}, 1);
-    end
-    hold off
-    ylim([-dRange, dRange]);
-    vline(0, '--k');
-    ylabel('\muV');
-    legend([h(1:2:6).mainLine], {'IL1', 'TR1', 'PT1'}, 'Location', 'best')
+% plot the selected ICs
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [4, 4], selected);
 
-    subplot(3, 2, 3)
-    hold on
-    for i_epb = 2:2:6
-        h(i_epb) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, i_epb), actBlock_std(idx, :, i_epb), {'LineStyle', linspec{i_epb}, 'Color', lincolor{i_epb}}, 1);
+%%
+% blocks: 'IL_1', 'IL_{2-19}', 'TR_1', 'TR_{2-19}', 'PT1_1', 'PT1_{2-19}', 'PT2_1', 'PT2_{2-19}', 'PT3_1', 'PT3_{2-19}', 'all'
+% nIC x time x blocks (10 + 1)
+fqtext = {'\theta', '\alpha', '\beta_{low}', '\beta_{high}'};
+fqfilename = {'theta', 'alpha', 'lowbeta', 'highbeta'};
+figfolder = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/NCML-EEGrasp/for May25 2020', EEG.filename(1:6));
+for i_IC = selected
+    close all;
+    data_plot = EEG.icaact(i_IC, :, :);
+    actBlock_plot = actBlock(i_IC, :, :);
+    actBlock_std_plot = actBlock_std(i_IC, :, :);
+    fig_act = contextICinspectPlot(EEG, data_plot, epBlock, t_win_eeg, actBlock_plot, actBlock_std_plot, i_IC, 'icaact');
+    figfilename = [EEG.filename(1:6), '_IC', num2str(i_IC), '_IC_activity'];
+    savefig(fig_act, fullfile(figfolder, figfilename))
+    
+    for i_fq = 1:4
+        data_plot = pow{i_fq, 1}(i_IC, :, :); % unit is power in '10 * log10( \muV^{2}/Hz )'
+        blockavg = powBlock{i_fq, 1}(i_IC, :, :);
+        blockstd = powBlock_std{i_fq, 1}(i_IC, :, :);
+        fig_tf_alpha = contextICinspectPlot(EEG, data_plot, epBlock, t_win_tf, blockavg, blockstd, i_IC, fqtext{i_fq});
+        figfilename = [EEG.filename(1:6), '_IC', num2str(i_IC), '_IC_', fqfilename{i_fq}];
+        savefig(fig_tf_alpha, fullfile(figfolder, figfilename))
     end
-    hold off
-% % %     ylim([-dRange, dRange]);
-    vline(0, '--k');
-    ylabel('\muV');
-    xlabel('time (s)')
-    tmp_shade = [h(2:2:6).edge];
-    legend(tmp_shade(1:2:end), {'IL 2~19', 'TR 2~19', 'PT1 2~19'}, 'Location', 'best')
     
-    subplot(3, 2, 5)
-    ep_all = nepb + 1;
-    h(ep_all) = shadedErrorBar(0.001 * t_win_eeg, actBlock(idx, :, ep_all), actBlock_std(idx, :, ep_all), {'LineStyle', linspec{ep_all}, 'Color', lincolor{ep_all}}, 1);
-% % %     ylim([-dRange, dRange]);
-    vline(0, '--k');
-    ylabel({'all eps', '\muV'});
-    xlabel('time (s)')
-    
-    
-    subplot(2, 2, [2, 4])
-    topoplot(EEG.icawinv(:, idx), EEG.chanlocs(EEG.icachansind));
-    [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(idx, :) );
-    tt = {[ num2str(idx), ' ', EEG.etc.ic_classification.ICLabel.classes{kkkkk}, ' ', num2str(100 * EEG.etc.ic_classification.ICLabel.classifications(idx, kkkkk), '%2.1f') ], ...
-        EEG.dipfit.model(idx).areadk };
-    title(tt, 'Units', 'normalized', 'Position', [0.5, -0.1, 0])
 end
 
+
+
 %% compute correlation between IC pairs
+%{
 nselected = length(selected);
 r = nan(nselected, nselected);
 ep_all = nepb + 1;
@@ -213,6 +210,8 @@ for idx = 1:nselected
         end
     end
 end
+%}
+
 %{
 subplot(2, 1, 2)
 for idx = selected
