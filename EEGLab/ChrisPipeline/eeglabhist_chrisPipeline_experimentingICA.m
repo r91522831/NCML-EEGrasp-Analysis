@@ -151,9 +151,9 @@ for All_sub_i = All_selected_sub
     EEG.etc.epoch_latency = ind_win;
     clear tmp*
     % reduce channels to 39 channels
-% % %     selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'};
+    selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'AF7' 'AF3' 'AF4' 'AF8' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'FT7' 'FT8' 'TP7' 'TP8' 'PO7' 'PO8' 'Oz'};
     % reduce channels to 29 channels
-    selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'Oz'};
+% % %     selected_channel = {'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'T7' 'C3' 'Cz' 'C4' 'T8' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'O2' 'FC3' 'FCz' 'FC4' 'CP3' 'CP4' 'PO3' 'PO4' 'Oz'};
     EEG = pop_select( EEG, 'channel', selected_channel);
     
     EEG.setname = [sub_id, '_heavilycleaned_shortepoched_reducechannel'];
@@ -202,6 +202,8 @@ for All_sub_i = All_selected_sub
     % Step 1: label each IC
     EEG = iclabel(EEG, 'default');
     % Step 2: source localization
+    % remove all fieltrip subfolders and run ft_defaults
+    % ft_defaults
     COREG = [0.83215, -15.6287, 2.4114, 0.081214, 0.00093739, -1.5732, 1.1742, 1.0601, 1.1485];
     EEG = pop_dipfit_settings( EEG, 'hdmfile', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_vol.mat'),...
                                     'coordformat', 'MNI', 'mrifile', fullfile(All_path_eeglab_dipfit, 'standard_BEM', 'standard_mri.mat'),...
