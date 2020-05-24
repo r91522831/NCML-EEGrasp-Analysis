@@ -1,13 +1,9 @@
 clear; close all; clc;
+%%
+% subID = 'sub-09', 'sub-11', 'sub-14', 'sub-21', 'sub-02';
+subID = 'sub-02';
 
-%% Get behavior data: Mcom and peak Roll
-% '/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/beh/mat/S009_temp_result.mat'
-subID = 'sub-09';
-behpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', subID, 'beh/mat');
-behfilename = ['S0', subID((end-1):end), '_temp_result.mat'];
-beh = load(fullfile(behpath, behfilename));
-
-%% Get EEG data: voltage for each channel
+% Get EEG data: voltage for each channel
 % load EEG csd data. Raw EEG data are in EEG.dataRaw. CSD EEG data are in EEG.data
 eegpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', subID, 'eeg/set');
 % % % eegfilename = [subID, '_epoched_ICA_SouceLocalized.set'];
@@ -15,14 +11,29 @@ eegpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', 
 eegfilename = [subID, '_timefreq.set'];
 
 EEG = pop_loadset('filename', eegfilename, 'filepath', eegpath);
-% % % % Get time freq data
-% % % tf = EEG.icatf;
 
+figfolder = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/NCML-EEGrasp/for May25 2020', EEG.filename(1:6));
+if ~isfolder(figfolder), mkdir(figfolder); end
+
+% plot all ICs and save
+printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [8, 8], 1:EEG.nbchan);
+pngfilename = [EEG.filename(1:6), '_IC activity_-3to3s_ICall'];
+saveas(gcf, fullfile(figfolder, pngfilename), 'png')
+
+%% Once ICs are selected
 subID = EEG.filename(1:6);
 % block ep into IL1, IL2~19, TR1, TR2~19, PT1 1, PT1 2~18, PT2 1, PT2 2~18, PT3 1, PT3 2~18
 % epBlock = defineBlocks(EEG);
 epBlock = defineBlocksSeperatePT123(EEG);
 nepb = length(epBlock);
+
+%% Get behavior data: Mcom and peak Roll
+% '/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/beh/mat/S009_temp_result.mat'
+behpath = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/', subID, 'beh/mat');
+behfilename = ['S0', subID((end-1):end), '_temp_result.mat'];
+beh = load(fullfile(behpath, behfilename));
+
+
 
 %% behavior computation
 nep = length(beh.resultantF);
@@ -145,18 +156,19 @@ subplot(3, 2, 5) % activation
 
 
 
-%% 
-% % % selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
-selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47];
+%%
+% % % selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47]; % this ICs are for sub-09
+selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47]; % this ICs are for sub-11
 % plot the selected ICs
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [4, 4], selected);
+pngfilename = [EEG.filename(1:6), '_IC activity_-3to3s_selectedICs'];
+saveas(gcf, fullfile(figfolder, pngfilename), 'png')
 
-%%
 % blocks: 'IL_1', 'IL_{2-19}', 'TR_1', 'TR_{2-19}', 'PT1_1', 'PT1_{2-19}', 'PT2_1', 'PT2_{2-19}', 'PT3_1', 'PT3_{2-19}', 'all'
 % nIC x time x blocks (10 + 1)
 fqtext = {'\theta', '\alpha', '\beta_{low}', '\beta_{high}'};
 fqfilename = {'theta', 'alpha', 'lowbeta', 'highbeta'};
-figfolder = fullfile('/Users/yen-hsunwu/Dropbox (ASU)/NCML-EEGrasp/for May25 2020', EEG.filename(1:6));
+
 for i_IC = selected
     close all;
     data_plot = EEG.icaact(i_IC, :, :);
@@ -176,7 +188,6 @@ for i_IC = selected
     end
     
 end
-
 
 
 %% compute correlation between IC pairs

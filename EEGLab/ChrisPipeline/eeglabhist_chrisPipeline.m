@@ -49,9 +49,7 @@ for All_sub_i = All_selected_sub
     % Step 2: set EEG output path
     % output_dir: /Users/yen-hsunwu/Dropbox (ASU)/BIDS_format/NCML-EEGrasp/sub-09/eeg/set/
     output_dir = fullfile(All_data_list(All_sub_i).folder, All_data_list(All_sub_i).name, 'eeg', 'set');
-    if ~isfolder(output_dir)
-        mkdir(output_dir)
-    end
+    if ~isfolder(output_dir), mkdir(output_dir); end
     % Step 3: call EEGLab
     [ALLEEG, EEG, ~, ALLCOM] = eeglab;
     pop_editoptions('option_single', false); % make sure the EEG.data precision is 'double' not 'single'!
