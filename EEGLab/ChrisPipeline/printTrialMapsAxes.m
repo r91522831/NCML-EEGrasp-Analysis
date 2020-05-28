@@ -76,6 +76,7 @@ if strcmpi(dataType,'ICA')
             if fidx < nComps
                 fidx = fidx + 1;
                 idx = comp(fidx);
+                if isnan(idx), continue; end
                 
                 % ICA activity stacked trial by trial from top to bottom (trial 1 to trial end)
                 % [left bottom width height]

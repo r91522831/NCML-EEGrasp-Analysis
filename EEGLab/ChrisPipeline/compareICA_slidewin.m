@@ -68,9 +68,17 @@ printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [6, 5], 1:29);
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [9, 7], 1:61);
 disp('finished!')
 %%
-% [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48]
-% % % selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
-selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47];
+% sub-09 selected ICs:  1    2   3   4  5    6  11  12  14  21  22      26      39      47
+% sub-21 selected ICs: 41	 3	 9	11	5	 2	14	 7	 4	41	24       8      11      37
+% sub-11 selected ICs:  7	17	 7	 9	1	25	 6	18	 6	 7	> 50 mm	> 50 mm	 5      24
+% sub-14 selected ICs: 26	42	 2	 8	1	12	21	14	43	28	> 50 mm	 8      > 50 mm	12
+% sub-02 selected ICs: 28	40	43	25	4	21	23	24	23	41	> 50 mm	23      31      31
+% % % selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22, 26, 39, 47]; % sub-09
+% % % selected = [41,	 3,	 9,	11,	5,	 2,	14,	 7,	 4,	41,	 24,	  8,     11,    37]; % sub-21
+% % % selected = [ 7,	17,	 7,	 9,	1,	25,	 6,	18,	 6,	 7, nan,    nan,      5,    24]; % sub-11
+% % % selected = [26,	42,	 2,	 8,	1,	12, 21,	14,	43,	28, nan,	  8,    nan,	12]; % sub-14
+selected = [28,	40,	43,	25,	4,	21,	23, 24,	23, 41, nan,     23,     31,    31]; % sub-02
+
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [], [4, 4], selected);
 
 %% Sorted the tf_ersp into context blocks
@@ -84,7 +92,9 @@ end
 
 %%
 % theta band: 4 to 8 Hz; alpha: 9 ~ 13 Hz; low beta: 14 ~ 20 Hz; high beta: 21 ~ 30 Hz
-selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48];
+% % % selected = [1, 4, 6, 7, 9, 12, 13, 15, 16, 21, 25, 36, 44, 48]; % this ICs are for sub-09 version 00
+% % % selected = [1, 2, 3, 4, 5,  6, 11, 12, 14, 21, 22, 26, 39, 47]; % this ICs are for sub-09 version 01
+selected = [1, 2, 3, 4, 5, 6, 11, 12, 14, 21, 22,26, 39, 47];
 % layout = [10, 6];
 layout = [4, 4];
 printTrialMapsAxes(EEG, [-3000, 3000], 'ICA', [4, 8], layout, selected, [-600, -200]);
