@@ -8,6 +8,9 @@ dt = diff(0.001 * time);
 cutoff = 15; % Hz
 
 fig = figure('DefaultAxesFontSize', 18, 'units', 'normalized', 'outerposition', [0, 0, 1, 1]);
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% plot voltage
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 subplot(3, 3, 1)
 tmp = [ data(:, :, context{1, 1}), data(:, :, context{1, 2}(1, 1)), ...
         data(:, :, context{1, 3}), data(:, :, context{1, 5}) ];
@@ -55,7 +58,9 @@ xlabel('time (s)')
 tmp_shade = [h(ep_all).patch, h(8).patch, h(10).patch];
 legend(tmp_shade, {'all', 'PT2_{2~19}', 'PT3_{2~19}'}, 'Location', 'best')
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% plot power spectrum 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 subplot(3, 3, 2)
 tmp = [ powfft(:, :, context{1, 1}), powfft(:, :, context{1, 2}(1, 1)), ...
         powfft(:, :, context{1, 3}), powfft(:, :, context{1, 5}) ];
@@ -103,17 +108,9 @@ xlabel('freq (Hz)')
 tmp_shade = [h(ep_all).patch, h(8).patch, h(10).patch];
 legend(tmp_shade, {'all', 'PT2_{2~19}', 'PT3_{2~19}'}, 'Location', 'best')
 
-
-
-
-
-
-
-
-
-
-
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% plot IC
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 subplot(3, 3, 3:3:9)
 topoplot(EEG.icawinv(:, comp), EEG.chanlocs(EEG.icachansind));
 [~, kkkkk] = max( EEG.etc.ic_classification.ICLabel.classifications(comp, :) );
