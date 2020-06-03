@@ -1,11 +1,11 @@
 clear; close all; clc;
 %%
 % subID = 'sub-09', 'sub-11', 'sub-14', 'sub-21', 'sub-02';
-subID = 'sub-02';
+subID = 'sub-14';
 
 % for switch computer
-% % % mainpath = '/Users/yen-hsunwu/Dropbox (ASU)';
-mainpath = '/Users/yenhsunw/Dropbox (ASU)';
+mainpath = '/Users/yen-hsunwu/Dropbox (ASU)';
+% % % mainpath = '/Users/yenhsunw/Dropbox (ASU)';
 
 
 % Get EEG data: voltage for each channel
@@ -17,7 +17,7 @@ eegpath = fullfile(mainpath, 'BIDS_format/NCML-EEGrasp', subID, 'eeg/set');
 eegfilename = [subID, '_timefreq.set'];
 
 EEG = pop_loadset('filename', eegfilename, 'filepath', eegpath);
-figfolder = fullfile(mainpath, 'NCML-EEGrasp/for May28 2020/power', EEG.filename(1:6));
+figfolder = fullfile(mainpath, 'NCML-EEGrasp/for Jun01 2020/power', EEG.filename(1:6));
 if ~isfolder(figfolder), mkdir(figfolder); end
 
 %% Once ICs are selected
@@ -175,7 +175,7 @@ switch EEG.filename(1:6)
     case 'sub-11'
         selected = [ 7,	17,	 7,	 9,	1, 25,	6, 18,	6,	7, nan, nan,   5, 24]; % sub-11
     case 'sub-14'
-        selected = [26,	42,	 2,	 8,	1, 12, 21, 14, 43, 28, nan,	  8, nan, 12]; % sub-14
+        selected = [36,	42,	 2,	 8,	1, 12, 21, 14, 43, 28, nan,	  8, nan, 12]; % sub-14
     case 'sub-21'
         selected = [41,	 3,	 9,	11,	5,  2, 14,	7,	4, 41,	24,	  8,  11, 37]; % sub-21
     case 'sub-02'
